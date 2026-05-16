@@ -1,0 +1,6 @@
+{
+    "group": "cdf",
+    "name": "test-framework",
+    "version": "0.2.4-SNAPSHOT",
+    "description": "Test framework for CDF libs"
+}

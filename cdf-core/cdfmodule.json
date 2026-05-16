@@ -1,0 +1,14 @@
+{
+    "group": "cdf",
+    "name": "cdf-core",
+    "version": "0.3.0",
+    "description": "Core libs",
+    "dependencies": [
+        {
+            "group": "cdf",
+            "name": "test-framework",
+            "version": "0.2.3",
+            "scope": "test"
+        }
+    ]
+}

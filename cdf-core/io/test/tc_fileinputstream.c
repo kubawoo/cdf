@@ -1,0 +1,35 @@
+#include "test_framework.h"
+#include "fileinputstream.h"
+
+
+void fileinputstream_test(TEST_CASE_ARGUMENTS) {
+    String * filename = new(String, "test.txt");
+    InputStream * is = new(FileInputStream, filename);
+
+    String * expected = new(String, "test 123\nfoo bar baz\n");
+
+    for(int i = 0; i < expected->length; i++) {
+        int c = call(is, read);
+        ASSERT_TRUE(c == call(expected, char_at, i));
+    }
+
+    REFCDEC(is);
+    REFCDEC(filename);
+    REFCDEC(expected);
+}
+
+void file_not_found(TEST_CASE_ARGUMENTS) {
+    String * filename = new(String, "no_such_file.txt");
+    InputStream * is = new(FileInputStream, filename);
+    int c = call(is, read);
+    ASSERT_TRUE(c == -1);
+
+    REFCDEC(is);
+    REFCDEC(filename);
+}
+
+TEST_CASES_BEGIN
+    TEST_CASE(fileinputstream_test);
+    TEST_CASE(file_not_found);
+TEST_CASES_END
+

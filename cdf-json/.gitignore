@@ -1,0 +1,13 @@
+*.o
+*.so
+*.depend
+*.layout
+.project
+.cproject
+.idea
+CMakeLists.txt
+dist
+*.db
+.settings
+.cdfmodules
+output.log

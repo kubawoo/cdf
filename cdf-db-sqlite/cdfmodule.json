@@ -1,0 +1,24 @@
+{
+    "group": "cdf",
+    "name": "cdf-db-sqlite",
+    "version": "0.2.0",
+    "description": "Support for SQLite database",
+    "dependencies": [
+        {
+            "group": "cdf",
+            "name": "cdf-core",
+            "version": "0.3.0"
+        },
+        {
+            "group": "cdf",
+            "name": "cdf-db",
+            "version": "0.2.1"
+        },
+        {
+            "group": "cdf",
+            "name": "test-framework",
+            "version": "0.2.3",
+            "scope": "test"
+        }
+    ]
+}

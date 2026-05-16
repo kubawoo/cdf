@@ -1,0 +1,24 @@
+{
+    "group": "cdf",
+    "name": "cdftk",
+    "version": "0.1.0-SNAPSHOT",
+    "description": "CDF Toolkit",
+    "dependencies": [
+        {
+            "group": "cdf",
+            "name": "test-framework",
+            "version": "0.2.3",
+            "scope": "test"
+        },
+        {
+            "group": "cdf",
+            "name": "cdf-core",
+            "version": "0.3.0"
+        },
+        {
+            "group": "cdf",
+            "name": "cdf-json",
+            "version": "0.1.2"
+        }
+    ]
+}

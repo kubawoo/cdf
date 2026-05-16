@@ -1,0 +1,16 @@
+CC=gcc -std=c17
+CFLAGS=-c -Wall -fPIC
+LDFLAGS=
+PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+CDF_HOME ?= ${HOME}/.cdf
+MOD_GROUP := $(shell jq -r '.group' $(PROJECT_ROOT)cdfmodule.json)
+MOD_NAME := $(shell jq -r '.name' $(PROJECT_ROOT)cdfmodule.json)
+MOD_VERSION := $(shell jq -r '.version' $(PROJECT_ROOT)cdfmodule.json | sed 's|-|.|' | awk -F"." '{if ($$4) {print $$1"."$$2"-"$$4} else {print $$1"."$$2}}')
+MOD_INSTALL_PATH = $(CDF_HOME)/$(MOD_GROUP)/$(MOD_NAME)/$(MOD_VERSION)
+
+ifneq (,$(findstring SNAPSHOT,$(MOD_VERSION)))
+CFLAGS += -g
+else
+CFLAGS += -Os
+endif

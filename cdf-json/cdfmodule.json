@@ -1,0 +1,19 @@
+{
+    "group": "cdf",
+    "name": "cdf-json",
+    "version": "0.1.2",
+    "description": "JSON handling lib",
+    "dependencies": [
+        {
+            "group": "cdf",
+            "name": "cdf-core",
+            "version": "0.3.0"
+        },
+        {
+            "group": "cdf",
+            "name": "test-framework",
+            "version": "0.2.3",
+            "scope": "test"
+        }
+    ]
+}
