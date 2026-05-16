@@ -7,9 +7,14 @@ static void print_object(ObjectPtr _this, ObjectPtr o) {
     REFCDEC(s);
 }
 
+static void print_cstring(ObjectPtr _this, const char * str) {
+    printf("%s\n", str);
+}
+
 Console * Console_new(Console * this) {
     super(Object, Console);
     this->print_object = print_object;
+    this->print_cstring = print_cstring;
     return this;
 }
 

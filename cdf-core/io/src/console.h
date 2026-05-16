@@ -7,6 +7,7 @@
 typedef struct {
     inherits(Object);
     void (*print_object)(ObjectPtr, ObjectPtr);
+    void (*print_cstring)(ObjectPtr, const char *);
 } Console;
 
 Console * Console_new(Console *);

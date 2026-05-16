@@ -19,8 +19,6 @@ clean:
 	$(foreach p, $(PROJECTS), make -C $(p) clean; )
 	make -C examples clean
 
-install: build
+install:
 	$(foreach p, $(PROJECTS), make -C $(p) install; )
 
-examples:
-	make -C examples

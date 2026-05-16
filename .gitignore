@@ -53,3 +53,11 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+
+dist
+examples/helloworld/helloworld
+examples/shapes/shapes
+examples/shop/shop
+examples/wwwserver/wwwserver
+test-framework/src/testrunner
