@@ -3,6 +3,7 @@ CFLAGS=-c -Wall -fPIC
 LDFLAGS=
 PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 CDF_HOME ?= ${HOME}/.cdf
+BUILD_DIR := $(PROJECT_ROOT)build
 MOD_GROUP := $(shell jq -r '.group' $(PROJECT_ROOT)cdfmodule.json)
 MOD_NAME := $(shell jq -r '.name' $(PROJECT_ROOT)cdfmodule.json)
 MOD_VERSION := $(shell jq -r '.version' $(PROJECT_ROOT)cdfmodule.json | sed 's|-|.|' | awk -F"." '{if ($$4) {print $$1"."$$2"-"$$4} else {print $$1"."$$2}}')

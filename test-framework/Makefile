@@ -21,12 +21,12 @@ valgrind: build
 
 dist: build
 	mkdir -p dist/bin
-	cp src/testrunner dist/bin
+	cp $(BUILD_DIR)/testrunner dist/bin
 	mkdir -p dist/include
 	cp src/test_framework.h dist/include
 	cp src/test_framework_types.h dist/include
 	mkdir -p dist/lib
-	cp src/libtestframework.so dist/lib
+	cp $(BUILD_DIR)/libtestframework.so dist/lib
 
 install: dist
 	$(info Installing to $(MOD_INSTALL_PATH))

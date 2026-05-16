@@ -24,7 +24,7 @@ dist: build
 	mkdir -p dist/lib
 	mkdir -p dist/include
 	cp src/*.h dist/include
-	cp src/*.so dist/lib
+	cp $(BUILD_DIR)/*.so dist/lib
 
 install: dist
 	$(info Installing to $(MOD_INSTALL_PATH))

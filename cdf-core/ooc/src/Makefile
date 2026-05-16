@@ -3,17 +3,20 @@ include ../../Makefile.inc
 EXECUTABLE=libcdfooc.so
 CFLAGS_=$(CFLAGS)
 LDFLAGS_=$(LDFLAGS) -shared
+MODULE_NAME=ooc
 
 SOURCES:=${wildcard *.c}
-OBJECTS=$(SOURCES:.c=.o)
+OBJECTS=$(addprefix $(BUILD_DIR)/$(MODULE_NAME)/, $(SOURCES:.c=.o))
 
-all: $(SOURCES) $(EXECUTABLE)
+all: $(SOURCES) $(BUILD_DIR)/$(MODULE_NAME)/$(EXECUTABLE)
 
-$(EXECUTABLE): $(OBJECTS)
+$(BUILD_DIR)/$(MODULE_NAME)/$(EXECUTABLE): $(OBJECTS)
+	mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS_) $(OBJECTS) -o $@
 
-.c.o:
+$(BUILD_DIR)/$(MODULE_NAME)/%.o: %.c
+	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS_) $< -o $@
 
 clean:
-	rm -rf *.o $(EXECUTABLE)
+	rm -rf $(BUILD_DIR)/$(MODULE_NAME)

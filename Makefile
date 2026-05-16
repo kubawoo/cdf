@@ -18,6 +18,7 @@ valgrind: build
 clean:
 	$(foreach p, $(PROJECTS), make -C $(p) clean; )
 	make -C examples clean
+	rm -rf examples/build
 
 install:
 	$(foreach p, $(PROJECTS), make -C $(p) install; )

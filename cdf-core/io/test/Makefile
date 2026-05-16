@@ -4,12 +4,12 @@ all: test_cases
 
 TEST_CASES := ${wildcard tc_*.c}
 test_cases:
-	$(foreach tc, $(TEST_CASES), $(CC) -g -Wall -fPIC -shared -I../src -I../../ooc/src -I$(TEST_FRAMEWORK_PATH)/include ${tc} -o $(patsubst %.c,%.so,$(tc)); )
+	$(foreach tc, $(TEST_CASES), $(CC) -g -Wall -fPIC -shared -I../src -I../../ooc/src -I$(TEST_FRAMEWORK_PATH)/include ${tc} -o $(BUILD_DIR)/$(patsubst %.c,%.so,$(tc)); )
 
 test: test_cases
-	@LD_LIBRARY_PATH=".:../src:$(TEST_FRAMEWORK_PATH)/lib:../../ooc/src" $(TEST_RUNNER) -lcdfooc -lcdfio tc_*.so > output.log
+	@LD_LIBRARY_PATH="$(BUILD_DIR)/ooc:$(BUILD_DIR)/io:$(TEST_FRAMEWORK_PATH)/lib" $(TEST_RUNNER) -lcdfooc -lcdfio $(BUILD_DIR)/tc_*.so > output.log
 
 valgrind: test_cases
-	@LD_LIBRARY_PATH=".:../src:$(TEST_FRAMEWORK_PATH)/lib:../../ooc/src" valgrind --show-leak-kinds=all --leak-check=full  $(TEST_RUNNER) -lcdfooc -lcdfio tc_*.so > output.log
+	@LD_LIBRARY_PATH="$(BUILD_DIR)/ooc:$(BUILD_DIR)/io:$(TEST_FRAMEWORK_PATH)/lib" valgrind --show-leak-kinds=all --leak-check=full  $(TEST_RUNNER) -lcdfooc -lcdfio $(BUILD_DIR)/tc_*.so > output.log
 clean:
-	rm -rf *.o *.so output.log
+	rm -rf $(BUILD_DIR)/tc_*.so output.log

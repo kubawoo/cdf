@@ -5,15 +5,17 @@ CFLAGS_=$(CFLAGS) -I$(CDF_CORE_PATH)/include
 LDFLAGS_=$(LDFLAGS) -shared -L$(CDF_CORE_PATH)/lib -lcdfcore
 
 SOURCES:=${wildcard *.c}
-OBJECTS=$(SOURCES:.c=.o)
+OBJECTS=$(addprefix $(BUILD_DIR)/, $(SOURCES:.c=.o))
 
-all: $(SOURCES) $(EXECUTABLE)
+all: $(SOURCES) $(BUILD_DIR)/$(EXECUTABLE)
 
-$(EXECUTABLE): $(OBJECTS)
+$(BUILD_DIR)/$(EXECUTABLE): $(OBJECTS)
+	mkdir -p $(BUILD_DIR)
 	$(CC) $(LDFLAGS_) $(OBJECTS) -o $@
 
-.c.o:
+$(BUILD_DIR)/%.o: %.c
+	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS_) $< -o $@
 
 clean:
-	rm -rf *.o $(EXECUTABLE)
+	rm -rf $(BUILD_DIR)

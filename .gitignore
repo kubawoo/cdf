@@ -56,9 +56,5 @@ dkms.conf
 
 
 dist
-examples/helloworld/helloworld
-examples/shapes/shapes
-examples/shop/shop
-examples/wwwserver/wwwserver
-test-framework/src/testrunner
+build
 *.log

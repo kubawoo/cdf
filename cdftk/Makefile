@@ -22,7 +22,7 @@ clean:
 
 dist: build
 	mkdir -p dist/bin
-	cp src/cdftk dist/bin
+	cp $(BUILD_DIR)/cdftk dist/bin
 
 run: build
 	make -C src run

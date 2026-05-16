@@ -3,6 +3,7 @@ CFLAGS=-c -Wall -fPIC -Os
 LDFLAGS=
 PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 CDF_HOME ?= ${HOME}/.cdf
+BUILD_DIR := $(PROJECT_ROOT)build
 
 CDF_CORE_VERSION := $(shell jq -r '.dependencies[] | select(.group=="cdf") | select(.name=="cdf-core") | .version' $(PROJECT_ROOT)cdfmodule.json | sed 's|-|.|' | awk -F"." '{if ($$4) {print $$1"."$$2"-"$$4} else {print $$1"."$$2}}')
 CDF_CORE_PATH := $(CDF_HOME)/cdf/cdf-core/$(CDF_CORE_VERSION)

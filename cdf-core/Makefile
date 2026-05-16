@@ -1,5 +1,5 @@
 include Makefile.inc
-ALL_OBJECTS := $(foreach m, $(MODULES), $(m)/src/*.o)
+ALL_OBJECTS := $(foreach m, $(MODULES), $(BUILD_DIR)/$(m)/*.o)
 
 all: dist
 
@@ -26,6 +26,7 @@ dist: build
 	$(foreach m, $(MODULES), cp $(m)/src/*.h dist/include; )
 	$(foreach m, $(MODULES), echo '#include "$(m).h"' >> dist/include/cdf.h; )
 	$(CC) $(LDFLAGS) -shared $(ALL_OBJECTS) -o dist/lib/libcdfcore.so
+	$(foreach m, $(MODULES), cp $(BUILD_DIR)/$(m)/*.so dist/lib; )
 
 install: dist
 	$(info Installing to $(MOD_INSTALL_PATH))
