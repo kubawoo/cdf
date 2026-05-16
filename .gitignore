@@ -61,3 +61,4 @@ examples/shapes/shapes
 examples/shop/shop
 examples/wwwserver/wwwserver
 test-framework/src/testrunner
+*.log

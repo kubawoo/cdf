@@ -1,34 +1,34 @@
 {
     "group": "cdf",
     "name": "cdf-db-entity",
-    "version": "0.2.0",
+    "version": "0.4.0",
     "description": "DB entity manager",
     "dependencies": [
         {
             "group": "cdf",
             "name": "cdf-core",
-            "version": "0.3.0"
+            "version": "0.4.0"
         },
         {
             "group": "cdf",
             "name": "cdf-json",
-            "version": "0.1.2"
+            "version": "0.4.0"
         },
         {
             "group": "cdf",
             "name": "cdf-db",
-            "version": "0.2.1"
+            "version": "0.4.0"
         },
         {
             "group": "cdf",
             "name": "cdf-db-sqlite",
-            "version": "0.2.0",
+            "version": "0.4.0",
             "scope": "test"
         },
         {
             "group": "cdf",
             "name": "test-framework",
-            "version": "0.2.3",
+            "version": "0.4.0",
             "scope": "test"
         }
     ]
