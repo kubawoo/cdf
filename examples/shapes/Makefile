@@ -2,7 +2,7 @@ include ../Makefile.inc
 
 EXECUTABLE=shapes
 CFLAGS_=$(CFLAGS) -I$(CDF_CORE_PATH)/include
-LDFLAGS_=$(LDFLAGS) -L$(CDF_CORE_PATH)/lib -lcdf
+LDFLAGS_=$(LDFLAGS) -L$(CDF_CORE_PATH)/lib -lcdfcore
 
 SOURCES:=${wildcard *.c}
 OBJECTS=$(SOURCES:.c=.o)

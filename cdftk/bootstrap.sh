@@ -29,12 +29,11 @@ for m in $modules; do
     version=`jq -r ".dependencies | .[] | select(.group==\"cdf\") | select(.name==\"$m\") | .version" $CURR_DIR/cdfmodule.json`
     if need_to_build "cdf" "$m" "$version"; then
         echo "Building $m v$version"
-        git clone --depth 1 https://gitlab.com/cdf-project/${m}.git -b $version
-        cd $m
+        cd $CURR_DIR/../$m
         make
         make test
         make install
-        cd ..
+        cd $CURR_DIR
     else
         echo "Dependency $m v$version already exists"
     fi

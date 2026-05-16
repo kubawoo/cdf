@@ -25,7 +25,7 @@ dist: build
 	mkdir -p dist/include
 	$(foreach m, $(MODULES), cp $(m)/src/*.h dist/include; )
 	$(foreach m, $(MODULES), echo '#include "$(m).h"' >> dist/include/cdf.h; )
-	$(CC) $(LDFLAGS) -shared $(ALL_OBJECTS) -o dist/lib/libcdf.so
+	$(CC) $(LDFLAGS) -shared $(ALL_OBJECTS) -o dist/lib/libcdfcore.so
 
 install: dist
 	$(info Installing to $(MOD_INSTALL_PATH))

@@ -13,7 +13,7 @@ cdf-log/          # logging framework
 cdf-db/           # generic database abstraction
 cdf-db-sqlite/    # sqlite backend for cdf-db
 cdf-db-entity/    # entity manager (ORM-like)
-cdftk/            # CLI toolkit (depends on cdf-core + cdf-json)
+cdftk/            # CLI toolkit (depends on cdf-core + cdf-json). Supports commands: `create-new-project <name>`, `build`, `test`
 examples/         # helloworld, shapes, shop, wwwserver
 ```
 
@@ -76,6 +76,7 @@ delete(obj);                          // force-delete
 super(BaseClass, ThisClass);          // constructor chaining
 override(BaseClass, base_method, fn); // virtual override
 ```
+
 
 ## Key gotchas
 

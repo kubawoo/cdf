@@ -7,7 +7,7 @@ PY2CDF=$(PROJECT_ROOT)py2cdf.py
 
 EXECUTABLE=libfoo.so
 CFLAGS_=$(CFLAGS) -I$(LIBCDF_DIST)/include
-LIBS=-L$(LIBCDF_DIST)/lib -lcdf -lsqlite3
+LIBS=-L$(LIBCDF_DIST)/lib -lcdfcore -lsqlite3
 LDFLAGS_=$(LDFLAGS) -shared $(LIBS)
 
 SOURCES:=${wildcard *.cs}

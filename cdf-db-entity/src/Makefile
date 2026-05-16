@@ -2,7 +2,7 @@ include ../Makefile.inc
 
 EXECUTABLE=libcdfdbentity.so
 CFLAGS_=$(CFLAGS) -I$(CDF_CORE_PATH)/include -I$(CDF_JSON_PATH)/include -I$(CDF_DB_PATH)/include
-LDFLAGS_=$(LDFLAGS) -shared -L$(CDF_CORE_PATH)/lib -L$(CDF_JSON_PATH)/lib -L$(CDF_DB_PATH)/lib -lcdf -lcdfjson -lcdfdb
+LDFLAGS_=$(LDFLAGS) -shared -L$(CDF_CORE_PATH)/lib -L$(CDF_JSON_PATH)/lib -L$(CDF_DB_PATH)/lib -lcdfcore -lcdfjson -lcdfdb
 
 SOURCES:=${wildcard *.c}
 OBJECTS=$(SOURCES:.c=.o)

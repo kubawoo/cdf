@@ -2,6 +2,12 @@
 
 Object-oriented libraries for C, built with macros and gcc-specific vararg extensions.
 
+
+## Warning: AI inside
+
+This repository was partially built by an AI. If the code compiles, consider it a miracle. If it doesn't, the AI probably `replaceAll`'d something it shouldn't have. You have been warned.
+
+
 ## Modules
 
 | Module | Description |
@@ -14,27 +20,21 @@ Object-oriented libraries for C, built with macros and gcc-specific vararg exten
 | `cdf-db` | Generic database abstraction |
 | `cdf-db-sqlite` | SQLite backend for `cdf-db` |
 | `cdf-db-entity` | Entity manager (ORM-like) |
+| `cdftk` | CLI toolkit (`create-new-project`, `build`, `test` commands) |
 | `examples/` | Sample applications: helloworld, shapes, shop, wwwserver |
 
 See [`cdf-core/doc/Tutorial.md`](cdf-core/doc/Tutorial.md) for a getting-started guide with code samples.
 
 ## Build & install
 
-gcc >= 4.x is required. Tested on Linux.
+Requires `gcc` (>= 4.x), `make`, and `jq`. The `cdf-db-sqlite` module additionally needs `libsqlite3-dev`. Tested on Linux.
 
 Each module declares its dependencies in `cdfmodule.json`. Modules install to `$CDF_HOME/{group}/{name}/{version}` (default `~/.cdf`).
 
-Build and install in dependency order:
+Build and install all:
 
 ```sh
-make -C test-framework && make -C test-framework install
-make -C cdf-core && make -C cdf-core install
-make -C cdf-json && make -C cdf-json install
-make -C cdf-http && make -C cdf-http install
-make -C cdf-log && make -C cdf-log install
-make -C cdf-db && make -C cdf-db install
-make -C cdf-db-sqlite && make -C cdf-db-sqlite install
-make -C cdf-db-entity && make -C cdf-db-entity install
+make install
 ```
 
 Available targets per module:
