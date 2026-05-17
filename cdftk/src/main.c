@@ -1,18 +1,17 @@
-#include <string.h>
-#include <stdio.h>
 #include <cdf.h>
 #include "cmd_create.h"
 #include "cmd_build.h"
 #include "cmd_test.h"
+#include "cmd_run.h"
 
 static void print_usage(void) {
-    Console * c = new(Console);
+    Console * c = singleton(Console);
     call(c, print_cstring, "Usage: cdftk <command> [args]\n\n");
     call(c, print_cstring, "Commands:\n");
-    call(c, print_cstring, "  create-new-project <name>   Create a new CDF project\n");
-    call(c, print_cstring, "  build                       Build the CDF project in current directory\n");
-    call(c, print_cstring, "  test                        Run tests for the CDF project in current directory\n");
-    REFCDEC(c);
+    call(c, print_cstring, "  create <name>   Create a new CDF project\n");
+    call(c, print_cstring, "  build         Build the CDF project in current directory\n");
+    call(c, print_cstring, "  test          Run tests for the CDF project in current directory\n");
+    call(c, print_cstring, "  run           Build and run the CDF project in current directory\n");
 }
 
 int main(int argc, char * argv[]) {
@@ -21,26 +20,35 @@ int main(int argc, char * argv[]) {
         return 1;
     }
 
-    if (strcmp(argv[1], "create-new-project") == 0) {
+    String * cmd = new(String, argv[1]);
+
+    if (call(cmd, equals_cstring, "create")) {
+        REFCDEC(cmd);
         if (argc < 3) {
-            Console * c = new(Console);
-            call(c, print_cstring, "Usage: cdftk create-new-project <project-name>\n");
-            REFCDEC(c);
+            Console * c = singleton(Console);
+            call(c, print_cstring, "Usage: cdftk create <project-name>\n");
             return 1;
         }
         return cmd_create_new_project(argv[2]);
     }
 
-    if (strcmp(argv[1], "build") == 0) {
+    if (call(cmd, equals_cstring, "build")) {
+        REFCDEC(cmd);
         return cmd_build();
     }
 
-    if (strcmp(argv[1], "test") == 0) {
+    if (call(cmd, equals_cstring, "test")) {
+        REFCDEC(cmd);
         return cmd_test();
     }
 
-    Console * c = new(Console);
+    if (call(cmd, equals_cstring, "run")) {
+        REFCDEC(cmd);
+        return cmd_run();
+    }
+
+    REFCDEC(cmd);
+    Console * c = singleton(Console);
     call(c, print_cstring, "Unknown command\n");
-    REFCDEC(c);
     return 1;
 }

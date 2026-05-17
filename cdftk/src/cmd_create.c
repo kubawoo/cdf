@@ -1,28 +1,28 @@
-#include <sys/stat.h>
-#include <stdio.h>
 #include <cdf.h>
-#include "utils.h"
 #include "cmd_create.h"
 
 int cmd_create_new_project(const char * name) {
-    char buf[1024];
-    char content[4096];
-    Console * c = new(Console);
+    Console * c = singleton(Console);
+    Directory * dir = new(Directory);
+    String * sname = new(String, name);
 
-    if (mkdir(name, 0755) != 0) {
+    if (!call(dir, create, sname)) {
         call(c, print_cstring, "Error: could not create project directory\n");
-        REFCDEC(c);
+        REFCDEC(dir);
+        REFCDEC(sname);
         return 1;
     }
 
-    snprintf(buf, sizeof(buf), "%s/src", name);
-    mkdir(buf, 0755);
+    String * path = new(String);
+    call(path, format, "%s/src", name);
+    call(dir, create, path);
+    call(path, format, "%s/test", name);
+    call(dir, create, path);
+    REFCDEC(dir);
 
-    snprintf(buf, sizeof(buf), "%s/test", name);
-    mkdir(buf, 0755);
-
-    snprintf(buf, sizeof(buf), "%s/cdfmodule.json", name);
-    snprintf(content, sizeof(content),
+    call(path, format, "%s/cdfmodule.json", name);
+    String * json = new(String);
+    call(json, format,
         "{\n"
         "    \"group\": \"cdf\",\n"
         "    \"name\": \"%s\",\n"
@@ -43,28 +43,39 @@ int cmd_create_new_project(const char * name) {
         "    ]\n"
         "}\n",
         name, name);
-    write_file(buf, content);
+    {
+        File * f = new(File, path);
+        call(f, open, new(String, "w"));
+        call(f, write_string, json);
+        REFCDEC(f);
+    }
+    REFCDEC(json);
 
-    snprintf(buf, sizeof(buf), "%s/src/main.c", name);
-    snprintf(content, sizeof(content),
+    call(path, format, "%s/src/main.c", name);
+    String * main_c = new(String);
+    call(main_c, format,
         "#include <cdf.h>\n"
-        "#include <stdio.h>\n"
         "\n"
         "int main(void) {\n"
         "    String * txt = new(String, \"Hello from %s!\");\n"
-        "    Console * c = new(Console);\n"
+        "    Console * c = singleton(Console);\n"
         "\n"
         "    call(c, print_object, txt);\n"
         "\n"
-        "    REFCDEC(c);\n"
         "    REFCDEC(txt);\n"
         "    return 0;\n"
         "}\n",
         name);
-    write_file(buf, content);
+    {
+        File * f = new(File, path);
+        call(f, open, new(String, "w"));
+        call(f, write_string, main_c);
+        REFCDEC(f);
+    }
+    REFCDEC(main_c);
 
-    snprintf(buf, sizeof(buf), "%s/test/tc_example.c", name);
-    write_file(buf,
+    call(path, format, "%s/test/tc_example.c", name);
+    String * test_c = new(String,
         "#include \"test_framework.h\"\n"
         "\n"
         "void test_true(TEST_CASE_ARGUMENTS) {\n"
@@ -74,8 +85,21 @@ int cmd_create_new_project(const char * name) {
         "TEST_CASES_BEGIN\n"
         "    TEST_CASE(test_true);\n"
         "TEST_CASES_END\n");
+    {
+        File * f = new(File, path);
+        call(f, open, new(String, "w"));
+        call(f, write_string, test_c);
+        REFCDEC(f);
+    }
+    REFCDEC(test_c);
 
-    printf("Project '%s' created successfully\n", name);
-    REFCDEC(c);
+    REFCDEC(path);
+
+    String * msg = new(String);
+    call(msg, format, "Project '%s' created successfully", name);
+    call(c, print_object, msg);
+    REFCDEC(msg);
+
+    REFCDEC(sname);
     return 0;
 }

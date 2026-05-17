@@ -3,6 +3,8 @@
 
 #include "console.h"
 #include "consoleoutputstream.h"
+#include "directory.h"
+#include "file.h"
 #include "fileinputstream.h"
 #include "fileoutputstream.h"
 #include "inputstream.h"

@@ -4,7 +4,7 @@ A command-line tool for creating, building, and testing CDF projects.
 
 ## Commands
 
-### `create-new-project <name>`
+### `create <name>`
 
 Scaffolds a new CDF project with:
 
@@ -13,7 +13,7 @@ Scaffolds a new CDF project with:
 - `cdfmodule.json` — module descriptor with `cdf-core` and `test-framework` dependencies
 
 ```
-cdftk create-new-project myapp
+cdftk create myapp
 cd myapp
 ```
 
@@ -36,7 +36,7 @@ cdftk test
 ## Usage
 
 ```
-cdftk create-new-project <name>   Create a new CDF project
+cdftk create <name>   Create a new CDF project
 cdftk build                        Build the project
 cdftk test                         Run tests
 ```

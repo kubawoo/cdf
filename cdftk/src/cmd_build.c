@@ -1,136 +1,201 @@
-#define _GNU_SOURCE
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <cdf.h>
-#include "utils.h"
+#include <json.h>
 #include "cmd_build.h"
 
-static void mangle_version(const char * version, char * out, size_t out_size) {
-    char buf[128];
-    snprintf(buf, sizeof(buf), "%s", version);
-    for (char * p = buf; *p; p++)
-        if (*p == '-') *p = '.';
-
-    char * parts[4];
-    int count = 0;
-    parts[count] = strtok(buf, ".");
-    while (parts[count] && count < 4) {
-        count++;
-        parts[count] = strtok(NULL, ".");
+static String * mangle_version(String * version) {
+    String * s = new(String);
+    for (int i = 0; i < version->length; i++) {
+        char c = call(version, char_at, i);
+        call(s, append_char, c == '-' ? '.' : c);
     }
+    StringTokenizer * st = new(StringTokenizer, s);
+    List * parts = call(st, split_by_char, '.');
+    REFCDEC(st);
+    REFCDEC(s);
 
-    if (count >= 4)
-        snprintf(out, out_size, "%s.%s-%s", parts[0], parts[1], parts[3]);
-    else
-        snprintf(out, out_size, "%s.%s", parts[0], parts[1]);
+    String * p0 = call(parts, get, 0);
+    String * p1 = call(parts, get, 1);
+    String * result = new(String);
+    call(result, append, p0);
+    call(result, append_char, '.');
+    call(result, append, p1);
+    if (parts->length >= 4) {
+        String * p3 = call(parts, get, 3);
+        call(result, append_char, '-');
+        call(result, append, p3);
+        REFCDEC(p3);
+    }
+    REFCDEC(p1);
+    REFCDEC(p0);
+    REFCDEC(parts);
+    return result;
 }
 
-static void dep_lib_name(const char * name, char * out, size_t out_size) {
-    char buf[128];
-    snprintf(buf, sizeof(buf), "%s", name);
-    char * w = buf;
-    for (char * r = buf; *r; r++)
-        if (*r != '-') *(w++) = *r;
-    *w = '\0';
-    snprintf(out, out_size, "%s", buf);
+static String * dep_lib_name(String * name) {
+    String * result = new(String);
+    for (int i = 0; i < name->length; i++) {
+        char c = call(name, char_at, i);
+        if (c != '-')
+            call(result, append_char, c);
+    }
+    return result;
 }
 
 int cmd_build(void) {
-    Console * c = new(Console);
-    char cflags[4096] = "";
-    char ldflags[4096] = "";
-    char test_cflags[4096] = "";
-    char test_ldflags[4096] = "";
-    char ld_path[4096] = "";
-    char test_ld_path[4096] = "";
-    char test_runner[512] = "";
+    Console * c = singleton(Console);
 
-    if (access("cdfmodule.json", F_OK) != 0) {
+    File * f = new(File, new(String, "cdfmodule.json"));
+    if (!call(f, exists)) {
+        REFCDEC(f);
         call(c, print_cstring, "Error: cdfmodule.json not found in current directory\n");
-        REFCDEC(c);
+        return 1;
+    }
+    REFCDEC(f);
+
+    f = new(File, new(String, "cdfmodule.json"));
+    call(f, open, new(String, "r"));
+    String * content = call(f, read);
+    call(f, close);
+    REFCDEC(f);
+
+    StringInputStream * sis = new(StringInputStream, content);
+    JsonObjectBuilderEventsHandler * handler = new(JsonObjectBuilderEventsHandler);
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *)handler);
+    int parse_result = call(parser, parse, (InputStream *)sis);
+    REFCDEC(sis);
+    REFCDEC(parser);
+
+    if (parse_result != CJSON_PARSE_SUCCESS) {
+        REFCDEC(handler);
+        REFCDEC(content);
+        call(c, print_cstring, "Error: could not parse cdfmodule.json\n");
         return 1;
     }
 
-    // Read deps: three lines per dep (name, version, scope)
-    FILE * fp = popen("jq -r '.dependencies[] | .name, .version, (.scope // \"\")' cdfmodule.json", "r");
-    if (!fp) {
-        call(c, print_cstring, "Error: could not read cdfmodule.json\n");
-        REFCDEC(c);
-        return 1;
-    }
+    JsonObject * root = handler->object;
+    REFCINC(root);
 
-    char name[128], version[128], scope[128];
-    while (fgets(name, sizeof(name), fp) &&
-           fgets(version, sizeof(version), fp) &&
-           fgets(scope, sizeof(scope), fp)) {
-        name[strcspn(name, "\n")] = '\0';
-        version[strcspn(version, "\n")] = '\0';
-        scope[strcspn(scope, "\n")] = '\0';
+    String * cflags = new(String);
+    String * ldflags = new(String);
+    String * test_cflags = new(String);
+    String * test_ldflags = new(String);
+    String * ld_path = new(String);
+    String * test_ld_path = new(String);
+    String * test_runner = new(String);
 
-        char mangled[64], libname[128], path[512];
-        mangle_version(version, mangled, sizeof(mangled));
-        snprintf(path, sizeof(path), "$(CDF_HOME)/cdf/%s/%s", name, mangled);
-        dep_lib_name(name, libname, sizeof(libname));
+    String * deps_key = new(String, "dependencies");
+    Object * deps_obj = call(root, get_value, deps_key);
+    REFCDEC(deps_key);
 
-        char inc[512], lib[512];
-        snprintf(inc, sizeof(inc), "-I%s/include", path);
-        snprintf(lib, sizeof(lib), "-L%s/lib -l%s", path, libname);
+    if (deps_obj && type_equal(deps_obj, "List")) {
+        List * deps = (List *)deps_obj;
+        String * path = new(String);
 
-        if (strcmp(scope, "test") == 0) {
-            if (strlen(test_cflags) > 0) strcat(test_cflags, " ");
-            strcat(test_cflags, inc);
-            if (strlen(test_ldflags) > 0) strcat(test_ldflags, " ");
-            strcat(test_ldflags, lib);
-            if (strlen(test_ld_path) > 0) strcat(test_ld_path, ":");
-            strcat(test_ld_path, path);
-            strcat(test_ld_path, "/lib");
-            if (strcmp(name, "test-framework") == 0) {
-                snprintf(test_runner, sizeof(test_runner),
-                    "$(CDF_HOME)/cdf/test-framework/%s/bin/testrunner", mangled);
+        for (int i = 0; i < deps->length; i++) {
+            JsonObject * dep = call(deps, get, i);
+
+            String * name_key = new(String, "name");
+            String * dep_name = call(dep, get_value, name_key);
+            REFCDEC(name_key);
+
+            String * ver_key = new(String, "version");
+            String * dep_version = call(dep, get_value, ver_key);
+            REFCDEC(ver_key);
+
+            String * scope_key = new(String, "scope");
+            Object * scope_obj = call(dep, get_value, scope_key);
+            REFCDEC(scope_key);
+            String * dep_scope = NULL;
+            if (scope_obj) {
+                dep_scope = call(scope_obj, to_string);
+                REFCDEC(scope_obj);
             }
-        } else {
-            if (strlen(cflags) > 0) strcat(cflags, " ");
-            strcat(cflags, inc);
-            if (strlen(ldflags) > 0) strcat(ldflags, " ");
-            strcat(ldflags, lib);
-            if (strlen(ld_path) > 0) strcat(ld_path, ":");
-            strcat(ld_path, path);
-            strcat(ld_path, "/lib");
+
+            String * mangled = mangle_version(dep_version);
+            String * libname = dep_lib_name(dep_name);
+
+            call(path, format, "$(CDF_HOME)/cdf/%s/%s", call(dep_name, to_cstring), call(mangled, to_cstring));
+
+            String * inc = new(String);
+            call(inc, format, "-I%s/include", call(path, to_cstring));
+            String * lib = new(String);
+            call(lib, format, "-L%s/lib -l%s", call(path, to_cstring), call(libname, to_cstring));
+
+            bool is_test = dep_scope && call(dep_scope, equals_cstring, "test");
+            String * target_cflags = is_test ? test_cflags : cflags;
+            String * target_ldflags = is_test ? test_ldflags : ldflags;
+            String * target_path = is_test ? test_ld_path : ld_path;
+
+            if (target_cflags->length > 0) call(target_cflags, append_char, ' ');
+            call(target_cflags, append, inc);
+
+            if (target_ldflags->length > 0) call(target_ldflags, append_char, ' ');
+            call(target_ldflags, append, lib);
+
+            if (target_path->length > 0) call(target_path, append_char, ':');
+            call(target_path, append, path);
+            call(target_path, append_cstring, "/lib");
+
+            if (is_test && dep_scope && call(dep_name, equals_cstring, "test-framework")) {
+                call(test_runner, format, "$(CDF_HOME)/cdf/test-framework/%s/bin/testrunner", call(mangled, to_cstring));
+            }
+
+            if (dep_scope) REFCDEC(dep_scope);
+            REFCDEC(libname);
+            REFCDEC(mangled);
+            REFCDEC(lib);
+            REFCDEC(inc);
+            REFCDEC(dep_version);
+            REFCDEC(dep_name);
+            REFCDEC(dep);
         }
+        REFCDEC(path);
     }
-    pclose(fp);
+    if (deps_obj) REFCDEC(deps_obj);
 
-    // Combined LD_LIBRARY_PATH for test runner
-    char combined_ld_path[8192] = "";
-    if (strlen(ld_path) > 0) strcat(combined_ld_path, ld_path);
-    if (strlen(test_ld_path) > 0) {
-        if (strlen(combined_ld_path) > 0) strcat(combined_ld_path, ":");
-        strcat(combined_ld_path, test_ld_path);
+    String * combined_ld_path = new(String);
+    if (ld_path->length > 0) call(combined_ld_path, append, ld_path);
+    if (test_ld_path->length > 0) {
+        if (combined_ld_path->length > 0) call(combined_ld_path, append_char, ':');
+        call(combined_ld_path, append, test_ld_path);
     }
 
-    // Collect all -l flags for test runner
-    char testrunner_libs[4096] = "";
+    String * testrunner_libs = new(String);
     {
-        char all_ld[8192];
-        snprintf(all_ld, sizeof(all_ld), "%s %s", ldflags, test_ldflags);
-        char * token = strtok(all_ld, " ");
-        while (token) {
-            if (token[0] == '-' && token[1] == 'l') {
-                if (strlen(testrunner_libs) > 0) strcat(testrunner_libs, " ");
-                strcat(testrunner_libs, token);
+        StringTokenizer * tokenizer = new(StringTokenizer, ldflags);
+        List * tokens = call(tokenizer, split_by_char, ' ');
+        REFCDEC(tokenizer);
+        for (int i = 0; i < tokens->length; i++) {
+            String * token = call(tokens, get, i);
+            if (call(token, char_at, 0) == '-' && call(token, char_at, 1) == 'l') {
+                if (testrunner_libs->length > 0) call(testrunner_libs, append_char, ' ');
+                call(testrunner_libs, append, token);
             }
-            token = strtok(NULL, " ");
+            REFCDEC(token);
         }
+        REFCDEC(tokens);
+
+        tokenizer = new(StringTokenizer, test_ldflags);
+        tokens = call(tokenizer, split_by_char, ' ');
+        REFCDEC(tokenizer);
+        for (int i = 0; i < tokens->length; i++) {
+            String * token = call(tokens, get, i);
+            if (call(token, char_at, 0) == '-' && call(token, char_at, 1) == 'l') {
+                if (testrunner_libs->length > 0) call(testrunner_libs, append_char, ' ');
+                call(testrunner_libs, append, token);
+            }
+            REFCDEC(token);
+        }
+        REFCDEC(tokens);
     }
 
-    mkdir("build", 0755);
+    Directory * dir = new(Directory);
+    call(dir, create, new(String, "build"));
+    REFCDEC(dir);
 
-    // Write Makefile.inc
-    char makefile_inc[8192];
-    snprintf(makefile_inc, sizeof(makefile_inc),
+    String * makefile_inc = new(String);
+    call(makefile_inc, format,
         "CC = gcc -std=c17\n"
         "CFLAGS = -c -Wall -fPIC -Os\n"
         "LDFLAGS =\n"
@@ -143,14 +208,18 @@ int cmd_build(void) {
         "TEST_INCLUDES = %s\n"
         "TEST_LDFLAGS = %s\n"
         "TEST_RUNNER = %s\n",
-        cflags, ldflags, test_cflags, test_ldflags,
-        strlen(test_runner) > 0 ? test_runner : "echo no-test-runner");
+        call(cflags, to_cstring), call(ldflags, to_cstring),
+        call(test_cflags, to_cstring), call(test_ldflags, to_cstring),
+        test_runner->length > 0 ? call(test_runner, to_cstring) : "echo no-test-runner");
 
-    write_file("build/Makefile.inc", makefile_inc);
+    f = new(File, new(String, "build/Makefile.inc"));
+    call(f, open, new(String, "w"));
+    call(f, write_string, makefile_inc);
+    REFCDEC(f);
+    REFCDEC(makefile_inc);
 
-    // Write Makefile
-    char makefile[8192];
-    snprintf(makefile, sizeof(makefile),
+    String * makefile = new(String);
+    call(makefile, format,
         "include Makefile.inc\n"
         "\n"
         "EXECUTABLE = $(MOD_NAME)\n"
@@ -171,6 +240,9 @@ int cmd_build(void) {
         "$(BUILD_DIR)%%.o: $(PROJECT_DIR)/src/%%.c\n"
         "\t$(CC) $(CFLAGS) $(CDF_INCLUDES) $< -o $@\n"
         "\n"
+        "run: build\n"
+        "\tLD_LIBRARY_PATH=\"%s\" $(BUILD_DIR)$(EXECUTABLE)\n"
+        "\n"
         "test: $(TEST_SOS)\n"
         "\tLD_LIBRARY_PATH=\"%s\" $(TEST_RUNNER) %s $(TEST_SOS)\n"
         "\t@echo \"All tests passed!\"\n"
@@ -180,19 +252,36 @@ int cmd_build(void) {
         "\n"
         "clean:\n"
         "\trm -f $(OBJECTS) $(TEST_SOS) $(BUILD_DIR)$(EXECUTABLE)\n",
-        combined_ld_path, testrunner_libs);
+        call(ld_path, to_cstring),
+        call(combined_ld_path, to_cstring), call(testrunner_libs, to_cstring));
 
-    write_file("build/Makefile", makefile);
+    f = new(File, new(String, "build/Makefile"));
+    call(f, open, new(String, "w"));
+    call(f, write_string, makefile);
+    REFCDEC(f);
+    REFCDEC(makefile);
 
-    printf("Running make -C build...\n");
+    REFCDEC(testrunner_libs);
+    REFCDEC(combined_ld_path);
+    REFCDEC(test_runner);
+    REFCDEC(test_ld_path);
+    REFCDEC(ld_path);
+    REFCDEC(test_ldflags);
+    REFCDEC(test_cflags);
+    REFCDEC(ldflags);
+    REFCDEC(cflags);
+
+    REFCDEC(root);
+    REFCDEC(handler);
+    REFCDEC(content);
+
+    call(c, print_cstring, "Running make -C build...");
     int ret = system("make -C build");
     if (ret != 0) {
         call(c, print_cstring, "Build failed\n");
-        REFCDEC(c);
         return 1;
     }
 
     call(c, print_cstring, "Build successful\n");
-    REFCDEC(c);
     return 0;
 }
