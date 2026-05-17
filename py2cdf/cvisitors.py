@@ -9,6 +9,14 @@ def _nexttmpvar():
     __ctr += 1
     return '_tmp_%d' % __ctr
 
+def _string_literal(arg):
+    nodename = type(arg).__name__
+    if nodename == 'Str':
+        return arg.s
+    if nodename == 'Constant' and isinstance(arg.value, str):
+        return arg.value
+    return None
+
 
 class BaseVisitor(ast.NodeVisitor):
     def __init__(self, scope, parentscope):
@@ -43,7 +51,10 @@ class RootVisitor(BaseVisitor):
         self.code += v.code
 
     def visit_Call(self, node):
-        self._do_visit(CallVisitor(self.scope, self.parentscope), node)
+        v = CallVisitor(self.scope, self.parentscope)
+        v.visit(node)
+        self.code += v.init_code
+        self.code += v.code
         self.code += ';\n'
 
     def visit_Expr(self, node):
@@ -107,6 +118,7 @@ class CallVisitor(BaseVisitor):
     def __init__(self, scope, parentscope):
         super().__init__(scope, parentscope)
         self.rettype = None
+        self.init_code = ''
 
     def visit_Call(self, node):
         if self._nodename(node.func) == 'Attribute':
@@ -123,10 +135,26 @@ class CallVisitor(BaseVisitor):
         elif self._nodename(node.func) == 'Name':
             f = node.func.id
             if ooctypes.is_known_type(f):
-                # constructor
                 self.rettype = f
-                # TODO args
-                self.code += 'new(%s)' % f
+                init_code = ''
+                call_args = ''
+                for i, arg in enumerate(node.args):
+                    s = _string_literal(arg)
+                    if s is not None:
+                        tmp = _nexttmpvar()
+                        self.scope[tmp] = 'String'
+                        init_code += '%s = new(String, "%s");\n' % (tmp, s)
+                        arg_expr = tmp
+                    else:
+                        arg_expr = visitorcommons._node_to_expr(arg)
+                    if i > 0:
+                        call_args += ', '
+                    call_args += arg_expr
+                self.init_code = init_code
+                if call_args:
+                    self.code = 'new(%s, %s)' % (f, call_args)
+                else:
+                    self.code = 'new(%s)' % f
             else:
                 raise Exception('Unsupported method call: %s' % f)
 
@@ -140,9 +168,29 @@ class AssignVisitor(BaseVisitor):
             visitor = CallVisitor(self.scope, self.parentscope)
             visitor.visit(node.value)
             self.scope[varname] = visitor.rettype
+            self.code += visitor.init_code
             self.code += '%s = %s;\n' % (varname, visitor.code)
 
 
+        elif self._nodename(node.value) == 'Constant':
+            value = node.value.value
+            if isinstance(value, str):
+                self.scope[varname] = 'String'
+                self.code += '%s = new(String, "%s");\n' % (varname, value)
+            elif isinstance(value, bool):
+                self.scope[varname] = 'Boolean'
+                self.code += '%s = new(%s, %s);\n' % (varname, self.scope[varname], str(value).lower())
+            elif isinstance(value, int):
+                self.scope[varname] = 'Integer'
+                self.code += '%s = new(%s, %s);\n' % (varname, self.scope[varname], str(value))
+            elif isinstance(value, float):
+                self.scope[varname] = 'Double'
+                self.code += '%s = new(%s, %s);\n' % (varname, self.scope[varname], str(value))
+            elif value is None:
+                self.scope[varname] = 'ObjectPtr'
+                self.code += '%s = NULL;\n' % varname
+            else:
+                raise Exception('Unsupported Constant type: %s' % type(value))
         elif self._nodename(node.value) == 'Num':
             value = node.value.n
             if isinstance(value, int):
@@ -171,6 +219,23 @@ class AssignVisitor(BaseVisitor):
             for e in node.value.elts:
                 if self._nodename(e) == 'Name':
                     var = e.id
+                elif self._nodename(e) == 'Constant':
+                    var = _nexttmpvar()
+                    val = e.value
+                    if isinstance(val, str):
+                        self.scope[var] = 'String'
+                        self.code += '%s = new(String, "%s");\n' % (var, val)
+                    elif isinstance(val, bool):
+                        self.scope[var] = 'Boolean'
+                        self.code += '%s = new(Boolean, %s);\n' % (var, str(val).lower())
+                    elif isinstance(val, int):
+                        self.scope[var] = 'Integer'
+                        self.code += '%s = new(Integer, %s);\n' % (var, val)
+                    elif isinstance(val, float):
+                        self.scope[var] = 'Double'
+                        self.code += '%s = new(Double, %s);\n' % (var, val)
+                    else:
+                        continue
                 elif self._nodename(e) == 'Str':
                     var = _nexttmpvar()
                     self.code += '%s = new(String, "%s");\n' % (var, e.s)
@@ -185,6 +250,22 @@ class AssignVisitor(BaseVisitor):
                     else:
                         raise Exception('Unsupported type: %s' % type(value))
                     self.code += '%s = new(%s, %s);\n' % (var, self.scope[var], value)
+                elif self._nodename(e) == 'UnaryOp' and self._nodename(e.op) == 'USub':
+                    var = _nexttmpvar()
+                    inner = e.operand
+                    innername = self._nodename(inner)
+                    if innername == 'Constant' and isinstance(inner.value, (int, float)):
+                        val = inner.value
+                        cls = 'Integer' if isinstance(val, int) else 'Double'
+                        self.scope[var] = cls
+                        self.code += '%s = new(%s, -%s);\n' % (var, cls, val)
+                    elif innername == 'Num':
+                        val = inner.n
+                        cls = 'Integer' if isinstance(val, int) else 'Double'
+                        self.scope[var] = cls
+                        self.code += '%s = new(%s, -%s);\n' % (var, cls, val)
+                    else:
+                        continue
                 else:
                     continue
                 self.code += 'call(%s, add, %s);\n' % (varname, var)
@@ -196,21 +277,26 @@ class ExprVisitor(BaseVisitor):
 
     def visit_Expr(self, node):
         # inline code
-        if self._nodename(node.value) == 'Bytes':
-            unescaped = node.value.s.decode('utf-8')
-            escaped = ''
-            quotes = 0
-            for c in unescaped:
-                if c == '"':
-                    quotes += 1
-                    escaped += c
-                elif c == '\n' and quotes % 2 == 1:
-                    escaped += '\\n'
-                else:
-                    escaped += c
-            self.code += escaped
+        val = node.value
+        if self._nodename(val) == 'Bytes':
+            raw = val.s
+        elif self._nodename(val) == 'Constant' and isinstance(val.value, bytes):
+            raw = val.value
         else:
             v = RootVisitor(self.scope, self.parentscope)
             v.visit(node.value)
             self.code += v.code
+            return
 
+        unescaped = raw.decode('utf-8')
+        escaped = ''
+        quotes = 0
+        for c in unescaped:
+            if c == '"':
+                quotes += 1
+                escaped += c
+            elif c == '\n' and quotes % 2 == 1:
+                escaped += '\\n'
+            else:
+                escaped += c
+        self.code += escaped

@@ -45,22 +45,49 @@ def _process_file(path, types, debug):
         print('Processing header file %s' % path)
     with open(path) as f:
         content = f.read()
+
+    # collect forward typedefs: typedef struct _X Y;
+    aliases = {}
+    for m in re.finditer(r'\s*typedef\s+struct\s+_(\w+)\s+(\w+)\s*;', content):
+        struct_tag = '_' + m.group(1)
+        alias = m.group(2)
+        aliases[struct_tag] = alias
+
     while True:
         m = re.search(r'\s*typedef\s+struct[^;]*\{(?P<body>.*?)\}\s*(?P<name>\w+)\s*;', content, flags=re.DOTALL)
-        if not m:
-            break
-        content = content[m.end():]
-        body = m.group('body')
-        name = m.group('name')
+        if m:
+            content = content[m.end():]
+            body = m.group('body')
+            name = m.group('name')
 
-        if name.startswith('_'):
+            if name.startswith('_'):
+                continue
+            if name in types:
+                raise Exception('%s is redefined' % name)
+
+            types[name] = _process_body(body)
+            if debug:
+                print('Found: %s=%s' % (name, str(types[name])))
             continue
-        if name in types:
-            raise Exception('%s is redefined' % name)
 
-        types[name] = _process_body(body)
-        if debug:
-            print('Found: %s=%s' % (name, str(types[name])))
+        m = re.search(r'\s*struct\s+_(\w+)\s*\{(?P<body>.*?)\}\s*;', content, flags=re.DOTALL)
+        if m:
+            content = content[m.end():]
+            body = m.group('body')
+            tag = '_' + m.group(1)
+            name = aliases.get(tag, m.group(1))
+
+            if name.startswith('_'):
+                continue
+            if name in types:
+                raise Exception('%s is redefined' % name)
+
+            types[name] = _process_body(body)
+            if debug:
+                print('Found: %s=%s' % (name, str(types[name])))
+            continue
+
+        break
 
 
 def _process_body(body):

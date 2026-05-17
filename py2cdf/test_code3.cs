@@ -3,7 +3,7 @@ import db_sqlite.h
 import io.h
 
 def db():
-    db = SQLiteDatabase("testdb")
+    db = SQLiteDatabase("test.db")
     console = Console();
     console.print_object(db);
     conn = db.open();
