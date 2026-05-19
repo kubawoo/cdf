@@ -17,11 +17,13 @@ void connection_lifecycle(TEST_CASE_ARGUMENTS) {
     DbConnection * conn = new(DbConnection);
     ASSERT_NOT_NULL(conn);
     ASSERT_TRUE(type_equal(conn, "DbConnection"));
-    bool ret = call(conn, exec, REFCTMP(new(String, "SELECT 1")));
+    String * sql = new(String, "SELECT 1");
+    bool ret = call(conn, exec, sql);
     ASSERT_FALSE(ret);
-    List * results = call(conn, query, REFCTMP(new(String, "SELECT 1")));
+    List * results = call(conn, query, sql);
     ASSERT_NULL(results);
     REFCDEC(conn);
+    REFCDEC(sql);
 }
 
 void prepared_statement_lifecycle(TEST_CASE_ARGUMENTS) {
