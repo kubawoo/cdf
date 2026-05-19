@@ -1,7 +1,7 @@
 #ifndef FILE_H
 #define FILE_H
 
-#include <ooc.h>
+#include "ooc.h"
 #include <stdio.h>
 
 typedef struct {

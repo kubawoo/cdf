@@ -1,7 +1,7 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-#include <ooc.h>
+#include "ooc.h"
 
 
 typedef struct {
