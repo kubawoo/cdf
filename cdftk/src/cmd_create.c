@@ -20,6 +20,8 @@ int cmd_create_new_project(const char * name, const char * type) {
     call(dir, create, path);
     REFCDEC(dir);
 
+    String * mode_w = new(String, "w");
+
     call(path, format, "%s/cdfmodule.json", name);
     String * json = new(String);
     call(json, format,
@@ -46,7 +48,7 @@ int cmd_create_new_project(const char * name, const char * type) {
         name, name, type);
     {
         File * f = new(File, path);
-        call(f, open, new(String, "w"));
+        call(f, open, call(mode_w, to_cstring));
         call(f, write_string, json);
         REFCDEC(f);
     }
@@ -73,7 +75,7 @@ int cmd_create_new_project(const char * name, const char * type) {
             name);
         {
             File * f = new(File, path);
-            call(f, open, new(String, "w"));
+            call(f, open, call(mode_w, to_cstring));
             call(f, write_string, main_c);
             REFCDEC(f);
         }
@@ -93,12 +95,13 @@ int cmd_create_new_project(const char * name, const char * type) {
         "TEST_CASES_END\n");
     {
         File * f = new(File, path);
-        call(f, open, new(String, "w"));
+        call(f, open, call(mode_w, to_cstring));
         call(f, write_string, test_c);
         REFCDEC(f);
     }
     REFCDEC(test_c);
 
+    REFCDEC(mode_w);
     REFCDEC(path);
 
     String * msg = new(String);
