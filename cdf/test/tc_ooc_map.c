@@ -80,9 +80,9 @@ void map_remove_first(TEST_CASE_ARGUMENTS) {
     String * k1 = new(String, "x");
     String * k2 = new(String, "y");
     String * k3 = new(String, "z");
-    call(map, put, REFCTMP(k1), REFCTMP(new(String, "10")));
-    call(map, put, REFCTMP(k2), REFCTMP(new(String, "20")));
-    call(map, put, REFCTMP(k3), REFCTMP(new(String, "30")));
+    call(map, put, k1, REFCTMP(new(String, "10")));
+    call(map, put, k2, REFCTMP(new(String, "20")));
+    call(map, put, k3, REFCTMP(new(String, "30")));
     ASSERT_EQUAL(call(map, get_length), 3);
 
     call(map, remove, k1);
@@ -99,6 +99,9 @@ void map_remove_first(TEST_CASE_ARGUMENTS) {
     REFCDEC(v3);
 
     REFCDEC(map);
+    REFCDEC(k1);
+    REFCDEC(k2);
+    REFCDEC(k3);
 }
 
 void map_remove_middle(TEST_CASE_ARGUMENTS) {
@@ -106,9 +109,9 @@ void map_remove_middle(TEST_CASE_ARGUMENTS) {
     String * k1 = new(String, "x");
     String * k2 = new(String, "y");
     String * k3 = new(String, "z");
-    call(map, put, REFCTMP(k1), REFCTMP(new(String, "10")));
-    call(map, put, REFCTMP(k2), REFCTMP(new(String, "20")));
-    call(map, put, REFCTMP(k3), REFCTMP(new(String, "30")));
+    call(map, put, k1, REFCTMP(new(String, "10")));
+    call(map, put, k2, REFCTMP(new(String, "20")));
+    call(map, put, k3, REFCTMP(new(String, "30")));
 
     call(map, remove, k2);
     ASSERT_EQUAL(call(map, get_length), 2);
@@ -124,6 +127,9 @@ void map_remove_middle(TEST_CASE_ARGUMENTS) {
     REFCDEC(v3);
 
     REFCDEC(map);
+    REFCDEC(k1);
+    REFCDEC(k2);
+    REFCDEC(k3);
 }
 
 void map_remove_last(TEST_CASE_ARGUMENTS) {
@@ -131,9 +137,9 @@ void map_remove_last(TEST_CASE_ARGUMENTS) {
     String * k1 = new(String, "x");
     String * k2 = new(String, "y");
     String * k3 = new(String, "z");
-    call(map, put, REFCTMP(k1), REFCTMP(new(String, "10")));
-    call(map, put, REFCTMP(k2), REFCTMP(new(String, "20")));
-    call(map, put, REFCTMP(k3), REFCTMP(new(String, "30")));
+    call(map, put, k1, REFCTMP(new(String, "10")));
+    call(map, put, k2, REFCTMP(new(String, "20")));
+    call(map, put, k3, REFCTMP(new(String, "30")));
 
     call(map, remove, k3);
     ASSERT_EQUAL(call(map, get_length), 2);
@@ -142,6 +148,9 @@ void map_remove_last(TEST_CASE_ARGUMENTS) {
     ASSERT_FALSE(call(map, contains_key, k3));
 
     REFCDEC(map);
+    REFCDEC(k1);
+    REFCDEC(k2);
+    REFCDEC(k3);
 }
 
 void map_remove_all(TEST_CASE_ARGUMENTS) {

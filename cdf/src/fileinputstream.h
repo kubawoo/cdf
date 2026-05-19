@@ -10,8 +10,7 @@ typedef struct {
     File * _file;
 } FileInputStream;
 
-FileInputStream * FileInputStream_new1(FileInputStream *, String * filename);
-FileInputStream * FileInputStream_new2(FileInputStream *, File * file);
+FileInputStream * FileInputStream_new1(FileInputStream *, File * file);
 void FileInputStream_delete(ObjectPtr);
 
 

@@ -3,12 +3,12 @@
 
 static void print_object(ObjectPtr _this, ObjectPtr o) {
     String * s = call((Object *)o, to_string);
-    printf("%s\n", call(s, to_cstring));
+    printf("%s", call(s, to_cstring));
     REFCDEC(s);
 }
 
 static void print_cstring(ObjectPtr _this, const char * str) {
-    printf("%s\n", str);
+    printf("%s", str);
 }
 
 Console * Console_new(Console * this) {

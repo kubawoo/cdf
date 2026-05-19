@@ -11,9 +11,8 @@ typedef struct {
     File * _file;
 } FileOutputStream;
 
-FileOutputStream * FileOutputStream_new1(FileOutputStream *, String * filename);
-FileOutputStream * FileOutputStream_new2(FileOutputStream *, String * filename, bool append);
-FileOutputStream * FileOutputStream_new3(FileOutputStream *, File * file, bool append);
+FileOutputStream * FileOutputStream_new1(FileOutputStream *, File * file);
+FileOutputStream * FileOutputStream_new2(FileOutputStream * this, File * file, bool append);
 void FileOutputStream_delete(ObjectPtr);
 
 #endif
