@@ -166,6 +166,53 @@ void build_string_array(TEST_CASE_ARGUMENTS) {
     REFCDEC(parser);
 }
 
+void build_object_with_array_then_fields(TEST_CASE_ARGUMENTS) {
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "{\"items\":[\"hello\",\"world\"],\"total\":2,\"active\":true}");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    ASSERT_EQUAL(ret, CJSON_PARSE_SUCCESS);
+
+    String * items_name = new(String, "items");
+    Object * items_val = call(handler->object, get_value, items_name);
+    ASSERT_NOT_NULL(items_val);
+    ASSERT_TRUE(type_equal(items_val, "List"));
+    List * items = (List *) items_val;
+    ASSERT_EQUAL(items->length, 2);
+    String * s0 = call(items, get, 0);
+    ASSERT_STRINGS_EQUAL(call(s0, to_cstring), "hello");
+    REFCDEC(s0);
+    String * s1 = call(items, get, 1);
+    ASSERT_STRINGS_EQUAL(call(s1, to_cstring), "world");
+    REFCDEC(s1);
+    REFCDEC(items_val);
+    REFCDEC(items_name);
+
+    String * total_name = new(String, "total");
+    Object * total_val = call(handler->object, get_value, total_name);
+    ASSERT_NOT_NULL(total_val);
+    ASSERT_TRUE(type_equal(total_val, "Long"));
+    Long * total = (Long *) total_val;
+    ASSERT_EQUAL(total->value, 2L);
+    REFCDEC(total_name);
+    REFCDEC(total_val);
+
+    String * active_name = new(String, "active");
+    Object * active_val = call(handler->object, get_value, active_name);
+    ASSERT_NOT_NULL(active_val);
+    ASSERT_TRUE(type_equal(active_val, "Boolean"));
+    Boolean * active = (Boolean *) active_val;
+    ASSERT_TRUE(active->value);
+    REFCDEC(active_name);
+    REFCDEC(active_val);
+
+    REFCDEC(parser);
+}
+
 TEST_CASES_BEGIN
     TEST_CASE(testcase);
     TEST_CASE(nohandler);
@@ -175,6 +222,7 @@ TEST_CASES_BEGIN
     TEST_CASE(build_object);
     TEST_CASE(build_complex_object);
     TEST_CASE(build_string_array);
+    TEST_CASE(build_object_with_array_then_fields);
 TEST_CASES_END
 
 
