@@ -131,6 +131,41 @@ void build_complex_object(TEST_CASE_ARGUMENTS) {
     REFCDEC(parser);
 }
 
+void build_string_array(TEST_CASE_ARGUMENTS) {
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "{\"strings\":[\"hello\",\"world\",\"foo\"]}");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    ASSERT_EQUAL(ret, CJSON_PARSE_SUCCESS);
+
+    String * name = new(String, "strings");
+    Object * value = call(handler->object, get_value, name);
+    ASSERT_NOT_NULL(value);
+    ASSERT_TRUE(type_equal(value, "List"));
+    List * list = (List *) value;
+    ASSERT_EQUAL(list->length, 3);
+
+    String * s0 = call(list, get, 0);
+    ASSERT_STRINGS_EQUAL(call(s0, to_cstring), "hello");
+    REFCDEC(s0);
+
+    String * s1 = call(list, get, 1);
+    ASSERT_STRINGS_EQUAL(call(s1, to_cstring), "world");
+    REFCDEC(s1);
+
+    String * s2 = call(list, get, 2);
+    ASSERT_STRINGS_EQUAL(call(s2, to_cstring), "foo");
+    REFCDEC(s2);
+
+    REFCDEC(name);
+    REFCDEC(value);
+    REFCDEC(parser);
+}
+
 TEST_CASES_BEGIN
     TEST_CASE(testcase);
     TEST_CASE(nohandler);
@@ -139,6 +174,7 @@ TEST_CASES_BEGIN
     TEST_CASE(invalid_json_tc2);
     TEST_CASE(build_object);
     TEST_CASE(build_complex_object);
+    TEST_CASE(build_string_array);
 TEST_CASES_END
 
 
