@@ -213,6 +213,79 @@ void build_object_with_array_then_fields(TEST_CASE_ARGUMENTS) {
     REFCDEC(parser);
 }
 
+void parse_string_comma_value(TEST_CASE_ARGUMENTS) {
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "{\"value\":\",\"}");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    ASSERT_EQUAL(ret, CJSON_PARSE_SUCCESS);
+
+    String * name = new(String, "value");
+    Object * val = call(handler->object, get_value, name);
+    ASSERT_NOT_NULL(val);
+    ASSERT_TRUE(type_equal(val, "String"));
+    String * s = (String *) val;
+    ASSERT_STRINGS_EQUAL(call(s, to_cstring), ",");
+
+    REFCDEC(name);
+    REFCDEC(val);
+    REFCDEC(parser);
+}
+
+void build_string_with_commas(TEST_CASE_ARGUMENTS) {
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "{\"title\":\"Buy groceries\",\"description\":\"Milk, eggs, bread\",\"due_date\":\"2026-05-20\",\"assignee\":\"Alice\"}");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    ASSERT_EQUAL(ret, CJSON_PARSE_SUCCESS);
+
+    String * title_name = new(String, "title");
+    Object * title_val = call(handler->object, get_value, title_name);
+    ASSERT_NOT_NULL(title_val);
+    ASSERT_TRUE(type_equal(title_val, "String"));
+    String * title = (String *) title_val;
+    ASSERT_STRINGS_EQUAL(call(title, to_cstring), "Buy groceries");
+    REFCDEC(title_name);
+    REFCDEC(title_val);
+
+    String * desc_name = new(String, "description");
+    Object * desc_val = call(handler->object, get_value, desc_name);
+    ASSERT_NOT_NULL(desc_val);
+    ASSERT_TRUE(type_equal(desc_val, "String"));
+    String * desc = (String *) desc_val;
+    ASSERT_STRINGS_EQUAL(call(desc, to_cstring), "Milk, eggs, bread");
+    REFCDEC(desc_name);
+    REFCDEC(desc_val);
+
+    String * date_name = new(String, "due_date");
+    Object * date_val = call(handler->object, get_value, date_name);
+    ASSERT_NOT_NULL(date_val);
+    ASSERT_TRUE(type_equal(date_val, "String"));
+    String * date = (String *) date_val;
+    ASSERT_STRINGS_EQUAL(call(date, to_cstring), "2026-05-20");
+    REFCDEC(date_name);
+    REFCDEC(date_val);
+
+    String * ass_name = new(String, "assignee");
+    Object * ass_val = call(handler->object, get_value, ass_name);
+    ASSERT_NOT_NULL(ass_val);
+    ASSERT_TRUE(type_equal(ass_val, "String"));
+    String * ass = (String *) ass_val;
+    ASSERT_STRINGS_EQUAL(call(ass, to_cstring), "Alice");
+    REFCDEC(ass_name);
+    REFCDEC(ass_val);
+
+    REFCDEC(parser);
+}
+
 TEST_CASES_BEGIN
     TEST_CASE(testcase);
     TEST_CASE(nohandler);
@@ -223,6 +296,8 @@ TEST_CASES_BEGIN
     TEST_CASE(build_complex_object);
     TEST_CASE(build_string_array);
     TEST_CASE(build_object_with_array_then_fields);
+    TEST_CASE(build_string_with_commas);
+    TEST_CASE(parse_string_comma_value);
 TEST_CASES_END
 
 

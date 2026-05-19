@@ -222,6 +222,19 @@ int _processInValue(ObjectPtr _this, char c) {
     make_this(JsonEventsParser, _this);
 
     if(c == ',' || c == '}') {
+        if(c == ',' && this->_buffer->length > 0) {
+            const char * buf = call(this->_buffer, to_cstring);
+            if(buf[0] == '"') {
+                int quote_count = 0;
+                for(int i = 0; i < this->_buffer->length; i++) {
+                    if(buf[i] == '"') quote_count++;
+                }
+                if(quote_count % 2 == 1) {
+                    call(this->_buffer, append_char, c);
+                    return CJSON_PARSE_SUCCESS;
+                }
+            }
+        }
         call(this->_buffer, trim);
         _Type type = _guessType(this->_buffer);
         if(type < 0) {
