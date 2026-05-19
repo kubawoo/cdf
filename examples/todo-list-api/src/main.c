@@ -1,5 +1,7 @@
 #include <cdf.h>
 #include <http.h>
+#include <db_sqlite.h>
+#include <entitymanager.h>
 #include <signal.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -16,10 +18,28 @@ void signal_handler(int signal) {
     }
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
     signal(SIGINT, signal_handler);
 
-    server = new(HttpServer, PORT, (HttpRequestHandler *)new(TodoRequestHandler));
+    Database * db;
+    if (argc > 1) {
+        String * path = new(String, argv[1]);
+        db = new(SQLiteDatabase, path);
+        REFCDEC(path);
+        printf("Using database file: %s\n", argv[1]);
+    } else {
+        db = new(SQLiteDatabase);
+        printf("Using in-memory database\n");
+    }
+
+    EntityManager * em = new(EntityManager, db);
+    REFCDEC(db);
+
+    TodoRequestHandler * handler = new(TodoRequestHandler);
+    handler->em = em;
+    REFCINC(em);
+
+    server = new(HttpServer, PORT, (HttpRequestHandler *)handler);
     printf("Starting todo-list-api on port %d\n", PORT);
     call(server, start);
 
@@ -30,6 +50,8 @@ int main(void) {
         sleep(1);
 
     delete(server);
+    REFCDEC(handler);
+    REFCDEC(em);
     printf("Bye bye\n");
     return 0;
 }

@@ -22,6 +22,21 @@
         },
         {
             "group": "cdf",
+            "name": "cdf-db",
+            "version": "0.4.0"
+        },
+        {
+            "group": "cdf",
+            "name": "cdf-db-sqlite",
+            "version": "0.4.0"
+        },
+        {
+            "group": "cdf",
+            "name": "cdf-db-entity",
+            "version": "0.4.0"
+        },
+        {
+            "group": "cdf",
             "name": "test-framework",
             "version": "0.4.0",
             "scope": "test"

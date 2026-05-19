@@ -4,10 +4,12 @@
 #include <cdf.h>
 #include <http.h>
 #include <json.h>
+#include <entitymanager.h>
 
 typedef struct {
     inherits(HttpRequestHandler);
     void (*handle)(void *, HttpRequest *, HttpResponse *);
+    EntityManager * em;
 } TodoRequestHandler;
 
 TodoRequestHandler * TodoRequestHandler_new(TodoRequestHandler * this);

@@ -3,9 +3,6 @@
 #include <string.h>
 #include <stdio.h>
 
-static List * todos = NULL;
-static long next_id = 1;
-
 static void set_content_type(HttpResponse * response) {
     call(response, add_header, REFCTMP(new(HttpHeader,
         REFCTMP(new(String, "Content-Type")),
@@ -21,7 +18,7 @@ static void send_error(HttpResponse * response, HttpStatus status, const char * 
     set_content_type(response);
 }
 
-static void handle_create(HttpResponse * response, String * content) {
+static void handle_create(TodoRequestHandler * handler, HttpResponse * response, String * content) {
     StringInputStream * sis = new(StringInputStream, content);
     JsonObjectBuilderEventsHandler * h = new(JsonObjectBuilderEventsHandler);
     JsonEventsParser * p = new(JsonEventsParser, (JsonEventsHandler *)h);
@@ -40,21 +37,22 @@ static void handle_create(HttpResponse * response, String * content) {
     REFCDEC(h);
 
     String * key;
+    String * title = NULL, * desc = NULL, * due = NULL, * assignee = NULL;
 
     key = new(String, "title");
-    String * title = call(obj, get_value, key);
+    title = call(obj, get_value, key);
     REFCDEC(key);
 
     key = new(String, "description");
-    String * desc = call(obj, get_value, key);
+    desc = call(obj, get_value, key);
     REFCDEC(key);
 
     key = new(String, "due_date");
-    String * due = call(obj, get_value, key);
+    due = call(obj, get_value, key);
     REFCDEC(key);
 
     key = new(String, "assignee");
-    String * assignee = call(obj, get_value, key);
+    assignee = call(obj, get_value, key);
     REFCDEC(key);
 
     String * e_title = NULL, * e_desc = NULL, * e_due = NULL, * e_ass = NULL;
@@ -65,7 +63,7 @@ static void handle_create(HttpResponse * response, String * content) {
     if (!assignee) { e_ass = new(String, ""); assignee = e_ass; }
 
     String * status = new(String, "pending");
-    TodoItem * item = new(TodoItem, next_id++, title, desc, due, assignee, status);
+    TodoItem * item = new(TodoItem, 0L, title, desc, due, assignee, status);
     REFCDEC(status);
 
     if (e_title) REFCDEC(e_title); else REFCDEC(title);
@@ -73,9 +71,7 @@ static void handle_create(HttpResponse * response, String * content) {
     if (e_due) REFCDEC(e_due); else REFCDEC(due);
     if (e_ass) REFCDEC(e_ass); else REFCDEC(assignee);
 
-    if (!todos) todos = new(List);
-    call(todos, add, item);
-    REFCDEC(item);
+    call(handler->em, save, (Entity *)item);
 
     JsonObject * resp_obj = todo_item_to_json(item);
     String * json_str = call(resp_obj, to_string);
@@ -85,25 +81,33 @@ static void handle_create(HttpResponse * response, String * content) {
     call(response, append_content, json_str);
     REFCDEC(json_str);
     set_content_type(response);
+    REFCDEC(item);
     REFCDEC(obj);
 }
 
-static void handle_list(HttpResponse * response) {
-    List * arr = new(List);
+static void handle_list(TodoRequestHandler * handler, HttpResponse * response) {
+    String * sql = new(String, "SELECT * FROM TodoItem;");
+    List * results = call(handler->em->conn, query, sql);
+    REFCDEC(sql);
 
-    if (todos) {
-        for (int i = 0; i < todos->length; i++) {
-            TodoItem * item = call(todos, get, i);
+    List * items = new(List);
+    if (results) {
+        for (int i = 0; i < results->length; i++) {
+            Map * row = call(results, get, i);
+            TodoItem * item = new(TodoItem);
+            call((Entity *)item, from_map, row, NULL);
             JsonObject * obj = todo_item_to_json(item);
-            call(arr, add, obj);
+            call(items, add, obj);
             REFCDEC(obj);
             REFCDEC(item);
+            REFCDEC(row);
         }
+        REFCDEC(results);
     }
 
     JsonObject * wrapper = new(JsonObject);
-    call(wrapper, put_value, REFCTMP(new(String, "items")), arr);
-    REFCDEC(arr);
+    call(wrapper, put_value, REFCTMP(new(String, "items")), items);
+    REFCDEC(items);
 
     String * json_str = call(wrapper, to_string);
     REFCDEC(wrapper);
@@ -113,33 +117,28 @@ static void handle_list(HttpResponse * response) {
     set_content_type(response);
 }
 
-static void handle_detail(HttpResponse * response, long id) {
-    if (!todos) {
+static void handle_detail(TodoRequestHandler * handler, HttpResponse * response, long id) {
+    TodoItem * item = new(TodoItem, id, NULL, NULL, NULL, NULL, NULL);
+
+    call(handler->em, load, (Entity *)item);
+
+    if (!((Entity *)item)->id || ((Entity *)item)->id->value < 0) {
+        REFCDEC(item);
         send_error(response, HTTP_STATUS_NOT_FOUND, "Not found");
         return;
     }
 
-    for (int i = 0; i < todos->length; i++) {
-        TodoItem * item = call(todos, get, i);
-        if (item->id == id) {
-            REFCDEC(item);
-            item = call(todos, get, i);
-            JsonObject * obj = todo_item_to_json(item);
-            REFCDEC(item);
-            String * json_str = call(obj, to_string);
-            REFCDEC(obj);
-            call(response, append_content, json_str);
-            REFCDEC(json_str);
-            set_content_type(response);
-            return;
-        }
-        REFCDEC(item);
-    }
+    JsonObject * obj = todo_item_to_json(item);
+    String * json_str = call(obj, to_string);
+    REFCDEC(obj);
 
-    send_error(response, HTTP_STATUS_NOT_FOUND, "Not found");
+    call(response, append_content, json_str);
+    REFCDEC(json_str);
+    set_content_type(response);
+    REFCDEC(item);
 }
 
-static void handle_update(HttpResponse * response, long id, String * content) {
+static void handle_update(TodoRequestHandler * handler, HttpResponse * response, long id, String * content) {
     StringInputStream * sis = new(StringInputStream, content);
     JsonObjectBuilderEventsHandler * h = new(JsonObjectBuilderEventsHandler);
     JsonEventsParser * p = new(JsonEventsParser, (JsonEventsHandler *)h);
@@ -157,92 +156,122 @@ static void handle_update(HttpResponse * response, long id, String * content) {
     REFCINC(obj);
     REFCDEC(h);
 
-    if (!todos) {
+    TodoItem * item = new(TodoItem, id, NULL, NULL, NULL, NULL, NULL);
+    call(handler->em, load, (Entity *)item);
+
+    if (!((Entity *)item)->id || ((Entity *)item)->id->value < 0) {
+        REFCDEC(item);
         REFCDEC(obj);
         send_error(response, HTTP_STATUS_NOT_FOUND, "Not found");
         return;
     }
 
-    int found = 0;
-    for (int i = 0; i < todos->length; i++) {
-        TodoItem * item = call(todos, get, i);
-        if (item->id == id) {
-            String * key;
-            String * val;
+    String * key;
+    String * val;
 
-            key = new(String, "title");
-            val = call(obj, get_value, key);
-            REFCDEC(key);
-            if (val) {
-                REFCDEC(item->title);
-                item->title = val;
-            }
-
-            key = new(String, "description");
-            val = call(obj, get_value, key);
-            REFCDEC(key);
-            if (val) {
-                REFCDEC(item->description);
-                item->description = val;
-            }
-
-            key = new(String, "due_date");
-            val = call(obj, get_value, key);
-            REFCDEC(key);
-            if (val) {
-                REFCDEC(item->due_date);
-                item->due_date = val;
-            }
-
-            key = new(String, "assignee");
-            val = call(obj, get_value, key);
-            REFCDEC(key);
-            if (val) {
-                REFCDEC(item->assignee);
-                item->assignee = val;
-            }
-
-            key = new(String, "status");
-            val = call(obj, get_value, key);
-            REFCDEC(key);
-            if (val) {
-                todo_item_set_status(item, val);
-                REFCDEC(val);
-            }
-
-            REFCDEC(item);
-
-            item = call(todos, get, i);
-            JsonObject * resp_obj = todo_item_to_json(item);
-            REFCDEC(item);
-            String * json_str = call(resp_obj, to_string);
-            REFCDEC(resp_obj);
-            call(response, append_content, json_str);
-            REFCDEC(json_str);
-            set_content_type(response);
-
-            found = 1;
-            break;
-        }
-        REFCDEC(item);
+    key = new(String, "title");
+    val = call(obj, get_value, key);
+    REFCDEC(key);
+    if (val) {
+        REFCDEC(item->title);
+        item->title = val;
+        REFCINC(val);
     }
 
-    REFCDEC(obj);
+    key = new(String, "description");
+    val = call(obj, get_value, key);
+    REFCDEC(key);
+    if (val) {
+        REFCDEC(item->description);
+        item->description = val;
+        REFCINC(val);
+    }
 
-    if (!found)
-        send_error(response, HTTP_STATUS_NOT_FOUND, "Not found");
+    key = new(String, "due_date");
+    val = call(obj, get_value, key);
+    REFCDEC(key);
+    if (val) {
+        REFCDEC(item->due_date);
+        item->due_date = val;
+        REFCINC(val);
+    }
+
+    key = new(String, "assignee");
+    val = call(obj, get_value, key);
+    REFCDEC(key);
+    if (val) {
+        REFCDEC(item->assignee);
+        item->assignee = val;
+        REFCINC(val);
+    }
+
+    key = new(String, "status");
+    val = call(obj, get_value, key);
+    REFCDEC(key);
+    if (val) {
+        todo_item_set_status(item, val);
+        REFCDEC(val);
+    }
+
+    List * fields = call((Entity *)item, fields, false);
+    String * sql = new(String, "UPDATE TodoItem SET ");
+    for (int i = 0; i < fields->length; i++) {
+        FieldMetadata * fm = call(fields, get, i);
+        Object * fval = *((Object **)((intptr_t)item + fm->offset));
+        call(sql, append, fm->name);
+        call(sql, append_cstring, "=");
+        if (fval) {
+            String * sv = call(fval, to_string);
+            call(sql, append_char, '\'');
+            call(sql, append, sv);
+            call(sql, append_char, '\'');
+            REFCDEC(sv);
+        } else {
+            call(sql, append_cstring, "NULL");
+        }
+        if (i < fields->length - 1)
+            call(sql, append_cstring, ", ");
+        REFCDEC(fm);
+    }
+    call(sql, append_cstring, " WHERE id=");
+    String * id_str = call(((Entity *)item)->id, to_string);
+    call(sql, append, id_str);
+    REFCDEC(id_str);
+    call(sql, append_cstring, ";");
+    REFCDEC(fields);
+
+    bool ok = call(handler->em->conn, exec, sql);
+    REFCDEC(sql);
+
+    if (!ok) {
+        REFCDEC(item);
+        REFCDEC(obj);
+        send_error(response, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Update failed");
+        return;
+    }
+
+    JsonObject * resp_obj = todo_item_to_json(item);
+    String * json_str = call(resp_obj, to_string);
+    REFCDEC(resp_obj);
+
+    call(response, append_content, json_str);
+    REFCDEC(json_str);
+    set_content_type(response);
+    REFCDEC(item);
+    REFCDEC(obj);
 }
 
 void TodoRequestHandler_handle(void * _this, HttpRequest * request, HttpResponse * response) {
+    TodoRequestHandler * handler = (TodoRequestHandler *)_this;
     const char * path = call(request->path, to_cstring);
 
     if (strcmp(path, "/todos") == 0) {
         if (request->method == HTTP_METHOD_POST) {
-            handle_create(response, request->content);
+            handle_create(handler, response, request->content);
             return;
         }
         if (request->method == HTTP_METHOD_GET) {
-            handle_list(response);
+            handle_list(handler, response);
             return;
         }
         response->status = HTTP_STATUS_METHOD_NOT_ALLOWED;
@@ -252,11 +281,11 @@ void TodoRequestHandler_handle(void * _this, HttpRequest * request, HttpResponse
     long id;
     if (sscanf(path, "/todos/%ld", &id) == 1) {
         if (request->method == HTTP_METHOD_GET) {
-            handle_detail(response, id);
+            handle_detail(handler, response, id);
             return;
         }
         if (request->method == HTTP_METHOD_PATCH) {
-            handle_update(response, id, request->content);
+            handle_update(handler, response, id, request->content);
             return;
         }
         response->status = HTTP_STATUS_METHOD_NOT_ALLOWED;
@@ -267,6 +296,8 @@ void TodoRequestHandler_handle(void * _this, HttpRequest * request, HttpResponse
 }
 
 void TodoRequestHandler_delete(ObjectPtr _this) {
+    make_this(TodoRequestHandler, _this);
+    REFCDEC(this->em);
     super_delete(HttpRequestHandler, _this);
 }
 
