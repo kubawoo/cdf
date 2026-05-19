@@ -1,11 +1,12 @@
+#include <math.h>
 #include "shape.h"
 
 static double area(ObjectPtr _this) {
-    return 0.0;
+    return NAN;
 }
 
 static double circumference(ObjectPtr _this) {
-    return 0.0;
+    return NAN;
 }
 
 Shape * Shape_new(Shape * this) {

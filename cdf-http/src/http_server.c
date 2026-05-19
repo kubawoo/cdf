@@ -80,6 +80,9 @@ static HttpMethod _method_from_string(String * s) {
     if(call(s, equals_cstring, "CONNECT")) {
         return HTTP_METHOD_CONNECT;
     }
+    if(call(s, equals_cstring, "PATCH")) {
+        return HTTP_METHOD_PATCH;
+    }
 
     return HTTP_METHOD_UNKNOWN;
 }

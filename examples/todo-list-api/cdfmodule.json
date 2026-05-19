@@ -1,0 +1,30 @@
+{
+    "group": "cdf",
+    "name": "todo-list-api",
+    "version": "0.1.0-SNAPSHOT",
+    "description": "Todo List REST API example",
+    "type": "app",
+    "dependencies": [
+        {
+            "group": "cdf",
+            "name": "cdf",
+            "version": "0.4.0"
+        },
+        {
+            "group": "cdf",
+            "name": "cdf-json",
+            "version": "0.4.0"
+        },
+        {
+            "group": "cdf",
+            "name": "cdf-http",
+            "version": "0.4.0"
+        },
+        {
+            "group": "cdf",
+            "name": "test-framework",
+            "version": "0.4.0",
+            "scope": "test"
+        }
+    ]
+}
