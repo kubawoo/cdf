@@ -135,6 +135,8 @@ int _processInObject(ObjectPtr _this, char c) {
         }
     } else if(c == '"') {
         push_state(this, IN_NAME);
+    } else if(c == ',') {
+        return CJSON_PARSE_SUCCESS;
     } else {
         return CJSON_PARSE_INVALID_JSON;
     }

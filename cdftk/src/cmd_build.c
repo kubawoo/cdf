@@ -272,6 +272,20 @@ int cmd_build(void) {
     }
     if (deps_obj) REFCDEC(deps_obj);
 
+    Map * external_libs = new(Map);
+    String * project_libs_key = new(String, "libraries");
+    Object * project_libs_obj = call(root, get_value, project_libs_key);
+    REFCDEC(project_libs_key);
+    if (project_libs_obj && type_equal(project_libs_obj, "List")) {
+        List * libs = (List *)project_libs_obj;
+        for (int i = 0; i < libs->length; i++) {
+            String * lib_name = call(libs, get, i);
+            call(external_libs, put, lib_name, lib_name);
+            REFCDEC(lib_name);
+        }
+    }
+    if (project_libs_obj) REFCDEC(project_libs_obj);
+
     while (q_names->length > 0) {
         String * name = call(q_names, get, 0);
         call(q_names, remove, 0);
@@ -366,6 +380,19 @@ int cmd_build(void) {
         }
         if (dep_deps_obj) REFCDEC(dep_deps_obj);
 
+        String * dep_libs_key = new(String, "libraries");
+        Object * dep_libs_obj = call(dep_root, get_value, dep_libs_key);
+        REFCDEC(dep_libs_key);
+        if (dep_libs_obj && type_equal(dep_libs_obj, "List")) {
+            List * dep_libs = (List *)dep_libs_obj;
+            for (int j = 0; j < dep_libs->length; j++) {
+                String * lib_name = call(dep_libs, get, j);
+                call(external_libs, put, lib_name, lib_name);
+                REFCDEC(lib_name);
+            }
+        }
+        if (dep_libs_obj) REFCDEC(dep_libs_obj);
+
         REFCDEC(dep_root);
         REFCDEC(version);
         REFCDEC(name);
@@ -410,6 +437,27 @@ int cmd_build(void) {
         REFCDEC(dep_name);
     }
 
+    {
+        List * ext_keys = call(external_libs, get_keys);
+        for (int i = 0; i < ext_keys->length; i++) {
+            String * lib_name = call(ext_keys, get, i);
+            String * ext_flag = new(String);
+            call(ext_flag, format, "-l%s", call(lib_name, to_cstring));
+            if (ldflags->length > 0) call(ldflags, append_char, ' ');
+            call(ldflags, append, ext_flag);
+            REFCDEC(ext_flag);
+            REFCDEC(lib_name);
+        }
+        REFCDEC(ext_keys);
+    }
+
+    if (ldflags->length > 0) {
+        String * wrapped = new(String);
+        call(wrapped, format, "-Wl,--start-group %s -Wl,--end-group", call(ldflags, to_cstring));
+        REFCDEC(ldflags);
+        ldflags = wrapped;
+    }
+
     List * all_keys = call(resolved, get_keys);
     for (int i = 0; i < all_keys->length; i++) {
         String * dep_name = call(all_keys, get, i);
@@ -446,6 +494,20 @@ int cmd_build(void) {
         REFCDEC(dep_name);
     }
     REFCDEC(all_keys);
+
+    {
+        List * ext_keys = call(external_libs, get_keys);
+        for (int i = 0; i < ext_keys->length; i++) {
+            String * lib_name = call(ext_keys, get, i);
+            String * ext_flag = new(String);
+            call(ext_flag, format, "-l%s", call(lib_name, to_cstring));
+            if (test_ldflags->length > 0) call(test_ldflags, append_char, ' ');
+            call(test_ldflags, append, ext_flag);
+            REFCDEC(ext_flag);
+            REFCDEC(lib_name);
+        }
+        REFCDEC(ext_keys);
+    }
 
     String * combined_ld_path = new(String);
     if (ld_path->length > 0) call(combined_ld_path, append, ld_path);
@@ -586,6 +648,7 @@ int cmd_build(void) {
     REFCDEC(processed);
     REFCDEC(main_names);
     REFCDEC(resolved);
+    REFCDEC(external_libs);
     REFCDEC(cdf_home_str);
     REFCDEC(root);
     REFCDEC(content);
