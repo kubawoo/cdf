@@ -1,6 +1,7 @@
 #include "ooc_map.h"
 #include <stdio.h>
 
+void Map_remove(ObjectPtr _this, ObjectPtr key);
 
 int Map_get_length(ObjectPtr _this) {
     make_this(Map, _this);
@@ -9,9 +10,7 @@ int Map_get_length(ObjectPtr _this) {
 
 void Map_put(ObjectPtr _this, ObjectPtr key, ObjectPtr value) {
     make_this(Map, _this);
-    if(call(this, contains_key, key)) {
-    	call(this, remove, key);
-    }
+    Map_remove(_this, key);
     call(this->_keys, add, key);
     call(this->_values, add, value);
 }
@@ -36,6 +35,7 @@ void Map_remove(ObjectPtr _this, ObjectPtr key) {
         if(call((Object *)key, equals, k)) {
             call(this->_keys, remove, i);
             call(this->_values, remove, i);
+            break;
         }
     }
 }

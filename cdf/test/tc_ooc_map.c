@@ -278,19 +278,20 @@ void map_remove_then_put(TEST_CASE_ARGUMENTS) {
     Map * map = new(Map);
     String * k = new(String, "key");
 
-    call(map, put, REFCTMP(k), REFCTMP(new(String, "first")));
+    call(map, put, k, REFCTMP(new(String, "first")));
     ASSERT_EQUAL(call(map, get_length), 1);
 
     call(map, remove, k);
     ASSERT_EQUAL(call(map, get_length), 0);
 
-    call(map, put, REFCTMP(k), REFCTMP(new(String, "second")));
+    call(map, put, k, REFCTMP(new(String, "second")));
     ASSERT_EQUAL(call(map, get_length), 1);
 
     String * v = call(map, get, k);
     ASSERT_STRINGS_EQUAL(call(v, to_cstring), "second");
     REFCDEC(v);
 
+    REFCDEC(k);
     REFCDEC(map);
 }
 
