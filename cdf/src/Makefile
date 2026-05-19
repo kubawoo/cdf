@@ -1,6 +1,6 @@
 include ../Makefile.inc
 
-EXECUTABLE=libcdfcore.so
+EXECUTABLE=libcdf.so
 CFLAGS_=$(CFLAGS) 
 LDFLAGS_=$(LDFLAGS) -shared
 

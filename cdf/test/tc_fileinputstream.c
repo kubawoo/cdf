@@ -4,7 +4,9 @@
 
 void fileinputstream_test(TEST_CASE_ARGUMENTS) {
     String * filename = new(String, "test.txt");
-    InputStream * is = new(FileInputStream, filename);
+    File * file = new(File, filename);
+    REFCDEC(filename);
+    InputStream * is = new(FileInputStream, file);
 
     String * expected = new(String, "test 123\nfoo bar baz\n");
 
@@ -14,18 +16,21 @@ void fileinputstream_test(TEST_CASE_ARGUMENTS) {
     }
 
     REFCDEC(is);
-    REFCDEC(filename);
+    REFCDEC(file);
     REFCDEC(expected);
 }
 
 void file_not_found(TEST_CASE_ARGUMENTS) {
     String * filename = new(String, "no_such_file.txt");
-    InputStream * is = new(FileInputStream, filename);
+    File * file = new(File, filename);
+    REFCDEC(filename);
+
+    InputStream * is = new(FileInputStream, file);
     int c = call(is, read);
     ASSERT_TRUE(c == -1);
 
     REFCDEC(is);
-    REFCDEC(filename);
+    REFCDEC(file);
 }
 
 TEST_CASES_BEGIN

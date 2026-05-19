@@ -6,8 +6,11 @@ void console_test(TEST_CASE_ARGUMENTS) {
     String * s = new(String, "hello console");
     Object * o = new(Object);
     call(c, print_object, c);
+    call(c, print_cstring, "\n");
     call(c, print_object, s);
+    call(c, print_cstring, "\n");
     call(c, print_object, o);
+    call(c, print_cstring, "\n");
 
     REFCDEC(s);
     REFCDEC(o);
