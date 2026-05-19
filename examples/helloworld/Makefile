@@ -2,7 +2,7 @@ include ../Makefile.inc
 
 EXECUTABLE=helloworld
 CFLAGS_=$(CFLAGS) -I$(CDF_CORE_PATH)/include
-LDFLAGS_=$(LDFLAGS) -L$(CDF_CORE_PATH)/lib -lcdfcore
+LDFLAGS_=$(LDFLAGS) -L$(CDF_CORE_PATH)/lib -lcdf
 EXAMPLE_DIR := helloworld
 
 SOURCES:=${wildcard *.c}

@@ -2,7 +2,7 @@ include ../Makefile.inc
 
 EXECUTABLE=wwwserver
 CFLAGS_=$(CFLAGS) -I$(CDF_CORE_PATH)/include -I$(CDF_HTTP_PATH)/include
-LDFLAGS_=$(LDFLAGS) -L$(CDF_CORE_PATH)/lib -lcdfcore -L$(CDF_HTTP_PATH)/lib -lcdfhttp
+LDFLAGS_=$(LDFLAGS) -L$(CDF_CORE_PATH)/lib -lcdf -L$(CDF_HTTP_PATH)/lib -lcdfhttp
 EXAMPLE_DIR := wwwserver
 
 SOURCES:=${wildcard *.c}

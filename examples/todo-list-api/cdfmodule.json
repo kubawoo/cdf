@@ -1,8 +1,8 @@
 {
     "group": "cdf",
-    "name": "examples",
-    "version": "0.4.0",
-    "description": "Examples for CDF",
+    "name": "todo-list-api",
+    "version": "0.1.0-SNAPSHOT",
+    "description": "Todo List REST API example",
     "type": "app",
     "dependencies": [
         {
@@ -12,12 +12,12 @@
         },
         {
             "group": "cdf",
-            "name": "cdf-http",
+            "name": "cdf-json",
             "version": "0.4.0"
         },
         {
             "group": "cdf",
-            "name": "cdf-json",
+            "name": "cdf-http",
             "version": "0.4.0"
         },
         {
@@ -34,6 +34,12 @@
             "group": "cdf",
             "name": "cdf-db-entity",
             "version": "0.4.0"
+        },
+        {
+            "group": "cdf",
+            "name": "test-framework",
+            "version": "0.4.0",
+            "scope": "test"
         }
     ]
 }

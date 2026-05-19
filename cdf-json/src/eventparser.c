@@ -146,9 +146,21 @@ int _processInName(ObjectPtr _this, char c) {
     make_this(JsonEventsParser, _this);
     if(c=='"') {
         pop_state(this);
-        push_state(this, NAME_DONE);
-        call(this->_name, set_text, call(this->_buffer, to_cstring));
-        call(this->_buffer, clear);
+        if(peek_state(this) == IN_ARRAY) {
+            Object * value = (Object *) new(String, call(this->_buffer, to_cstring));
+            if(this->_handler->value != NULL) {
+                String * name = call(this->_name, copy);
+                call(this->_handler, value, name, value);
+                REFCDEC(name);
+            }
+            REFCDEC(value);
+            call(this->_name, clear);
+            call(this->_buffer, clear);
+        } else {
+            push_state(this, NAME_DONE);
+            call(this->_name, set_text, call(this->_buffer, to_cstring));
+            call(this->_buffer, clear);
+        }
     } else {
         call(this->_buffer, append_char, c);
     }

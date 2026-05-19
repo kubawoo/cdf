@@ -3,6 +3,7 @@
     "name": "cdf-db-sqlite",
     "version": "0.4.0",
     "description": "Support for SQLite database",
+    "type": "lib",
     "dependencies": [
         {
             "group": "cdf",

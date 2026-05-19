@@ -55,6 +55,9 @@ const char * HttpRequest_method_to_string(HttpMethod method) {
     case HTTP_METHOD_CONNECT:
         s = "CONNECT";
         break;
+    case HTTP_METHOD_PATCH:
+        s = "PATCH";
+        break;
     default:
        break;
     }

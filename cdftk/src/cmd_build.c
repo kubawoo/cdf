@@ -109,13 +109,16 @@ static JsonObject * read_cdfmodule(const char * cdf_home, String * name, String 
     String * json_path = new(String);
     call(json_path, format, "%s/cdf/%s/%s/cdfmodule.json", cdf_home, call(name, to_cstring), call(mangled, to_cstring));
 
+    String * mode_r = new(String, "r");
     File * f = new(File, json_path);
     REFCDEC(json_path);
     if (!call(f, exists)) {
+        REFCDEC(mode_r);
         REFCDEC(f);
         return NULL;
     }
-    call(f, open, new(String, "r"));
+    call(f, open, call(mode_r, to_cstring));
+    REFCDEC(mode_r);
     String * content = call(f, read);
     call(f, close);
     REFCDEC(f);
@@ -145,20 +148,27 @@ static JsonObject * read_cdfmodule(const char * cdf_home, String * name, String 
 
 int cmd_build(void) {
     Console * c = singleton(Console);
+    String * path_cdfmodule = new(String, "cdfmodule.json");
+    String * mode_w = new(String, "w");
 
-    File * f = new(File, new(String, "cdfmodule.json"));
+    File * f = new(File, path_cdfmodule);
     if (!call(f, exists)) {
         REFCDEC(f);
+        REFCDEC(mode_w);
+        REFCDEC(path_cdfmodule);
         call(c, print_cstring, "Error: cdfmodule.json not found in current directory\n");
         return 1;
     }
     REFCDEC(f);
 
-    f = new(File, new(String, "cdfmodule.json"));
-    call(f, open, new(String, "r"));
+    String * mode_r = new(String, "r");
+    f = new(File, path_cdfmodule);
+    call(f, open, call(mode_r, to_cstring));
+    REFCDEC(mode_r);
     String * content = call(f, read);
     call(f, close);
     REFCDEC(f);
+    REFCDEC(path_cdfmodule);
 
     StringInputStream * sis = new(StringInputStream, content);
     JsonObjectBuilderEventsHandler * handler = new(JsonObjectBuilderEventsHandler);
@@ -170,6 +180,7 @@ int cmd_build(void) {
     if (parse_result != CJSON_PARSE_SUCCESS) {
         REFCDEC(handler);
         REFCDEC(content);
+        REFCDEC(mode_w);
         call(c, print_cstring, "Error: could not parse cdfmodule.json\n");
         return 1;
     }
@@ -472,8 +483,10 @@ int cmd_build(void) {
         REFCDEC(tokens);
     }
 
+    String * build_dir_name = new(String, "build");
     Directory * dir = new(Directory);
-    call(dir, create, new(String, "build"));
+    call(dir, create, build_dir_name);
+    REFCDEC(build_dir_name);
     REFCDEC(dir);
 
     String * makefile_inc = new(String);
@@ -485,6 +498,8 @@ int cmd_build(void) {
         "PROJECT_DIR := $(abspath $(BUILD_DIR)/..)\n"
         "CDF_HOME ?= $(HOME)/.cdf\n"
         "MOD_NAME := $(shell jq -r '.name' $(PROJECT_DIR)/cdfmodule.json)\n"
+        "MOD_TYPE := $(shell jq -r '.type // \"lib\"' $(PROJECT_DIR)/cdfmodule.json)\n"
+        "MOD_LIB_NAME := $(shell echo $(MOD_NAME) | sed 's/-//g')\n"
         "CDF_INCLUDES = %s\n"
         "CDF_LDFLAGS = %s\n"
         "TEST_INCLUDES = %s\n"
@@ -494,17 +509,27 @@ int cmd_build(void) {
         call(test_cflags, to_cstring), call(test_ldflags, to_cstring),
         test_runner->length > 0 ? call(test_runner, to_cstring) : "echo no-test-runner");
 
-    f = new(File, new(String, "build/Makefile.inc"));
-    call(f, open, new(String, "w"));
+    String * mf_inc_path = new(String, "build/Makefile.inc");
+    f = new(File, mf_inc_path);
+    REFCDEC(mf_inc_path);
+    call(f, open, call(mode_w, to_cstring));
     call(f, write_string, makefile_inc);
     REFCDEC(f);
     REFCDEC(makefile_inc);
+
+    String * run_target = new(String);
+    call(run_target, format,
+        "ifneq ($(filter app,$(MOD_TYPE)),)\n"
+        "run: build\n"
+        "\tLD_LIBRARY_PATH=\"%s\" $(BUILD_DIR)$(EXECUTABLE)\n"
+        "endif\n",
+        call(ld_path, to_cstring));
 
     String * makefile = new(String);
     call(makefile, format,
         "include Makefile.inc\n"
         "\n"
-        "EXECUTABLE = $(MOD_NAME)\n"
+        "EXECUTABLE = $(if $(filter app,$(MOD_TYPE)),$(MOD_NAME),lib$(MOD_LIB_NAME).so)\n"
         "SOURCES = $(wildcard $(PROJECT_DIR)/src/*.c)\n"
         "OBJECTS = $(SOURCES:$(PROJECT_DIR)/src/%%.c=$(BUILD_DIR)%%.o)\n"
         "TEST_CASES = $(wildcard $(PROJECT_DIR)/test/tc_*.c)\n"
@@ -517,13 +542,12 @@ int cmd_build(void) {
         "build: $(BUILD_DIR)$(EXECUTABLE)\n"
         "\n"
         "$(BUILD_DIR)$(EXECUTABLE): $(OBJECTS)\n"
-        "\t$(CC) $(OBJECTS) $(CDF_LDFLAGS) -o $@\n"
+        "\t$(CC) $(OBJECTS) $(if $(filter app,$(MOD_TYPE)),$(CDF_LDFLAGS),-shared $(CDF_LDFLAGS)) -o $@\n"
         "\n"
         "$(BUILD_DIR)%%.o: $(PROJECT_DIR)/src/%%.c\n"
         "\t$(CC) $(CFLAGS) $(CDF_INCLUDES) $< -o $@\n"
         "\n"
-        "run: build\n"
-        "\tLD_LIBRARY_PATH=\"%s\" $(BUILD_DIR)$(EXECUTABLE)\n"
+        "%s"
         "\n"
         "test: $(TEST_SOS)\n"
         "\tLD_LIBRARY_PATH=\"%s\" $(TEST_RUNNER) %s $(TEST_SOS)\n"
@@ -534,14 +558,17 @@ int cmd_build(void) {
         "\n"
         "clean:\n"
         "\trm -f $(OBJECTS) $(TEST_SOS) $(BUILD_DIR)$(EXECUTABLE)\n",
-        call(ld_path, to_cstring),
+        call(run_target, to_cstring),
         call(combined_ld_path, to_cstring), call(testrunner_libs, to_cstring));
 
-    f = new(File, new(String, "build/Makefile"));
-    call(f, open, new(String, "w"));
+    String * mf_path = new(String, "build/Makefile");
+    f = new(File, mf_path);
+    REFCDEC(mf_path);
+    call(f, open, call(mode_w, to_cstring));
     call(f, write_string, makefile);
     REFCDEC(f);
     REFCDEC(makefile);
+    REFCDEC(run_target);
 
     REFCDEC(testrunner_libs);
     REFCDEC(combined_ld_path);
@@ -566,10 +593,12 @@ int cmd_build(void) {
     call(c, print_cstring, "Running make -C build...");
     int ret = system("make -C build");
     if (ret != 0) {
+        REFCDEC(mode_w);
         call(c, print_cstring, "Build failed\n");
         return 1;
     }
 
+    REFCDEC(mode_w);
     call(c, print_cstring, "Build successful\n");
     return 0;
 }

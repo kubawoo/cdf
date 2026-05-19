@@ -4,7 +4,7 @@
 #include "circle.h"
 
 int main(void) {
-    Console * c = new(Console);
+    Console * c = singleton(Console);
 
     List * shapes = new(List);
     Shape * shape = new(Shape);
@@ -26,16 +26,17 @@ int main(void) {
     for(int i = 0; i < shapes->length; i++) {
         shape = call(shapes, get, i);
         call(c, print_object, shape);
+	call(c, print_cstring, "\n");
         String * s = new(String);
-        call(s, format, "area=%f, circumference=%f", call(shape, area), call(shape, circumference));
+        call(s, format, " - area=%f\n - circumference=%f", call(shape, area), call(shape, circumference));
         call(c, print_object, s);
+	call(c, print_cstring, "\n\n");
         REFCDEC(s);
         REFCDEC(shape);
     }
 
 
     REFCDEC(shapes);
-    REFCDEC(c);
     return 0;
 }
 
