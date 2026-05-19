@@ -1,7 +1,7 @@
 #include <cdf.h>
 #include "cmd_create.h"
 
-int cmd_create_new_project(const char * name) {
+int cmd_create_new_project(const char * name, const char * type) {
     Console * c = singleton(Console);
     Directory * dir = new(Directory);
     String * sname = new(String, name);
@@ -28,7 +28,7 @@ int cmd_create_new_project(const char * name) {
         "    \"name\": \"%s\",\n"
         "    \"version\": \"0.1.0-SNAPSHOT\",\n"
         "    \"description\": \"%s\",\n"
-        "    \"type\": \"app\",\n"
+        "    \"type\": \"%s\",\n"
         "    \"dependencies\": [\n"
         "        {\n"
         "            \"group\": \"cdf\",\n"
@@ -43,7 +43,7 @@ int cmd_create_new_project(const char * name) {
         "        }\n"
         "    ]\n"
         "}\n",
-        name, name);
+        name, name, type);
     {
         File * f = new(File, path);
         call(f, open, new(String, "w"));
@@ -52,28 +52,33 @@ int cmd_create_new_project(const char * name) {
     }
     REFCDEC(json);
 
-    call(path, format, "%s/src/main.c", name);
-    String * main_c = new(String);
-    call(main_c, format,
-        "#include <cdf.h>\n"
-        "\n"
-        "int main(void) {\n"
-        "    String * txt = new(String, \"Hello from %s!\");\n"
-        "    Console * c = singleton(Console);\n"
-        "\n"
-        "    call(c, print_object, txt);\n"
-        "\n"
-        "    REFCDEC(txt);\n"
-        "    return 0;\n"
-        "}\n",
-        name);
-    {
-        File * f = new(File, path);
-        call(f, open, new(String, "w"));
-        call(f, write_string, main_c);
-        REFCDEC(f);
+    String * type_str = new(String, type);
+    bool is_app = call(type_str, equals_cstring, "app");
+    REFCDEC(type_str);
+    if (is_app) {
+        call(path, format, "%s/src/main.c", name);
+        String * main_c = new(String);
+        call(main_c, format,
+            "#include <cdf.h>\n"
+            "\n"
+            "int main(void) {\n"
+            "    String * txt = new(String, \"Hello from %s!\");\n"
+            "    Console * c = singleton(Console);\n"
+            "\n"
+            "    call(c, print_object, txt);\n"
+            "\n"
+            "    REFCDEC(txt);\n"
+            "    return 0;\n"
+            "}\n",
+            name);
+        {
+            File * f = new(File, path);
+            call(f, open, new(String, "w"));
+            call(f, write_string, main_c);
+            REFCDEC(f);
+        }
+        REFCDEC(main_c);
     }
-    REFCDEC(main_c);
 
     call(path, format, "%s/test/tc_example.c", name);
     String * test_c = new(String,

@@ -9,7 +9,7 @@ static void print_usage(void) {
     Console * c = singleton(Console);
     call(c, print_cstring, "Usage: cdftk <command> [args]\n\n");
     call(c, print_cstring, "Commands:\n");
-    call(c, print_cstring, "  create <name>   Create a new CDF project\n");
+    call(c, print_cstring, "  create <name>   Create a new CDF project (--type lib|app)\n");
     call(c, print_cstring, "  build         Build the CDF project in current directory\n");
     call(c, print_cstring, "  test          Run tests for the CDF project in current directory\n");
     call(c, print_cstring, "  run           Build and run the CDF project in current directory\n");
@@ -28,10 +28,24 @@ int main(int argc, char * argv[]) {
         REFCDEC(cmd);
         if (argc < 3) {
             Console * c = singleton(Console);
-            call(c, print_cstring, "Usage: cdftk create <project-name>\n");
+            call(c, print_cstring, "Usage: cdftk create <project-name> [--type lib|app]\n");
             return 1;
         }
-        return cmd_create_new_project(argv[2]);
+        const char * name = NULL;
+        const char * type = "app";
+        for (int i = 2; i < argc; i++) {
+            if (strcmp(argv[i], "--type") == 0 && i + 1 < argc) {
+                type = argv[++i];
+            } else if (!name) {
+                name = argv[i];
+            }
+        }
+        if (!name) {
+            Console * c = singleton(Console);
+            call(c, print_cstring, "Usage: cdftk create <project-name> [--type lib|app]\n");
+            return 1;
+        }
+        return cmd_create_new_project(name, type);
     }
 
     if (call(cmd, equals_cstring, "build")) {
