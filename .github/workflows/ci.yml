@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc valgrind jq make
+
+      - name: Build and install modules
+        run: |
+          PROJECTS="test-framework cdf cdf-json cdf-http cdf-log cdf-db cdf-db-sqlite cdf-db-entity"
+          for p in $PROJECTS; do
+            make -C "$p" && make -C "$p" install
+          done
+
+      - name: Run tests
+        run: make test
+
+      - name: Run valgrind
+        run: make valgrind
