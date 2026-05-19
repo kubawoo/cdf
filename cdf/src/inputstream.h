@@ -1,7 +1,7 @@
 #ifndef INPUTSTREAM_H
 #define INPUTSTREAM_H
 
-#include <ooc.h>
+#include "ooc.h"
 
 
 typedef struct {

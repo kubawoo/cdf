@@ -1,7 +1,7 @@
 #ifndef DIRECTORY_H
 #define DIRECTORY_H
 
-#include <ooc.h>
+#include "ooc.h"
 
 typedef struct {
     inherits(Object);

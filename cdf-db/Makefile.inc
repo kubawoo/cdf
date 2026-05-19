@@ -13,5 +13,5 @@ TEST_FRAMEWORK_VERSION := $(shell jq -r '.dependencies[] | select(.group=="cdf")
 TEST_FRAMEWORK_PATH := $(CDF_HOME)/cdf/test-framework/$(TEST_FRAMEWORK_VERSION)
 TEST_RUNNER := $(TEST_FRAMEWORK_PATH)/bin/testrunner
 
-CDF_CORE_VERSION := $(shell jq -r '.dependencies[] | select(.group=="cdf") | select(.name=="cdf-core") | .version' $(PROJECT_ROOT)cdfmodule.json | sed 's|-|.|' | awk -F"." '{if ($$4) {print $$1"."$$2"-"$$4} else {print $$1"."$$2}}')
-CDF_CORE_PATH := $(CDF_HOME)/cdf/cdf-core/$(CDF_CORE_VERSION)
+CDF_CORE_VERSION := $(shell jq -r '.dependencies[] | select(.group=="cdf") | select(.name=="cdf") | .version' $(PROJECT_ROOT)cdfmodule.json | sed 's|-|.|' | awk -F"." '{if ($$4) {print $$1"."$$2"-"$$4} else {print $$1"."$$2}}')
+CDF_CORE_PATH := $(CDF_HOME)/cdf/cdf/$(CDF_CORE_VERSION)

@@ -1,6 +1,6 @@
 CC=gcc -std=c17
 PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-LIBCDF_DIST:=../cdf-core/dist
+LIBCDF_DIST:=../cdf/dist
 CDF_DB_SRC:=../cdf-db/src
 CDF_DB_SQLITE_SRC:=../cdf-db-sqlite/src
 CDF_HOME ?= $(HOME)/.cdf
