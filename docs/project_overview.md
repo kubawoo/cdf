@@ -8,14 +8,14 @@ CDF (C Development Framework) is a monorepo of object-oriented C libraries that 
 
 ```
 test-framework/   # Custom test runner (tc_*.c → .so files, run via testrunner)
-cdf-core/         # Core libs: ooc/ (Object, String, List, Map, Array, etc.), io/ (streams)
+cdf/              # Core libs: ooc/ (Object, String, List, Map, Array, etc.), io/ (streams)
 cdf-json/         # JSON parser/serializer
 cdf-http/         # HTTP client + multithreaded server
 cdf-log/          # Logging framework
 cdf-db/           # Generic database abstraction
 cdf-db-sqlite/    # SQLite backend for cdf-db
 cdf-db-entity/    # Entity manager (ORM-like)
-cdftk/            # CLI toolkit (depends on cdf-core + cdf-json). Supports commands: `create-new-project <name>`, `build`, `test`
+cdftk/            # CLI toolkit (depends on cdf + cdf-json). Supports commands: `create-new-project <name>`, `build`, `test`
 py2cdf/           # Python-like syntax to CDF source translator (.cs files → .csc/.csh)
 examples/         # helloworld, shapes, shop, wwwserver
 docs/             # Documentation (this directory)
@@ -95,7 +95,7 @@ Version strings are mangled by the Makefiles:
 Dependencies must be installed before dependent modules can link:
 ```sh
 make -C test-framework && make -C test-framework install
-make -C cdf-core && make -C cdf-core install
+make -C cdf && make -C cdf install
 make -C cdf-json && make -C cdf-json install
 # ... etc for cdf-http, cdf-log, cdf-db, cdf-db-sqlite, cdf-db-entity
 ```

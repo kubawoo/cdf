@@ -6,14 +6,14 @@ Monorepo of object-oriented C libraries (OOP via macros, gcc-specific vararg ext
 
 ```
 test-framework/   # custom test runner (tc_*.c → .so files, run via testrunner)
-cdf-core/         # core libs: ooc/ (Object, String, List, Map, Array, etc.), io/ (streams)
+cdf/              # core libs: ooc/ (Object, String, List, Map, Array, etc.), io/ (streams)
 cdf-json/         # JSON parser/serializer
 cdf-http/         # HTTP client + multithreaded server
 cdf-log/          # logging framework
 cdf-db/           # generic database abstraction
 cdf-db-sqlite/    # sqlite backend for cdf-db
 cdf-db-entity/    # entity manager (ORM-like)
-cdftk/            # CLI toolkit (depends on cdf-core + cdf-json). Supports commands: `create-new-project <name>`, `build`, `test`
+cdftk/            # CLI toolkit (depends on cdf + cdf-json). Supports commands: `create-new-project <name>`, `build`, `test`
 py2cdf/           # Python-like syntax to CDF source translator (.cs files → .csc/.csh)
 examples/         # helloworld, shapes, shop, wwwserver
 ```
@@ -25,7 +25,7 @@ Modules declare deps in `cdfmodule.json`. Built modules install to `$CDF_HOME/{g
 **Build + install order matters** — a module's tests and downstream consumers expect its deps to be installed under `$CDF_HOME`:
 ```sh
 make -C test-framework && make -C test-framework install
-make -C cdf-core && make -C cdf-core install
+make -C cdf && make -C cdf install
 make -C cdf-json && make -C cdf-json install
 # ... etc for cdf-http, cdf-log, cdf-db, cdf-db-sqlite, cdf-db-entity
 ```
@@ -41,7 +41,7 @@ make -C cdf-json && make -C cdf-json install
 | `make install` | Copy `dist/` to `$CDF_HOME` |
 | `make dist` | Build + assemble headers + shared libs into `dist/` |
 
-Root `Makefile` builds projects sequentially (order: `test-framework cdf-core cdf-json cdf-http cdf-log cdf-db cdf-db-sqlite cdf-db-entity`), but still needs `make install` for each dep before downstream modules can link.
+Root `Makefile` builds projects sequentially (order: `test-framework cdf cdf-json cdf-http cdf-log cdf-db cdf-db-sqlite cdf-db-entity`), but still needs `make install` for each dep before downstream modules can link.
 
 ## Testing
 

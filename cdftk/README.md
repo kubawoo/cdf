@@ -10,7 +10,7 @@ Scaffolds a new CDF project with:
 
 - `src/main.c` — starter hello-world program
 - `test/tc_example.c` — starter test case
-- `cdfmodule.json` — module descriptor with `cdf-core` and `test-framework` dependencies
+- `cdfmodule.json` — module descriptor with `cdf` and `test-framework` dependencies
 
 ```
 cdftk create myapp
@@ -43,7 +43,7 @@ cdftk test                         Run tests
 
 ## Dependencies
 
-- `cdf-core` — core OOP library
+- `cdf` — core OOP library
 - `cdf-json` — JSON parsing
 - `test-framework` (test scope) — test runner
 

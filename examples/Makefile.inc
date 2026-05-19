@@ -5,8 +5,8 @@ PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 CDF_HOME ?= ${HOME}/.cdf
 BUILD_DIR := $(PROJECT_ROOT)build
 
-CDF_CORE_VERSION := $(shell jq -r '.dependencies[] | select(.group=="cdf") | select(.name=="cdf-core") | .version' $(PROJECT_ROOT)cdfmodule.json | sed 's|-|.|' | awk -F"." '{if ($$4) {print $$1"."$$2"-"$$4} else {print $$1"."$$2}}')
-CDF_CORE_PATH := $(CDF_HOME)/cdf/cdf-core/$(CDF_CORE_VERSION)
+CDF_CORE_VERSION := $(shell jq -r '.dependencies[] | select(.group=="cdf") | select(.name=="cdf") | .version' $(PROJECT_ROOT)cdfmodule.json | sed 's|-|.|' | awk -F"." '{if ($$4) {print $$1"."$$2"-"$$4} else {print $$1"."$$2}}')
+CDF_CORE_PATH := $(CDF_HOME)/cdf/cdf/$(CDF_CORE_VERSION)
 
 CDF_JSON_VERSION := $(shell jq -r '.dependencies[] | select(.group=="cdf") | select(.name=="cdf-json") | .version' $(PROJECT_ROOT)cdfmodule.json | sed 's|-|.|' | awk -F"." '{if ($$4) {print $$1"."$$2"-"$$4} else {print $$1"."$$2}}')
 CDF_JSON_PATH := $(CDF_HOME)/cdf/cdf-json/$(CDF_JSON_VERSION)

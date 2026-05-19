@@ -1,4 +1,4 @@
-PROJECTS=test-framework cdf-core cdf-json cdf-http cdf-log cdf-db cdf-db-sqlite cdf-db-entity
+PROJECTS=test-framework cdf cdf-json cdf-http cdf-log cdf-db cdf-db-sqlite cdf-db-entity
 
 all: build
 

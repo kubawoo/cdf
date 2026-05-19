@@ -31,7 +31,7 @@ int cmd_create_new_project(const char * name) {
         "    \"dependencies\": [\n"
         "        {\n"
         "            \"group\": \"cdf\",\n"
-        "            \"name\": \"cdf-core\",\n"
+        "            \"name\": \"cdf\",\n"
         "            \"version\": \"0.4.0\"\n"
         "        },\n"
         "        {\n"

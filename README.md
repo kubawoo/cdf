@@ -13,7 +13,7 @@ This repository was partially built by an AI. If the code compiles, consider it 
 | Module | Description |
 |---|---|
 | `test-framework` | Custom test runner (test cases compiled as `.so`, run via `testrunner`) |
-| `cdf-core` | Core libs: `ooc/` (Object, String, List, Map, Array, etc.) and `io/` (streams) |
+| `cdf` | Core libs: `ooc/` (Object, String, List, Map, Array, etc.) and `io/` (streams) |
 | `cdf-json` | JSON parser/serializer |
 | `cdf-http` | HTTP client and multithreaded server |
 | `cdf-log` | Logging framework |
@@ -23,7 +23,7 @@ This repository was partially built by an AI. If the code compiles, consider it 
 | `cdftk` | CLI toolkit (`create-new-project`, `build`, `test` commands) |
 | `examples/` | Sample applications: helloworld, shapes, shop, wwwserver |
 
-See [`cdf-core/doc/Tutorial.md`](cdf-core/doc/Tutorial.md) for a getting-started guide with code samples.
+See [`cdf/doc/Tutorial.md`](cdf/doc/Tutorial.md) for a getting-started guide with code samples.
 
 ## Build & install
 
@@ -79,7 +79,7 @@ Each module has a `cdfmodule.json` that declares its identity and dependencies:
     "dependencies": [
         {
             "group": "cdf",
-            "name": "cdf-core",
+            "name": "cdf",
             "version": "0.4.0"
         },
         {
