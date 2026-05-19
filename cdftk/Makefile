@@ -4,6 +4,7 @@ all: dist
 
 .PHONY: build
 .PHONY: test
+.PHONY: clean-build
 
 build:
 	make -C src
@@ -13,6 +14,9 @@ test: build
 
 valgrind: build
 	make -C test valgrind
+
+clean-build: build
+	src/build/cdftk clean
 
 clean:
 	rm -rf dist

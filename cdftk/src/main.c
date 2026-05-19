@@ -3,6 +3,7 @@
 #include "cmd_build.h"
 #include "cmd_test.h"
 #include "cmd_run.h"
+#include "cmd_clean.h"
 
 static void print_usage(void) {
     Console * c = singleton(Console);
@@ -12,6 +13,7 @@ static void print_usage(void) {
     call(c, print_cstring, "  build         Build the CDF project in current directory\n");
     call(c, print_cstring, "  test          Run tests for the CDF project in current directory\n");
     call(c, print_cstring, "  run           Build and run the CDF project in current directory\n");
+    call(c, print_cstring, "  clean         Clean build artifacts\n");
 }
 
 int main(int argc, char * argv[]) {
@@ -45,6 +47,11 @@ int main(int argc, char * argv[]) {
     if (call(cmd, equals_cstring, "run")) {
         REFCDEC(cmd);
         return cmd_run();
+    }
+
+    if (call(cmd, equals_cstring, "clean")) {
+        REFCDEC(cmd);
+        return cmd_clean();
     }
 
     REFCDEC(cmd);
