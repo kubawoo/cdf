@@ -6,7 +6,7 @@
 
 typedef struct {
     inherits(Object);
-    bool (*open)(ObjectPtr, String * mode);
+    bool (*open)(ObjectPtr, const char * mode);
     void (*close)(ObjectPtr);
     bool (*is_open)(ObjectPtr);
     bool (*exists)(ObjectPtr);

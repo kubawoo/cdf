@@ -11,7 +11,7 @@ FileOutputStream * FileOutputStream_new2(FileOutputStream * this, String * filen
     super(OutputStream, FileOutputStream);
     override(OutputStream, write, write);
     this->_file = new(File, filename);
-    call(this->_file, open, new(String, append ? "a" : "w"));
+    call(this->_file, open, append ? "a" : "w");
     return this;
 }
 

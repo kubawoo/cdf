@@ -12,7 +12,7 @@ FileInputStream * FileInputStream_new1(FileInputStream * this, String * filename
     super(InputStream, FileInputStream);
     override(InputStream, read, read);
     this->_file = new(File, filename);
-    call(this->_file, open, new(String, "r"));
+    call(this->_file, open, "r");
     return this;
 }
 

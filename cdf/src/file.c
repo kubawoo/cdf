@@ -1,12 +1,12 @@
 #include "file.h"
 #include <unistd.h>
 
-static bool open(ObjectPtr _this, String * mode) {
+static bool open(ObjectPtr _this, const char * mode) {
     make_this(File, _this);
     if (this->_fp) {
         fclose(this->_fp);
     }
-    this->_fp = fopen(call(this->_path, to_cstring), call(mode, to_cstring));
+    this->_fp = fopen(call(this->_path, to_cstring), mode);
     return this->_fp != NULL;
 }
 
