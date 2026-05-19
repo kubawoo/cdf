@@ -14,6 +14,7 @@ cdf-db/           # generic database abstraction
 cdf-db-sqlite/    # sqlite backend for cdf-db
 cdf-db-entity/    # entity manager (ORM-like)
 cdftk/            # CLI toolkit (depends on cdf-core + cdf-json). Supports commands: `create-new-project <name>`, `build`, `test`
+py2cdf/           # Python-like syntax to CDF source translator (.cs files → .csc/.csh)
 examples/         # helloworld, shapes, shop, wwwserver
 ```
 
