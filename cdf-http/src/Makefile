@@ -2,7 +2,7 @@ include ../Makefile.inc
 
 EXECUTABLE=libcdfhttp.so
 CFLAGS_=$(CFLAGS) -I$(CDF_CORE_PATH)/include
-LDFLAGS_=$(LDFLAGS) -shared -L$(CDF_CORE_PATH)/lib -lcdfcore
+LDFLAGS_=$(LDFLAGS) -shared -L$(CDF_CORE_PATH)/lib -lcdf
 
 SOURCES:=${wildcard *.c}
 OBJECTS=$(addprefix $(BUILD_DIR)/, $(SOURCES:.c=.o))
