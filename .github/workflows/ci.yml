@@ -15,15 +15,42 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y gcc valgrind jq make
 
-      - name: Build and install modules
+      - name: Build and install core modules
         run: |
-          PROJECTS="test-framework cdf cdf-json cdf-http cdf-log cdf-db cdf-db-sqlite cdf-db-entity"
-          for p in $PROJECTS; do
+          for p in test-framework cdf cdf-json cdf-http cdf-log cdf-db cdf-db-sqlite cdf-db-entity; do
             make -C "$p" && make -C "$p" install
           done
 
+      - name: Build and install cdftk
+        run: make -C cdftk && make -C cdftk install
+
+      - name: Build examples
+        run: make -C examples
+
       - name: Run tests
-        run: make test
+        run: |
+          make test || {
+            echo "=== TESTS FAILED ==="
+            for p in test-framework cdf cdf-json cdf-http cdf-log cdf-db cdf-db-sqlite cdf-db-entity cdftk; do
+              f="$p/test/output.log"
+              if [ -f "$f" ]; then
+                echo "--- $f ---"
+                cat "$f"
+              fi
+            done
+            exit 1
+          }
 
       - name: Run valgrind
-        run: make valgrind
+        run: |
+          make valgrind || {
+            echo "=== VALGRIND FAILED ==="
+            for p in test-framework cdf cdf-json cdf-http cdf-log cdf-db cdf-db-sqlite cdf-db-entity cdftk; do
+              f="$p/test/output.log"
+              if [ -f "$f" ]; then
+                echo "--- $f ---"
+                cat "$f"
+              fi
+            done
+            exit 1
+          }

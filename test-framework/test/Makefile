@@ -10,6 +10,6 @@ test: test_cases
 	@LD_LIBRARY_PATH="$(BUILD_DIR):../dist/lib" ../dist/bin/testrunner $(BUILD_DIR)/tc_*.so > output.log
 
 valgrind: test_cases
-	@LD_LIBRARY_PATH="$(BUILD_DIR):../dist/lib" valgrind --show-leak-kinds=all --leak-check=full ../dist/bin/testrunner $(BUILD_DIR)/tc_*.so > output.log
+	@LD_LIBRARY_PATH="$(BUILD_DIR):../dist/lib" valgrind --error-exitcode=1 --show-leak-kinds=all --leak-check=full ../dist/bin/testrunner $(BUILD_DIR)/tc_*.so > output.log
 clean:
 	rm -rf $(BUILD_DIR)/tc_*.so output.log
