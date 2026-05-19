@@ -418,7 +418,7 @@ int cmd_build(void) {
         String * inc = new(String);
         call(inc, format, "-I%s/include", call(path_prefix, to_cstring));
         String * lib = new(String);
-        call(lib, format, "-L%s/lib -l%s", call(path_prefix, to_cstring), call(libname, to_cstring));
+        call(lib, format, "-L%s/lib -l%s -Wl,-rpath=%s/lib", call(path_prefix, to_cstring), call(libname, to_cstring), call(path_prefix, to_cstring));
 
         if (cflags->length > 0) call(cflags, append_char, ' ');
         call(cflags, append, inc);
