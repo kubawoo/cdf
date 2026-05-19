@@ -10,6 +10,6 @@ test: test_cases
 	LD_LIBRARY_PATH="$(BUILD_DIR):$(CDF_CORE_PATH)/lib:$(CDF_JSON_PATH)/lib:$(CDF_DB_PATH)/lib:$(CDF_DB_SQLITE_PATH)/lib:$(TEST_FRAMEWORK_PATH)/lib" $(TEST_RUNNER) -lcdf -lcdfjson -lcdfdb -lsqlite3 -lcdfdbsqlite -lcdfdbentity $(BUILD_DIR)/tc_*.so > output.log
 
 valgrind: test_cases
-	LD_LIBRARY_PATH="$(BUILD_DIR):$(CDF_CORE_PATH)/lib:$(CDF_JSON_PATH)/lib:$(CDF_DB_PATH)/lib:$(CDF_DB_SQLITE_PATH)/lib:$(TEST_FRAMEWORK_PATH)/lib" valgrind --show-leak-kinds=all --leak-check=full  $(TEST_RUNNER) -lcdf -lcdfjson -lcdfdb -lsqlite3 -lcdfdbsqlite -lcdfdbentity  $(BUILD_DIR)/tc_*.so > output.log
+	LD_LIBRARY_PATH="$(BUILD_DIR):$(CDF_CORE_PATH)/lib:$(CDF_JSON_PATH)/lib:$(CDF_DB_PATH)/lib:$(CDF_DB_SQLITE_PATH)/lib:$(TEST_FRAMEWORK_PATH)/lib" valgrind --error-exitcode=1 --show-leak-kinds=all --leak-check=full  $(TEST_RUNNER) -lcdf -lcdfjson -lcdfdb -lsqlite3 -lcdfdbsqlite -lcdfdbentity  $(BUILD_DIR)/tc_*.so > output.log
 clean:
 	rm -rf $(BUILD_DIR)/tc_*.so output.log
