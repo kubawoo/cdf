@@ -485,6 +485,8 @@ int cmd_build(void) {
         "PROJECT_DIR := $(abspath $(BUILD_DIR)/..)\n"
         "CDF_HOME ?= $(HOME)/.cdf\n"
         "MOD_NAME := $(shell jq -r '.name' $(PROJECT_DIR)/cdfmodule.json)\n"
+        "MOD_TYPE := $(shell jq -r '.type // \"lib\"' $(PROJECT_DIR)/cdfmodule.json)\n"
+        "MOD_LIB_NAME := $(shell echo $(MOD_NAME) | sed 's/-//g')\n"
         "CDF_INCLUDES = %s\n"
         "CDF_LDFLAGS = %s\n"
         "TEST_INCLUDES = %s\n"
@@ -500,11 +502,19 @@ int cmd_build(void) {
     REFCDEC(f);
     REFCDEC(makefile_inc);
 
+    String * run_target = new(String);
+    call(run_target, format,
+        "ifneq ($(filter app,$(MOD_TYPE)),)\n"
+        "run: build\n"
+        "\tLD_LIBRARY_PATH=\"%s\" $(BUILD_DIR)$(EXECUTABLE)\n"
+        "endif\n",
+        call(ld_path, to_cstring));
+
     String * makefile = new(String);
     call(makefile, format,
         "include Makefile.inc\n"
         "\n"
-        "EXECUTABLE = $(MOD_NAME)\n"
+        "EXECUTABLE = $(if $(filter app,$(MOD_TYPE)),$(MOD_NAME),lib$(MOD_LIB_NAME).so)\n"
         "SOURCES = $(wildcard $(PROJECT_DIR)/src/*.c)\n"
         "OBJECTS = $(SOURCES:$(PROJECT_DIR)/src/%%.c=$(BUILD_DIR)%%.o)\n"
         "TEST_CASES = $(wildcard $(PROJECT_DIR)/test/tc_*.c)\n"
@@ -517,13 +527,12 @@ int cmd_build(void) {
         "build: $(BUILD_DIR)$(EXECUTABLE)\n"
         "\n"
         "$(BUILD_DIR)$(EXECUTABLE): $(OBJECTS)\n"
-        "\t$(CC) $(OBJECTS) $(CDF_LDFLAGS) -o $@\n"
+        "\t$(CC) $(OBJECTS) $(if $(filter app,$(MOD_TYPE)),$(CDF_LDFLAGS),-shared $(CDF_LDFLAGS)) -o $@\n"
         "\n"
         "$(BUILD_DIR)%%.o: $(PROJECT_DIR)/src/%%.c\n"
         "\t$(CC) $(CFLAGS) $(CDF_INCLUDES) $< -o $@\n"
         "\n"
-        "run: build\n"
-        "\tLD_LIBRARY_PATH=\"%s\" $(BUILD_DIR)$(EXECUTABLE)\n"
+        "%s"
         "\n"
         "test: $(TEST_SOS)\n"
         "\tLD_LIBRARY_PATH=\"%s\" $(TEST_RUNNER) %s $(TEST_SOS)\n"
@@ -534,7 +543,7 @@ int cmd_build(void) {
         "\n"
         "clean:\n"
         "\trm -f $(OBJECTS) $(TEST_SOS) $(BUILD_DIR)$(EXECUTABLE)\n",
-        call(ld_path, to_cstring),
+        call(run_target, to_cstring),
         call(combined_ld_path, to_cstring), call(testrunner_libs, to_cstring));
 
     f = new(File, new(String, "build/Makefile"));
@@ -542,6 +551,7 @@ int cmd_build(void) {
     call(f, write_string, makefile);
     REFCDEC(f);
     REFCDEC(makefile);
+    REFCDEC(run_target);
 
     REFCDEC(testrunner_libs);
     REFCDEC(combined_ld_path);

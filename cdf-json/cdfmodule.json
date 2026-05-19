@@ -3,6 +3,7 @@
     "name": "cdf-json",
     "version": "0.4.0",
     "description": "JSON handling lib",
+    "type": "lib",
     "dependencies": [
         {
             "group": "cdf",

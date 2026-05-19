@@ -28,6 +28,7 @@ int cmd_create_new_project(const char * name) {
         "    \"name\": \"%s\",\n"
         "    \"version\": \"0.1.0-SNAPSHOT\",\n"
         "    \"description\": \"%s\",\n"
+        "    \"type\": \"app\",\n"
         "    \"dependencies\": [\n"
         "        {\n"
         "            \"group\": \"cdf\",\n"
