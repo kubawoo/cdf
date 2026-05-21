@@ -1,5 +1,6 @@
-#include "test_framework.h"
 #include "ooc.h"
+#include "ooc_map.h"
+#include "test_framework.h"
 
 void map_basic(TEST_CASE_ARGUMENTS) {
     Map * map = new(Map);

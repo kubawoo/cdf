@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "consoleoutputstream.h"
+#include "test_framework.h"
 
 void consoleos_test(TEST_CASE_ARGUMENTS) {
     OutputStream * c = new(ConsoleOutputStream);

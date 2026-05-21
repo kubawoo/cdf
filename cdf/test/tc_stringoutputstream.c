@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "stringoutputstream.h"
+#include "test_framework.h"
 
 void stringoutputstream_test(TEST_CASE_ARGUMENTS) {
     OutputStream * os = new(StringOutputStream);

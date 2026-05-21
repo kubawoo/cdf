@@ -1,6 +1,6 @@
-#include "test_framework.h"
-#include "ooc_string.h"
 #include "ooc_list.h"
+#include "ooc_string.h"
+#include "test_framework.h"
 
 void string_new(TEST_CASE_ARGUMENTS) {
     String * s = new(String);
