@@ -13,7 +13,7 @@ This repository was partially built by an AI. If the code compiles, consider it 
 | Module | Description |
 |---|---|
 | `test-framework` | Custom test runner (test cases compiled as `.so`, run via `testrunner`) |
-| `cdf` | Core libs: Object, String, List, Map, Array, etc. (in src/) and `io/` (streams) |
+| `cdf` | Core libs: Object, String, List, Map, Array, etc. (in src/), including IO streams |
 | `cdf-json` | JSON parser/serializer |
 | `cdf-http` | HTTP client and multithreaded server |
 | `cdf-log` | Logging framework |
