@@ -1,4 +1,59 @@
 #include "ooc_list.h"
+#include "ooc_collection.h"
+
+/* ListIterator implementation */
+typedef struct _ListIterator {
+    inherits(Iterator);
+    List * list;
+    _ListItem * current;
+} ListIterator;
+
+static bool ListIterator_has_next(ObjectPtr _this) {
+    make_this(ListIterator, _this);
+    return this->current != NULL;
+}
+
+static ObjectPtr ListIterator_next(ObjectPtr _this) {
+    make_this(ListIterator, _this);
+    if (this->current == NULL) {
+        return NULL;
+    }
+    ObjectPtr result = this->current->item;
+    REFCINC(result);
+    this->current = this->current->next;
+    return result;
+}
+
+static void ListIterator_delete(ObjectPtr _this) {
+    make_this(ListIterator, _this);
+    REFCDEC(this->list);
+    super_delete(Iterator, _this);
+}
+
+/* ListIterator constructor */
+static ListIterator * ListIterator_new1(ListIterator * this) {
+    super(Iterator, ListIterator);
+    this->list = NULL;
+    this->current = NULL;
+    return this;
+}
+
+/* List iterator method */
+static Iterator * List_iterator(ObjectPtr _this) {
+    make_this(List, _this);
+    ListIterator * iter = ListIterator_new1(NULL);
+    iter->list = this;
+    REFCINC(this);
+    iter->current = this->_first;
+    
+    /* Set up the iterator interface */
+    Iterator * iter_iface = (Iterator*)iter;
+    iter_iface->has_next = ListIterator_has_next;
+    iter_iface->next = ListIterator_next;
+    /* The destructor is already set by the constructor */
+    
+    return iter_iface;
+}
 
 void _ListItem_delete(ObjectPtr _this) {
     make_this(_ListItem, _this);
@@ -98,6 +153,7 @@ void List_set(ObjectPtr _this, int i, ObjectPtr item) {
     if(i < 0 || i >= this->length) {
         return;
     }
+
     REFCINC(item);
     _ListItem * it = this->_first;
     for(int k = 0; k < i; ++k) {
@@ -148,6 +204,7 @@ static bool List_contains(ObjectPtr _this, ObjectPtr element) {
 	    return false;
 }
 
+
 static String * List_to_string(ObjectPtr _this) {
 	make_this(List, _this);
 	String * s = new(String, "[");
@@ -175,6 +232,7 @@ static String * List_to_string(ObjectPtr _this) {
 List * List_new(List * this) {
     super(Object, List);
     override(Object, to_string, List_to_string);
+    override(Collection, iterator, List_iterator);
     this->length = 0;
     this->_first = NULL;
     this->_last = NULL;
@@ -186,4 +244,3 @@ List * List_new(List * this) {
     this->contains = List_contains;
     return this;
 }
-
