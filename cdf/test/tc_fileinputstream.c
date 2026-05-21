@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "fileinputstream.h"
+#include "test_framework.h"
 
 
 void fileinputstream_test(TEST_CASE_ARGUMENTS) {

@@ -1,6 +1,6 @@
-#include "test_framework.h"
 #include "ooc.h"
 #include "ooc_list.h"
+#include "test_framework.h"
 
 void list_test(TEST_CASE_ARGUMENTS) {
     List * list = new(List);

@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "ooc_object.h"
+#include "test_framework.h"
 
 void object_equals(TEST_CASE_ARGUMENTS) {
     Object * o1 = new(Object);

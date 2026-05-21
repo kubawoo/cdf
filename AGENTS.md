@@ -6,7 +6,7 @@ Monorepo of object-oriented C libraries (OOP via macros, gcc-specific vararg ext
 
 ```
 test-framework/   # custom test runner (tc_*.c → .so files, run via testrunner)
-cdf/              # core libs: ooc/ (Object, String, List, Map, Array, etc.), io/ (streams)
+cdf/              # core libs: Object, String, List, Map, Array, etc. (in src/), io/ (streams)
 cdf-json/         # JSON parser/serializer
 cdf-http/         # HTTP client + multithreaded server
 cdf-log/          # logging framework
@@ -63,7 +63,7 @@ Root `Makefile` builds projects sequentially (order: `test-framework cdf cdf-jso
 
 ## Compiler & flags
 
-- Compiler: `gcc -std=c17` (uses GCC-specific varargs in `ooc_macros.h` — not portable to clang).
+- Compiler: `gcc -std=c17` (uses GCC-specific varargs in `src/ooc_macros.h` — not portable to clang).
 - Debug builds get `-g`; release builds get `-Os` (controlled by `SNAPSHOT` in version string).
 
 ## OOP conventions (src/ooc_macros.h)

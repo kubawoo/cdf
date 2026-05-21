@@ -7,6 +7,7 @@
 #include "ooc_map.h"
 #include "ooc_object.h"
 #include "ooc_pair.h"
+#include "ooc_queue.h"
 #include "ooc_primitives.h"
 #include "ooc_singleton.h"
 #include "ooc_stack.h"

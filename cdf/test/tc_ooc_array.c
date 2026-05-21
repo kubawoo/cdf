@@ -1,6 +1,6 @@
-#include "test_framework.h"
 #include "ooc.h"
 #include "ooc_array.h"
+#include "test_framework.h"
 
 void array_test(TEST_CASE_ARGUMENTS) {
     Array * a = new(Array, 10);

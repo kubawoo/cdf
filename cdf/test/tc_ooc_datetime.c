@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "ooc_datetime.h"
+#include "test_framework.h"
 
 void constructor_test(TEST_CASE_ARGUMENTS) {
     DateTime * dt = new(DateTime);

@@ -8,7 +8,7 @@ CDF (C Development Framework) is a monorepo of object-oriented C libraries that 
 
 ```
 test-framework/   # Custom test runner (tc_*.c → .so files, run via testrunner)
-cdf/              # Core libs: ooc/ (Object, String, List, Map, Array, etc.), io/ (streams)
+cdf/              # Core libs: Object, String, List, Map, Array, etc. (in src/), io/ (streams)
 cdf-json/         # JSON parser/serializer
 cdf-http/         # HTTP client + multithreaded server
 cdf-log/          # Logging framework
@@ -129,7 +129,7 @@ The `-l` flags are passed to dlopen for runtime linking.
 
 ## Compiler Requirements
 
-- Compiler: `gcc -std=c17` (uses GCC-specific varargs in ooc_macros.h)
+- Compiler: `gcc -std=c17` (uses GCC-specific varargs in src/ooc_macros.h)
 - Not portable to clang due to GCC-specific extensions
 - Debug builds get `-g`; release builds get `-Os` (controlled by SNAPSHOT in version string)
 
