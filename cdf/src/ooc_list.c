@@ -173,7 +173,10 @@ static String * List_to_string(ObjectPtr _this) {
 }
 
 List * List_new(List * this) {
-    super(Object, List);
+    if (!this) {
+        this = malloc(sizeof(List));
+    }
+    Object_new((Object*)this);
     override(Object, to_string, List_to_string);
     this->length = 0;
     this->_first = NULL;
@@ -184,6 +187,37 @@ List * List_new(List * this) {
     this->set = List_set;
     this->insert = List_insert;
     this->contains = List_contains;
+    // Implement the iterator method from Collection
+    this->iterator = (Iterator* (*)(ObjectPtr))ListIterator_new;
     return this;
 }
 
+// ListIterator implementation
+ListIterator * ListIterator_new(ListIterator * this, List * list) {
+    if (!this) {
+        this = malloc(sizeof(ListIterator));
+    }
+    Object_new((Object*)this);
+    this->list = list;
+    this->current = list->_first;
+    // Implement the Iterator interface
+    this->hasNext = ListIterator_hasNext;
+    this->next = ListIterator_next;
+    return this;
+}
+
+bool ListIterator_hasNext(ObjectPtr _this) {
+    make_this(ListIterator, _this);
+    return this->current != NULL;
+}
+
+ObjectPtr ListIterator_next(ObjectPtr _this) {
+    make_this(ListIterator, _this);
+    if (this->current == NULL) {
+        return NULL;
+    }
+    ObjectPtr result = this->current->item;
+    REFCINC(result);
+    this->current = this->current->next;
+    return result;
+}

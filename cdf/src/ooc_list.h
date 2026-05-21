@@ -1,7 +1,8 @@
 #ifndef OOC_LIST_H
 #define OOC_LIST_H
 
-#include "ooc_object.h"
+#include "ooc_collection.h"
+#include "ooc_iterator.h"
 
 typedef struct _ListItem {
     inherits(Object);
@@ -16,7 +17,7 @@ _ListItem * _ListItem_new3(_ListItem * this, Object *, _ListItem * prev, _ListIt
 void _ListItem_delete(ObjectPtr);
 
 typedef struct {
-    inherits(Object);
+    inherits(Collection);
     _ListItem * _first;
     _ListItem * _last;
     int length;
@@ -31,8 +32,17 @@ typedef struct {
     String * (*to_string)(ObjectPtr);
 } List;
 
+// Iterator implementation for List
+typedef struct {
+    inherits(Iterator);
+    List * list;
+    struct _ListItem * current;
+} ListIterator;
+
 List * List_new(List * this);
 void List_delete(ObjectPtr);
+ListIterator * ListIterator_new(ListIterator * this, List * list);
+bool ListIterator_hasNext(ObjectPtr _this);
+ObjectPtr ListIterator_next(ObjectPtr _this);
 
 #endif
-
