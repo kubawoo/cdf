@@ -6,7 +6,7 @@ Monorepo of object-oriented C libraries (OOP via macros, gcc-specific vararg ext
 
 ```
 test-framework/   # custom test runner (tc_*.c → .so files, run via testrunner)
-cdf/              # core libs: Object, String, List, Map, Array, etc. (in src/), io/ (streams)
+cdf/              # core libs: Object, String, List, Map, Array, etc. (in src/), including IO streams
 cdf-json/         # JSON parser/serializer
 cdf-http/         # HTTP client + multithreaded server
 cdf-log/          # logging framework

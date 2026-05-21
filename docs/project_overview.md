@@ -8,7 +8,7 @@ CDF (C Development Framework) is a monorepo of object-oriented C libraries that 
 
 ```
 test-framework/   # Custom test runner (tc_*.c → .so files, run via testrunner)
-cdf/              # Core libs: Object, String, List, Map, Array, etc. (in src/), io/ (streams)
+cdf/              # Core libs: Object, String, List, Map, Array, etc. (in src/), including IO streams
 cdf-json/         # JSON parser/serializer
 cdf-http/         # HTTP client + multithreaded server
 cdf-log/          # Logging framework
