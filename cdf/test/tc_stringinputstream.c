@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "stringinputstream.h"
+#include "test_framework.h"
 
 void stringinputstream_test(TEST_CASE_ARGUMENTS) {
     String * s = new(String, "1a.");

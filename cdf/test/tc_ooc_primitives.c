@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "ooc_primitives.h"
+#include "test_framework.h"
 
 void boolean_new(TEST_CASE_ARGUMENTS) {
     Boolean * b = new(Boolean, false);

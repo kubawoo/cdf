@@ -1,6 +1,6 @@
-#include "test_framework.h"
 #include "ooc_pair.h"
 #include "ooc_primitives.h"
+#include "test_framework.h"
 
 void pair_test(TEST_CASE_ARGUMENTS) {
     String * s = REFCTMP(new(String, "hello"));

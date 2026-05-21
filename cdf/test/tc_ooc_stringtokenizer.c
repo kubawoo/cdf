@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "ooc_stringtokenizer.h"
+#include "test_framework.h"
 
 
 void string_split_by_char(TEST_CASE_ARGUMENTS) {

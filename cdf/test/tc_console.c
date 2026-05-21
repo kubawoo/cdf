@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "console.h"
+#include "test_framework.h"
 
 void console_test(TEST_CASE_ARGUMENTS) {
     Console * c = new(Console);

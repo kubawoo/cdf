@@ -1,6 +1,6 @@
-#include "test_framework.h"
-#include "fileoutputstream.h"
 #include "fileinputstream.h"
+#include "fileoutputstream.h"
+#include "test_framework.h"
 
 void fileoutputstream_test(TEST_CASE_ARGUMENTS) {
     String * filename = new(String, "fileoutputstream_test.log");

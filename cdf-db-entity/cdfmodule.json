@@ -1,35 +1,35 @@
 {
     "group": "cdf",
     "name": "cdf-db-entity",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "description": "DB entity manager",
     "type": "lib",
     "dependencies": [
         {
             "group": "cdf",
             "name": "cdf",
-            "version": "0.4.0"
+            "version": "0.5.0"
         },
         {
             "group": "cdf",
             "name": "cdf-json",
-            "version": "0.4.0"
+            "version": "0.5.0"
         },
         {
             "group": "cdf",
             "name": "cdf-db",
-            "version": "0.4.0"
+            "version": "0.5.0"
         },
         {
             "group": "cdf",
             "name": "cdf-db-sqlite",
-            "version": "0.4.0",
+            "version": "0.5.0",
             "scope": "test"
         },
         {
             "group": "cdf",
             "name": "test-framework",
-            "version": "0.4.0",
+            "version": "0.5.0",
             "scope": "test"
         }
     ]

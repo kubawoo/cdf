@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "ooc_stack.h"
+#include "test_framework.h"
 
 void stack_test(TEST_CASE_ARGUMENTS) {
     Stack * stack = new(Stack);

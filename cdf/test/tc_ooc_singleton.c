@@ -1,5 +1,5 @@
-#include "test_framework.h"
 #include "ooc.h"
+#include "test_framework.h"
 
 void singleton_test(TEST_CASE_ARGUMENTS) {
 	String * a = _cdf_get_singleton("String");
