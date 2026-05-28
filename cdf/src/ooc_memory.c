@@ -2,10 +2,6 @@
 #include <stdlib.h>
 
 #define POOL_MAX_BUCKETS 128
-
-size_t pool_allocs;
-size_t pool_reuses;
-
 static void *freelists[POOL_MAX_BUCKETS];
 
 void *pool_alloc(size_t size) {
@@ -16,13 +12,11 @@ void *pool_alloc(size_t size) {
         void *obj = freelists[idx];
         if (obj) {
             freelists[idx] = *(void**)obj;
-            pool_reuses++;
             return obj;
         }
     }
 
     size_t *header = malloc(sizeof(size_t) + aligned);
-    pool_allocs++;
     if (!header) return NULL;
     *header = aligned;
     return header + 1;
