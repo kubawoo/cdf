@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "ooc_memory.h"
 
 #define GET_MACRO(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,NAME,...) NAME
 
@@ -46,12 +47,12 @@
 #define _this11(class, a, b, c, d, e, f, g, h, i, j) this = class##_new10(this, a, b, c, d, e, f, g, h, i, j)
 #define this(...) GET_MACRO(__VA_ARGS__, _this11, _this10, _this9, _this8, _this7, _this6, _this5, _this4, _this3, _this2, _this1)(__VA_ARGS__)
 
-#define delete(x) do { if(!x) { break; } Object * _o = (Object *) x; _o->_ooc_destructor(_o); free(x); x = NULL; } while(0)
+#define delete(x) do { if(!x) { break; } Object * _o = (Object *) x; _o->_ooc_destructor(_o); pool_free(x); x = NULL; } while(0)
 
 #define inherits(class) class _ooc_base
 
 //TODO add arguments to super constructor
-#define super(BaseClass, ThisClass) if(!this) this = malloc(sizeof(ThisClass));\
+#define super(BaseClass, ThisClass) if(!this) this = pool_alloc(sizeof(ThisClass));\
                                     BaseClass##_new((BaseClass *)this);\
                                     ((Object *) this)->_ooc_destructor =  ThisClass##_delete;\
                                     ((Object *) this)->type = #ThisClass
