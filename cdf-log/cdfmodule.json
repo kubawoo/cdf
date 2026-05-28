@@ -1,19 +1,19 @@
 {
     "group": "cdf",
     "name": "cdf-log",
-    "version": "0.5.0",
+    "version": "0.5.0-SNAPSHOT",
     "description": "Logging lib",
     "type": "lib",
     "dependencies": [
         {
             "group": "cdf",
             "name": "cdf",
-            "version": "0.5.0"
+            "version": "0.5.0-SNAPSHOT"
         },
         {
             "group": "cdf",
             "name": "test-framework",
-            "version": "0.5.0",
+            "version": "0.5.0-SNAPSHOT",
             "scope": "test"
         }
     ]
