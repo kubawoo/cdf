@@ -1,6 +1,5 @@
 #include "ooc_map.h"
 #include <stdio.h>
-#include "ooc_pair.h"
 
 void Map_remove(ObjectPtr _this, ObjectPtr key);
 
@@ -102,8 +101,6 @@ Map * Map_new(Map * this) {
     this->contains_value = Map_contains_value;
     this->get_length = Map_get_length;
     this->get_keys = Map_get_keys;
-    // Implement the iterator method from Collection
-    this->iterator = (Iterator* (*)(ObjectPtr))MapIterator_new;
     return this;
 }
 
@@ -114,33 +111,4 @@ void Map_delete(ObjectPtr _this) {
     super_delete(Object, this);
 }
 
-// MapIterator implementation
-MapIterator * MapIterator_new(MapIterator * this, Map * map) {
-    if (!this) {
-        this = malloc(sizeof(MapIterator));
-    }
-    super(Iterator, this);
-    this->map = map;
-    this->index = 0;
-    // Implement the Iterator interface
-    this->hasNext = MapIterator_hasNext;
-    this->next = MapIterator_next;
-    return this;
-}
 
-bool MapIterator_hasNext(ObjectPtr _this) {
-    make_this(MapIterator, _this);
-    return this->index < this->map->_keys->length;
-}
-
-ObjectPtr MapIterator_next(ObjectPtr _this) {
-    make_this(MapIterator, _this);
-    if (this->index >= this->map->_keys->length) {
-        return NULL;
-    }
-    ObjectPtr key = call(this->map->_keys, get, this->index);
-    ObjectPtr value = call(this->map->_values, get, this->index);
-    this->index++;
-    // Return a pair containing key and value
-    return new(Pair, key, value);
-}

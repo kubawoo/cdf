@@ -2,9 +2,7 @@
 #define OOC_COLLECTION_H
 
 #include "ooc_object.h"
-
-// Forward declaration
-typedef struct _Iterator Iterator;
+#include "ooc_iterator.h"
 
 typedef struct {
     inherits(Object);

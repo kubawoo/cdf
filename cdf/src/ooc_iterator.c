@@ -1,10 +1,7 @@
 #include "ooc_iterator.h"
 
 Iterator * Iterator_new(Iterator * this) {
-    if (!this) {
-        this = malloc(sizeof(Iterator));
-    }
-    Object_new((Object*)this);
+    super(Object, Iterator);
     // The hasNext and next methods must be implemented by subclasses
     this->hasNext = NULL;
     this->next = NULL;
@@ -12,5 +9,5 @@ Iterator * Iterator_new(Iterator * this) {
 }
 
 void Iterator_delete(ObjectPtr _this) {
-    // No specific cleanup needed for base Iterator
+    super_delete(Object, _this);
 }

@@ -11,19 +11,23 @@ typedef struct {
     Object ** _values;
     void (*set)(ObjectPtr, int, ObjectPtr);
     ObjectPtr (*get)(ObjectPtr, int);
+    Iterator* (*iterator)(ObjectPtr);
 } Array;
+
+Array * Array_new1(Array * this, int size);
+void Array_delete(ObjectPtr);
 
 // Iterator implementation for Array
 typedef struct {
     inherits(Iterator);
+    bool (*hasNext)(ObjectPtr);
+    ObjectPtr (*next)(ObjectPtr);
     Array * array;
     int index;
 } ArrayIterator;
 
-Array * Array_new1(Array * this, int size);
-void Array_delete(ObjectPtr);
-ArrayIterator * ArrayIterator_new(ArrayIterator * this, Array * array);
-bool ArrayIterator_hasNext(ObjectPtr _this);
-ObjectPtr ArrayIterator_next(ObjectPtr _this);
+
+ArrayIterator * ArrayIterator_new1(ArrayIterator * this, Array * array);
+void ArrayIterator_delete(ObjectPtr);
 
 #endif

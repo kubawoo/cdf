@@ -30,19 +30,24 @@ typedef struct {
     bool (*contains)(ObjectPtr, ObjectPtr);
 
     String * (*to_string)(ObjectPtr);
+    Iterator* (*iterator)(ObjectPtr);
 } List;
+
+List * List_new(List * this);
+void List_delete(ObjectPtr);
+
 
 // Iterator implementation for List
 typedef struct {
     inherits(Iterator);
+    bool (*hasNext)(ObjectPtr);
+    ObjectPtr (*next)(ObjectPtr);
     List * list;
-    struct _ListItem * current;
+    int index;
 } ListIterator;
 
-List * List_new(List * this);
-void List_delete(ObjectPtr);
-ListIterator * ListIterator_new(ListIterator * this, List * list);
-bool ListIterator_hasNext(ObjectPtr _this);
-ObjectPtr ListIterator_next(ObjectPtr _this);
+
+ListIterator * ListIterator_new1(ListIterator * this, List * list);
+void ListIterator_delete(ObjectPtr);
 
 #endif
