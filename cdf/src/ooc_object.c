@@ -20,7 +20,7 @@ void Object_delete(ObjectPtr _this) {
 
 Object * Object_new(Object * this) {
     if (!this) {
-        this = malloc(sizeof(Object));
+        this = pool_alloc(sizeof(Object));
     }
     this->_refc = 1;
     this->_ooc_destructor = Object_delete;
