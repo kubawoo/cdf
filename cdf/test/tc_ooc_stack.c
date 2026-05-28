@@ -1,3 +1,4 @@
+#include "ooc.h"
 #include "ooc_stack.h"
 #include "test_framework.h"
 
@@ -49,8 +50,46 @@ void stack_test(TEST_CASE_ARGUMENTS) {
     REFCDEC(stack);
 }
 
+void stack_iterator_test(TEST_CASE_ARGUMENTS) {
+    Stack * stack = new(Stack);
+    call(stack, push, REFCTMP(new(String, "first")));
+    call(stack, push, REFCTMP(new(String, "second")));
+    call(stack, push, REFCTMP(new(String, "third")));
+
+    Iterator * it = call(stack, iterator);
+    ASSERT_TRUE(type_equal(it, "StackIterator"));
+
+    String * s = call(it, next);
+    ASSERT_STRINGS_EQUAL(call(s, to_cstring), "first");
+    REFCDEC(s);
+
+    s = call(it, next);
+    ASSERT_STRINGS_EQUAL(call(s, to_cstring), "second");
+    REFCDEC(s);
+
+    s = call(it, next);
+    ASSERT_STRINGS_EQUAL(call(s, to_cstring), "third");
+    REFCDEC(s);
+
+    ASSERT_FALSE(call(it, hasNext));
+    ASSERT_NULL(call(it, next));
+
+    REFCDEC(it);
+    REFCDEC(stack);
+}
+
+void stack_iterator_empty(TEST_CASE_ARGUMENTS) {
+    Stack * stack = new(Stack);
+    Iterator * it = call(stack, iterator);
+    ASSERT_TRUE(type_equal(it, "StackIterator"));
+    ASSERT_FALSE(call(it, hasNext));
+    ASSERT_NULL(call(it, next));
+    REFCDEC(it);
+    REFCDEC(stack);
+}
 
 TEST_CASES_BEGIN
     TEST_CASE(stack_test);
+    TEST_CASE(stack_iterator_test);
+    TEST_CASE(stack_iterator_empty);
 TEST_CASES_END
-

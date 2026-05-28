@@ -1,3 +1,4 @@
+#include "ooc.h"
 #include "ooc_queue.h"
 #include "test_framework.h"
 
@@ -49,7 +50,46 @@ void queue_test(TEST_CASE_ARGUMENTS) {
     REFCDEC(queue);
 }
 
+void queue_iterator_test(TEST_CASE_ARGUMENTS) {
+    Queue * queue = new(Queue);
+    call(queue, enqueue, REFCTMP(new(String, "first")));
+    call(queue, enqueue, REFCTMP(new(String, "second")));
+    call(queue, enqueue, REFCTMP(new(String, "third")));
+
+    Iterator * it = call(queue, iterator);
+    ASSERT_TRUE(type_equal(it, "QueueIterator"));
+
+    String * s = call(it, next);
+    ASSERT_STRINGS_EQUAL(call(s, to_cstring), "first");
+    REFCDEC(s);
+
+    s = call(it, next);
+    ASSERT_STRINGS_EQUAL(call(s, to_cstring), "second");
+    REFCDEC(s);
+
+    s = call(it, next);
+    ASSERT_STRINGS_EQUAL(call(s, to_cstring), "third");
+    REFCDEC(s);
+
+    ASSERT_FALSE(call(it, hasNext));
+    ASSERT_NULL(call(it, next));
+
+    REFCDEC(it);
+    REFCDEC(queue);
+}
+
+void queue_iterator_empty(TEST_CASE_ARGUMENTS) {
+    Queue * queue = new(Queue);
+    Iterator * it = call(queue, iterator);
+    ASSERT_TRUE(type_equal(it, "QueueIterator"));
+    ASSERT_FALSE(call(it, hasNext));
+    ASSERT_NULL(call(it, next));
+    REFCDEC(it);
+    REFCDEC(queue);
+}
 
 TEST_CASES_BEGIN
     TEST_CASE(queue_test);
+    TEST_CASE(queue_iterator_test);
+    TEST_CASE(queue_iterator_empty);
 TEST_CASES_END

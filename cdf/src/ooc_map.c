@@ -87,10 +87,15 @@ static String * Map_to_string(ObjectPtr _this) {
 	return s;
 }
 
+static Iterator * _iterator(ObjectPtr _this) {
+    make_this(Map, _this);
+    return new(MapIterator, this);
+}
 
 Map * Map_new(Map * this) {
-    super(Object, Map);
+    super(Collection, Map);
     override(Object, to_string, Map_to_string);
+    override(Collection, iterator, _iterator);
     this->_values = new(List);
     this->_keys = new(List);
 
@@ -108,7 +113,34 @@ void Map_delete(ObjectPtr _this) {
     make_this(Map, _this);
     REFCDEC(this->_values);
     REFCDEC(this->_keys);
-    super_delete(Object, this);
+    super_delete(Collection, this);
 }
 
+static ObjectPtr _next(ObjectPtr _this) {
+    make_this(MapIterator, _this);
+    if(!call(this, hasNext)) {
+        return NULL;
+    }
+    return call(this->map->_keys, get, this->index++);
+}
 
+static bool _hasNext(ObjectPtr _this) {
+    make_this(MapIterator, _this);
+    return this->index < this->map->_keys->length;
+}
+
+MapIterator * MapIterator_new1(MapIterator * this, Map * map) {
+    super(Iterator, MapIterator);
+    override(Iterator, hasNext, _hasNext);
+    override(Iterator, next, _next);
+    REFCINC(map);
+    this->map = map;
+    this->index = 0;
+    return this;
+}
+
+void MapIterator_delete(ObjectPtr _this) {
+    make_this(MapIterator, _this);
+    REFCDEC(this->map);
+    super_delete(Iterator, _this);
+}

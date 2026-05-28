@@ -323,6 +323,49 @@ void map_to_string(TEST_CASE_ARGUMENTS) {
     REFCDEC(map);
 }
 
+void map_iterator_test(TEST_CASE_ARGUMENTS) {
+    Map * map = new(Map);
+    String * k1 = new(String, "x");
+    String * k2 = new(String, "y");
+    call(map, put, REFCTMP(k1), REFCTMP(new(String, "10")));
+    call(map, put, REFCTMP(k2), REFCTMP(new(String, "20")));
+
+    Iterator * it = call(map, iterator);
+    ASSERT_TRUE(type_equal(it, "MapIterator"));
+
+    ASSERT_TRUE(call(it, hasNext));
+    String * k = call(it, next);
+    ASSERT_NOT_NULL(k);
+    String * v = call(map, get, k);
+    ASSERT_NOT_NULL(v);
+    REFCDEC(v);
+    REFCDEC(k);
+
+    ASSERT_TRUE(call(it, hasNext));
+    k = call(it, next);
+    ASSERT_NOT_NULL(k);
+    v = call(map, get, k);
+    ASSERT_NOT_NULL(v);
+    REFCDEC(v);
+    REFCDEC(k);
+
+    ASSERT_FALSE(call(it, hasNext));
+    ASSERT_NULL(call(it, next));
+
+    REFCDEC(it);
+    REFCDEC(map);
+}
+
+void map_iterator_empty(TEST_CASE_ARGUMENTS) {
+    Map * map = new(Map);
+    Iterator * it = call(map, iterator);
+    ASSERT_TRUE(type_equal(it, "MapIterator"));
+    ASSERT_FALSE(call(it, hasNext));
+    ASSERT_NULL(call(it, next));
+    REFCDEC(it);
+    REFCDEC(map);
+}
+
 TEST_CASES_BEGIN
     TEST_CASE(map_basic);
     TEST_CASE(map_multiple_entries);
@@ -339,4 +382,6 @@ TEST_CASES_BEGIN
     TEST_CASE(map_equals_key);
     TEST_CASE(map_remove_then_put);
     TEST_CASE(map_to_string);
+    TEST_CASE(map_iterator_test);
+    TEST_CASE(map_iterator_empty);
 TEST_CASES_END

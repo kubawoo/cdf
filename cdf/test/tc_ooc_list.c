@@ -267,12 +267,55 @@ void list_to_string(TEST_CASE_ARGUMENTS) {
 	REFCDEC(l);
 }
 
+void list_iterator_test(TEST_CASE_ARGUMENTS) {
+    List * list = new(List);
+    call(list, add, REFCTMP(new(String, "a")));
+    call(list, add, REFCTMP(new(String, "b")));
+    call(list, add, REFCTMP(new(String, "c")));
+
+    Iterator * it = call(list, iterator);
+    ASSERT_TRUE(type_equal(it, "ListIterator"));
+
+    ASSERT_TRUE(call(it, hasNext));
+    String * s = call(it, next);
+    ASSERT_STRINGS_EQUAL(call(s, to_cstring), "a");
+    REFCDEC(s);
+
+    ASSERT_TRUE(call(it, hasNext));
+    s = call(it, next);
+    ASSERT_STRINGS_EQUAL(call(s, to_cstring), "b");
+    REFCDEC(s);
+
+    ASSERT_TRUE(call(it, hasNext));
+    s = call(it, next);
+    ASSERT_STRINGS_EQUAL(call(s, to_cstring), "c");
+    REFCDEC(s);
+
+    ASSERT_FALSE(call(it, hasNext));
+    ASSERT_NULL(call(it, next));
+
+    REFCDEC(it);
+    REFCDEC(list);
+}
+
+void list_iterator_empty(TEST_CASE_ARGUMENTS) {
+    List * list = new(List);
+    Iterator * it = call(list, iterator);
+    ASSERT_TRUE(type_equal(it, "ListIterator"));
+    ASSERT_FALSE(call(it, hasNext));
+    ASSERT_NULL(call(it, next));
+    REFCDEC(it);
+    REFCDEC(list);
+}
+
 TEST_CASES_BEGIN
     TEST_CASE(list_test);
     TEST_CASE(list_get);
     TEST_CASE(list_set);
     TEST_CASE(list_remove);
     TEST_CASE(list_insert);
+    TEST_CASE(List_contains);
     TEST_CASE(list_to_string);
+    TEST_CASE(list_iterator_test);
+    TEST_CASE(list_iterator_empty);
 TEST_CASES_END
-
