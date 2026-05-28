@@ -1,7 +1,5 @@
 #include "handlers.h"
 #include "todo_item.h"
-#include <string.h>
-#include <stdio.h>
 
 static void set_content_type(HttpResponse * response) {
     call(response, add_header, REFCTMP(new(HttpHeader,
@@ -263,9 +261,7 @@ static void handle_update(TodoRequestHandler * handler, HttpResponse * response,
 
 void TodoRequestHandler_handle(void * _this, HttpRequest * request, HttpResponse * response) {
     TodoRequestHandler * handler = (TodoRequestHandler *)_this;
-    const char * path = call(request->path, to_cstring);
-
-    if (strcmp(path, "/todos") == 0) {
+    if (call(request->path, equals_cstring, "/todos")) {
         if (request->method == HTTP_METHOD_POST) {
             handle_create(handler, response, request->content);
             return;
@@ -278,18 +274,26 @@ void TodoRequestHandler_handle(void * _this, HttpRequest * request, HttpResponse
         return;
     }
 
-    long id;
-    if (sscanf(path, "/todos/%ld", &id) == 1) {
-        if (request->method == HTTP_METHOD_GET) {
-            handle_detail(handler, response, id);
+    if (request->path->length > 7 && call(request->path, index_of_cstring, "/todos/") == 0) {
+        String *id_str = call(request->path, substring_from, 7);
+        Long *id_long = new(Long, 0L);
+        if (call(id_long, from_string, id_str)) {
+            long id = id_long->value;
+            REFCDEC(id_str);
+            REFCDEC(id_long);
+            if (request->method == HTTP_METHOD_GET) {
+                handle_detail(handler, response, id);
+                return;
+            }
+            if (request->method == HTTP_METHOD_PATCH) {
+                handle_update(handler, response, id, request->content);
+                return;
+            }
+            response->status = HTTP_STATUS_METHOD_NOT_ALLOWED;
             return;
         }
-        if (request->method == HTTP_METHOD_PATCH) {
-            handle_update(handler, response, id, request->content);
-            return;
-        }
-        response->status = HTTP_STATUS_METHOD_NOT_ALLOWED;
-        return;
+        REFCDEC(id_str);
+        REFCDEC(id_long);
     }
 
     response->status = HTTP_STATUS_NOT_FOUND;
