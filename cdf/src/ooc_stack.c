@@ -5,7 +5,7 @@ void Stack_delete(ObjectPtr _this) {
     make_this(Stack, _this);
     REFCDEC(this->_list);
 
-    super_delete(Object, _this);
+    super_delete(Collection, _this);
 }
 
 void Stack_push(ObjectPtr _this, ObjectPtr e) {
@@ -37,9 +37,15 @@ static String * Stack_to_string(ObjectPtr _this) {
 	return call(this->_list, to_string);
 }
 
+static Iterator * _iterator(ObjectPtr _this) {
+    make_this(Stack, _this);
+    return new(StackIterator, this->_list);
+}
+
 Stack * Stack_new(Stack * this) {
-    super(Object, Stack);
+    super(Collection, Stack);
     override(Object, to_string, Stack_to_string);
+    override(Collection, iterator, _iterator);
     this->_list = new(List);
     this->push = Stack_push;
     this->pop = Stack_pop;
@@ -48,3 +54,31 @@ Stack * Stack_new(Stack * this) {
     return this;
 }
 
+static ObjectPtr _next(ObjectPtr _this) {
+    make_this(StackIterator, _this);
+    if(!call(this, hasNext)) {
+        return NULL;
+    }
+    return call(this->list, get, this->index++);
+}
+
+static bool _hasNext(ObjectPtr _this) {
+    make_this(StackIterator, _this);
+    return this->index < this->list->length;
+}
+
+StackIterator * StackIterator_new1(StackIterator * this, List * list) {
+    super(Iterator, StackIterator);
+    override(Iterator, hasNext, _hasNext);
+    override(Iterator, next, _next);
+    REFCINC(list);
+    this->list = list;
+    this->index = 0;
+    return this;
+}
+
+void StackIterator_delete(ObjectPtr _this) {
+    make_this(StackIterator, _this);
+    REFCDEC(this->list);
+    super_delete(Iterator, _this);
+}

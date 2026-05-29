@@ -172,9 +172,15 @@ static String * List_to_string(ObjectPtr _this) {
 	return s;
 }
 
+static Iterator * _iterator(ObjectPtr _this) {
+    make_this(List, _this);
+    return new(ListIterator, this);
+}
+
 List * List_new(List * this) {
-    super(Object, List);
+    super(Collection, List);
     override(Object, to_string, List_to_string);
+    override(Collection, iterator, _iterator);
     this->length = 0;
     this->_first = NULL;
     this->_last = NULL;
@@ -184,6 +190,40 @@ List * List_new(List * this) {
     this->set = List_set;
     this->insert = List_insert;
     this->contains = List_contains;
+    // Implement the iterator method from Collection
     return this;
 }
 
+
+static ObjectPtr _next(ObjectPtr _this) {
+    make_this(ListIterator, _this);
+    if(!call(this, hasNext)) {
+        return NULL;
+    }
+    return call(this->list, get, this->index++);
+}
+
+static bool _hasNext(ObjectPtr _this) {
+    make_this(ListIterator, _this);
+    return this->index < this->list->length;
+}
+
+
+// ListIterator implementation
+ListIterator * ListIterator_new1(ListIterator * this, List * list) {
+    super(Iterator, ListIterator);
+    override(Iterator, hasNext, _hasNext);
+    override(Iterator, next, _next);
+    REFCINC(list);
+
+    this->list = list;
+    this->index = 0;
+    return this;
+}
+
+
+void ListIterator_delete(ObjectPtr _this) {
+    make_this(ListIterator, _this);
+    REFCDEC(this->list);
+    super_delete(Iterator, _this);
+}

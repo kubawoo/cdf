@@ -1,25 +1,25 @@
 {
     "group": "cdf",
     "name": "cdftk",
-    "version": "0.5.0",
+    "version": "0.5.0-SNAPSHOT",
     "description": "CDF Toolkit",
     "type": "app",
     "dependencies": [
         {
             "group": "cdf",
             "name": "test-framework",
-            "version": "0.5.0",
+            "version": "0.5.0-SNAPSHOT",
             "scope": "test"
         },
         {
             "group": "cdf",
             "name": "cdf",
-            "version": "0.5.0"
+            "version": "0.5.0-SNAPSHOT"
         },
         {
             "group": "cdf",
             "name": "cdf-json",
-            "version": "0.5.0"
+            "version": "0.5.0-SNAPSHOT"
         }
     ]
 }
