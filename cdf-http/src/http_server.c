@@ -56,34 +56,22 @@ void _set_run(HttpServer * this, bool run) {
 typedef enum {_PARSING_STATUS_LINE, _PARSING_HEADERS, _PARSING_BODY} _HttpServer_ParsingState;
 
 static HttpMethod _method_from_string(String * s) {
-    if(call(s, equals_cstring, "GET")) {
-        return HTTP_METHOD_GET;
+    const char *str = call(s, to_cstring);
+    static const struct { const char *name; HttpMethod method; } table[] = {
+        {"GET", HTTP_METHOD_GET},
+        {"POST", HTTP_METHOD_POST},
+        {"PUT", HTTP_METHOD_PUT},
+        {"DELETE", HTTP_METHOD_DELETE},
+        {"HEAD", HTTP_METHOD_HEAD},
+        {"OPTIONS", HTTP_METHOD_OPTIONS},
+        {"TRACE", HTTP_METHOD_TRACE},
+        {"CONNECT", HTTP_METHOD_CONNECT},
+        {"PATCH", HTTP_METHOD_PATCH},
+    };
+    for (size_t i = 0; i < sizeof(table) / sizeof(table[0]); i++) {
+        if (strcmp(str, table[i].name) == 0)
+            return table[i].method;
     }
-    if(call(s, equals_cstring, "POST")) {
-        return HTTP_METHOD_POST;
-    }
-    if(call(s, equals_cstring, "PUT")) {
-        return HTTP_METHOD_PUT;
-    }
-    if(call(s, equals_cstring, "DELETE")) {
-        return HTTP_METHOD_DELETE;
-    }
-    if(call(s, equals_cstring, "HEAD")) {
-        return HTTP_METHOD_HEAD;
-    }
-    if(call(s, equals_cstring, "OPTIONS")) {
-        return HTTP_METHOD_OPTIONS;
-    }
-    if(call(s, equals_cstring, "TRACE")) {
-        return HTTP_METHOD_TRACE;
-    }
-    if(call(s, equals_cstring, "CONNECT")) {
-        return HTTP_METHOD_CONNECT;
-    }
-    if(call(s, equals_cstring, "PATCH")) {
-        return HTTP_METHOD_PATCH;
-    }
-
     return HTTP_METHOD_UNKNOWN;
 }
 
@@ -189,7 +177,7 @@ static HttpRequest * _parse_request(int conn_fd) {
     String * s = new(String);
     _HttpServer_ParsingState state = _PARSING_STATUS_LINE;
     int last_bytes_read = 0;
-    int buffer_len = 511;
+    int buffer_len = 16384;
     char buffer[buffer_len + 1];
     bool parsing_ok = false;
 
@@ -242,9 +230,16 @@ static int connection_main(void* _conn) {
     HttpResponse * response = new(HttpResponse);
     call(response, add_header, REFCTMP(new(HttpHeader, REFCTMP(new(String, "Server")), REFCTMP(new(String, "CDF Server")))));
     call(response, add_header, REFCTMP(new(HttpHeader, REFCTMP(new(String, "Connection")), REFCTMP(new(String, "close")))));
-    DateTime * now = new(DateTime);
-    call(response, add_header, REFCTMP(new(HttpHeader, REFCTMP(new(String, "Date")), REFCTMP(call(now, format, "%a, %d %b %Y %H:%M:%S")))));
-    delete(now);
+    time_t now_sec = time(NULL);
+    if (now_sec != server->_last_date_update || !server->_cached_date) {
+        DateTime * dt = new(DateTime);
+        String * fmt = call(dt, format, "%a, %d %b %Y %H:%M:%S");
+        REFCDEC(server->_cached_date);
+        server->_cached_date = fmt;
+        delete(dt);
+        server->_last_date_update = now_sec;
+    }
+    call(response, add_header, REFCTMP(new(HttpHeader, REFCTMP(new(String, "Date")), REFCTMP(call(server->_cached_date, copy)))));
 
     call(conn->handler, handle, request, response);
     delete(request);
@@ -271,47 +266,34 @@ static int connection_main(void* _conn) {
     return 0;
 }
 
+static int worker_main(void * arg) {
+    HttpServer * server = (HttpServer *)arg;
+    struct pollfd pfd;
+    memset(&pfd, 0, sizeof(pfd));
+    pfd.fd = server->server_socket;
+    pfd.events = POLLIN;
+
+    while (HttpServer_is_running(server)) {
+        int ret = poll(&pfd, 1, 500);
+        if (ret <= 0) continue;
+        int conn = accept(server->server_socket, NULL, NULL);
+        if (conn < 0) continue;
+        _ConnectionData * c = new(_ConnectionData, conn, server->_handler, server);
+        mtx_lock(&server->conn_mutex);
+        server->_active_connections++;
+        mtx_unlock(&server->conn_mutex);
+        connection_main(c);
+    }
+    return 0;
+}
+
 static int server_main(void * _this) {
     make_this(HttpServer, _this);
-    struct pollfd fds[1];
-    memset(fds, 0 , sizeof(fds));
-    fds[0].fd = this->server_socket;
-    fds[0].events = POLLIN;
-
-    while(HttpServer_is_running(this)) {
-        int ret = poll(fds, 1, 1000);
-        if(ret < 0) {
-            fprintf(stderr, "poll failed: %s\n", strerror(errno));
-            continue;
-        }
-
-        if(ret == 0) {
-            //fprintf(stderr, "poll timedout\n");
-            continue;
-        }
-
-        if(fds[0].revents != POLLIN) {
-            fprintf(stderr, "unexpected event found: %d\n", fds[0].revents);
-            continue;
-        }
-
-        int conn = accept(this->server_socket, NULL, NULL);
-        if(conn < 0) {
-            fprintf(stderr, "no connection: %s\n", strerror(errno));
-        } else {
-            //fprintf(stderr, "got connection\n");
-            _ConnectionData * c = new(_ConnectionData, conn, this->_handler, this);
-            thrd_t thread_id;
-            if(thrd_create(&thread_id, &connection_main, c) != thrd_success) {
-                fprintf(stderr, "failed to create connection thread\n");
-                delete(c);
-            } else {
-                mtx_lock(&this->conn_mutex);
-                this->_active_connections++;
-                mtx_unlock(&this->conn_mutex);
-                thrd_detach(thread_id);
-            }
-        }
+    for (int i = 0; i < HTTP_SERVER_POOL_SIZE; i++) {
+        thrd_create(&this->_workers[i], worker_main, this);
+    }
+    for (int i = 0; i < HTTP_SERVER_POOL_SIZE; i++) {
+        thrd_join(this->_workers[i], NULL);
     }
     return 0;
 }
@@ -346,17 +328,11 @@ static void HttpServer_start(ObjectPtr _this) {
             return;
         }
 
-        int flags;
-        if ((flags = fcntl(this->server_socket, F_GETFL, 0)) < 0) {
-            fprintf(stderr, "failed to get server socket flags: %s\n", strerror(errno));
-            return;
-        }
-        if (fcntl(this->server_socket, F_SETFL, flags | O_NONBLOCK) < 0) {
-            fprintf(stderr, "failed to set server socket flags: %s\n", strerror(errno));
-            return;
-        }
-
         _set_run(this, true);
+
+        int flags = fcntl(this->server_socket, F_GETFL, 0);
+        fcntl(this->server_socket, F_SETFL, flags | O_NONBLOCK);
+
         thrd_create(&this->server_thread, &server_main, _this);
     }
 }
@@ -365,8 +341,8 @@ static void HttpServer_stop(ObjectPtr _this) {
     make_this(HttpServer, _this);
     if(HttpServer_is_running(this)) {
         _set_run(this, false);
-        thrd_join(this->server_thread, NULL);
         close(this->server_socket);
+        thrd_join(this->server_thread, NULL);
 
         mtx_lock(&this->conn_mutex);
         while(this->_active_connections > 0) {
@@ -391,6 +367,8 @@ HttpServer * HttpServer_new2(HttpServer * this, int port, HttpRequestHandler * h
     } else {
         this->_handler = handler;
     }
+    this->_cached_date = NULL;
+    this->_last_date_update = 0;
     this->is_running = HttpServer_is_running;
     return this;
 }
@@ -402,6 +380,7 @@ void HttpServer_delete(ObjectPtr _this) {
     mtx_destroy(&this->conn_mutex);
     cnd_destroy(&this->conn_cv);
     REFCDEC(this->_handler);
+    REFCDEC(this->_cached_date);
     super_delete(Object, _this);
 }
 

@@ -3,7 +3,10 @@
 
 #include <ooc.h>
 #include <threads.h>
+#include <time.h>
 #include "http_types.h"
+
+#define HTTP_SERVER_POOL_SIZE 8
 
 typedef struct {
     inherits(Object);
@@ -22,6 +25,7 @@ typedef struct {
     HttpRequestHandler * _handler;
 
     thrd_t server_thread;
+    thrd_t _workers[HTTP_SERVER_POOL_SIZE];
     mtx_t run_mutex;
     bool run;
     int server_socket;
@@ -31,6 +35,8 @@ typedef struct {
     mtx_t conn_mutex;
     cnd_t conn_cv;
     int _active_connections;
+    String * _cached_date;
+    time_t _last_date_update;
 } HttpServer;
 
 HttpServer * HttpServer_new2(HttpServer *, int, HttpRequestHandler *);

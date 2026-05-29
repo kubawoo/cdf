@@ -13,128 +13,50 @@ typedef enum {_PARSING_STATUS_LINE, _PARSING_HEADERS, _PARSING_BODY} _HttpClient
 
 
 HttpStatus _status_from_string(String * s) {
-    //TODO convert to int and make switch
-    if(call(s, equals_cstring, "100")) {
-        return HTTP_STATUS_CONTINUE;
+    int code = atoi(call(s, to_cstring));
+    switch(code) {
+        case 100: return HTTP_STATUS_CONTINUE;
+        case 101: return HTTP_STATUS_SWITCHING_PROTOCOLS;
+        case 200: return HTTP_STATUS_OK;
+        case 201: return HTTP_STATUS_CREATED;
+        case 202: return HTTP_STATUS_ACCEPTED;
+        case 203: return HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION;
+        case 204: return HTTP_STATUS_NO_CONTENT;
+        case 205: return HTTP_STATUS_RESET_CONTENT;
+        case 206: return HTTP_STATUS_PARTIAL_CONTENT;
+        case 300: return HTTP_STATUS_MULTIPLE_CHOICES;
+        case 301: return HTTP_STATUS_MOVED_PERMANENTLY;
+        case 302: return HTTP_STATUS_FOUND;
+        case 303: return HTTP_STATUS_SEE_OTHER;
+        case 304: return HTTP_STATUS_NOT_MODIFIED;
+        case 305: return HTTP_STATUS_USE_PROXY;
+        case 307: return HTTP_STATUS_TEMPORARY_REDIRECT;
+        case 400: return HTTP_STATUS_BAD_REQUEST;
+        case 401: return HTTP_STATUS_UNAUTHORIZED;
+        case 402: return HTTP_STATUS_PAYMENT_REQUIRED;
+        case 403: return HTTP_STATUS_FORBIDDEN;
+        case 404: return HTTP_STATUS_NOT_FOUND;
+        case 405: return HTTP_STATUS_METHOD_NOT_ALLOWED;
+        case 406: return HTTP_STATUS_NOT_ACCEPTABLE;
+        case 407: return HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED;
+        case 408: return HTTP_STATUS_REQUEST_TIMEOUT;
+        case 409: return HTTP_STATUS_CONFLICT;
+        case 410: return HTTP_STATUS_GONE;
+        case 411: return HTTP_STATUS_LENGTH_REQUIRED;
+        case 412: return HTTP_STATUS_PRECONDITION_FAILED;
+        case 413: return HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE;
+        case 414: return HTTP_STATUS_REQUEST_URI_TOO_LONG;
+        case 415: return HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE;
+        case 416: return HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE;
+        case 417: return HTTP_STATUS_EXPECTATION_FAILED;
+        case 500: return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+        case 501: return HTTP_STATUS_NOT_IMPLEMENTED;
+        case 502: return HTTP_STATUS_BAD_GATEWAY;
+        case 503: return HTTP_STATUS_SERVICE_UNAVAILABLE;
+        case 504: return HTTP_STATUS_GATEWAY_TIMEOUT;
+        case 505: return HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED;
+        default: return HTTP_STATUS_UNKNOWN;
     }
-    if(call(s, equals_cstring, "101")) {
-        return HTTP_STATUS_SWITCHING_PROTOCOLS;
-    }
-    if(call(s, equals_cstring, "200")) {
-        return HTTP_STATUS_OK;
-    }
-    if(call(s, equals_cstring, "201")) {
-        return HTTP_STATUS_CREATED;
-    }
-    if(call(s, equals_cstring, "202")) {
-        return HTTP_STATUS_ACCEPTED;
-    }
-    if(call(s, equals_cstring, "203")) {
-        return HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION;
-    }
-    if(call(s, equals_cstring, "204")) {
-        return HTTP_STATUS_NO_CONTENT;
-    }
-    if(call(s, equals_cstring, "205")) {
-        return HTTP_STATUS_RESET_CONTENT;
-    }
-    if(call(s, equals_cstring, "206")) {
-        return HTTP_STATUS_PARTIAL_CONTENT;
-    }
-    if(call(s, equals_cstring, "300")) {
-        return HTTP_STATUS_MULTIPLE_CHOICES;
-    }
-    if(call(s, equals_cstring, "301")) {
-        return HTTP_STATUS_MOVED_PERMANENTLY;
-    }
-    if(call(s, equals_cstring, "302")) {
-        return HTTP_STATUS_FOUND;
-    }
-    if(call(s, equals_cstring, "303")) {
-        return HTTP_STATUS_SEE_OTHER;
-    }
-    if(call(s, equals_cstring, "304")) {
-        return HTTP_STATUS_NOT_MODIFIED;
-    }
-    if(call(s, equals_cstring, "305")) {
-        return HTTP_STATUS_USE_PROXY;
-    }
-    if(call(s, equals_cstring, "307")) {
-        return HTTP_STATUS_TEMPORARY_REDIRECT;
-    }
-    if(call(s, equals_cstring, "400")) {
-        return HTTP_STATUS_BAD_REQUEST;
-    }
-    if(call(s, equals_cstring, "401")) {
-        return HTTP_STATUS_UNAUTHORIZED;
-    }
-    if(call(s, equals_cstring, "402")) {
-        return HTTP_STATUS_PAYMENT_REQUIRED;
-    }
-    if(call(s, equals_cstring, "403")) {
-        return HTTP_STATUS_FORBIDDEN;
-    }
-    if(call(s, equals_cstring, "404")) {
-        return HTTP_STATUS_NOT_FOUND;
-    }
-    if(call(s, equals_cstring, "405")) {
-        return HTTP_STATUS_METHOD_NOT_ALLOWED;
-    }
-    if(call(s, equals_cstring, "406")) {
-        return HTTP_STATUS_NOT_ACCEPTABLE;
-    }
-    if(call(s, equals_cstring, "407")) {
-        return HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED;
-    }
-    if(call(s, equals_cstring, "408")) {
-        return HTTP_STATUS_REQUEST_TIMEOUT;
-    }
-    if(call(s, equals_cstring, "409")) {
-        return HTTP_STATUS_CONFLICT;
-    }
-    if(call(s, equals_cstring, "410")) {
-        return HTTP_STATUS_GONE;
-    }
-    if(call(s, equals_cstring, "411")) {
-        return HTTP_STATUS_LENGTH_REQUIRED;
-    }
-    if(call(s, equals_cstring, "412")) {
-        return HTTP_STATUS_PRECONDITION_FAILED;
-    }
-    if(call(s, equals_cstring, "413")) {
-        return HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE;
-    }
-    if(call(s, equals_cstring, "414")) {
-        return HTTP_STATUS_REQUEST_URI_TOO_LONG;
-    }
-    if(call(s, equals_cstring, "415")) {
-        return HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE;
-    }
-    if(call(s, equals_cstring, "416")) {
-        return HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE;
-    }
-    if(call(s, equals_cstring, "417")) {
-        return HTTP_STATUS_EXPECTATION_FAILED;
-    }
-    if(call(s, equals_cstring, "500")) {
-        return HTTP_STATUS_INTERNAL_SERVER_ERROR;
-    }
-    if(call(s, equals_cstring, "501")) {
-        return HTTP_STATUS_NOT_IMPLEMENTED;
-    }
-    if(call(s, equals_cstring, "502")) {
-        return HTTP_STATUS_BAD_GATEWAY;
-    }
-    if(call(s, equals_cstring, "503")) {
-        return HTTP_STATUS_SERVICE_UNAVAILABLE;
-    }
-    if(call(s, equals_cstring, "504")) {
-        return HTTP_STATUS_GATEWAY_TIMEOUT;
-    }
-    if(call(s, equals_cstring, "505")) {
-        return HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED;
-    }
-    return HTTP_STATUS_UNKNOWN;
 }
 
 bool _HttpClient_parse_status_line(String * status_line, HttpResponse * response) {
@@ -236,7 +158,7 @@ static HttpResponse * _parse_response(int conn_fd) {
     String * s = new(String);
     _HttpClient_ParsingState state = _PARSING_STATUS_LINE;
     int last_bytes_read = 0;
-    int buffer_len = 511;
+    int buffer_len = 16384;
     char buffer[buffer_len + 1];
     bool parsing_ok = false;
 
