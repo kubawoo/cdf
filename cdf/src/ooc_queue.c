@@ -8,12 +8,12 @@ void Queue_delete(ObjectPtr _this) {
     super_delete(Collection, _this);
 }
 
-void Queue_enqueue(ObjectPtr _this, ObjectPtr e) {
+static void Queue_enqueue(ObjectPtr _this, ObjectPtr e) {
     make_this(Queue, _this);
     call(this->_list, add, e);
 }
 
-ObjectPtr Queue_dequeue(ObjectPtr _this) {
+static ObjectPtr Queue_dequeue(ObjectPtr _this) {
     make_this(Queue, _this);
     if (this->_list->length == 0) {
         return NULL;
@@ -23,7 +23,7 @@ ObjectPtr Queue_dequeue(ObjectPtr _this) {
     return e;
 }
 
-ObjectPtr Queue_peek(ObjectPtr _this) {
+static ObjectPtr Queue_peek(ObjectPtr _this) {
     make_this(Queue, _this);
     if (this->_list->length == 0) {
         return NULL;
@@ -31,7 +31,7 @@ ObjectPtr Queue_peek(ObjectPtr _this) {
     return call(this->_list, get, 0);
 }
 
-int Queue_size(ObjectPtr _this) {
+static int Queue_size(ObjectPtr _this) {
     make_this(Queue, _this);
     return this->_list->length;
 }

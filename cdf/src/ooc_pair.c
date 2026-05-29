@@ -9,13 +9,13 @@ void Pair_delete(ObjectPtr _this) {
     super_delete(Object, _this);
 }
 
-ObjectPtr Pair_left(ObjectPtr _this) {
+static ObjectPtr Pair_left(ObjectPtr _this) {
     make_this(Pair, _this);
     REFCINC(this->_left);
     return this->_left;
 }
 
-ObjectPtr Pair_right(ObjectPtr _this) {
+static ObjectPtr Pair_right(ObjectPtr _this) {
     make_this(Pair, _this);
     REFCINC(this->_right);
     return this->_right;

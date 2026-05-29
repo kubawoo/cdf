@@ -1,7 +1,7 @@
 #include "ooc_primitives.h"
 #include <stdio.h>
 
-String * Boolean_to_string(ObjectPtr _this) {
+static String * Boolean_to_string(ObjectPtr _this) {
     make_this(Boolean, _this);
     if(this->value) {
         return new(String, "true");
@@ -10,7 +10,7 @@ String * Boolean_to_string(ObjectPtr _this) {
     }
 }
 
-bool Boolean_equals(ObjectPtr _this, ObjectPtr _other) {
+static bool Boolean_equals(ObjectPtr _this, ObjectPtr _other) {
     if(_this == _other) {
         return true;
     }
@@ -28,7 +28,7 @@ bool Boolean_equals(ObjectPtr _this, ObjectPtr _other) {
     Boolean * other = (Boolean *) _other;
     return this->value == other->value;
 }
-bool Boolean_from_string(ObjectPtr _this, String * string) {
+static bool Boolean_from_string(ObjectPtr _this, String * string) {
     make_this(Boolean, _this);
     if(call(string, equals_cstring, "true")) {
         this->value = true;
@@ -58,86 +58,86 @@ void Boolean_delete(ObjectPtr _this) {
     super_delete(Object, _this);
 }
 
-Integer * Integer_add_int(ObjectPtr _this, int i) {
+static Integer * Integer_add_int(ObjectPtr _this, int i) {
     make_this(Integer, _this);
     return new(Integer, this->value + i);
 }
 
-Integer * Integer_add(ObjectPtr _this, Integer * i) {
+static Integer * Integer_add(ObjectPtr _this, Integer * i) {
     return Integer_add_int(_this, i->value);
 }
 
-void Integer_increment_int(ObjectPtr _this, int i) {
+static void Integer_increment_int(ObjectPtr _this, int i) {
     make_this(Integer, _this);
     this->value += i;
 }
 
-void Integer_increment(ObjectPtr _this, Integer * i) {
+static void Integer_increment(ObjectPtr _this, Integer * i) {
     Integer_increment_int(_this, i->value);
 }
 
-Integer * Integer_subtract_int(ObjectPtr _this, int i) {
+static Integer * Integer_subtract_int(ObjectPtr _this, int i) {
     make_this(Integer, _this);
     return new(Integer, this->value - i);
 }
 
-Integer * Integer_subtract(ObjectPtr _this, Integer * i) {
+static Integer * Integer_subtract(ObjectPtr _this, Integer * i) {
     return Integer_subtract_int(_this, i->value);
 }
 
-void Integer_decrement_int(ObjectPtr _this, int i) {
+static void Integer_decrement_int(ObjectPtr _this, int i) {
     make_this(Integer, _this);
     this->value -= i;
 }
 
-void Integer_decrement(ObjectPtr _this, Integer * i) {
+static void Integer_decrement(ObjectPtr _this, Integer * i) {
     Integer_decrement_int(_this, i->value);
 }
 
-Integer * Integer_multiply_int(ObjectPtr _this, int i) {
+static Integer * Integer_multiply_int(ObjectPtr _this, int i) {
     make_this(Integer, _this);
     return new(Integer, this->value * i);
 }
 
-Integer * Integer_multiply(ObjectPtr _this, Integer * i) {
+static Integer * Integer_multiply(ObjectPtr _this, Integer * i) {
     return Integer_multiply_int(_this, i->value);
 }
 
-void Integer_multiply_inplace_int(ObjectPtr _this, int i) {
+static void Integer_multiply_inplace_int(ObjectPtr _this, int i) {
     make_this(Integer, _this);
     this->value *= i;
 }
 
-void Integer_multiply_inplace(ObjectPtr _this, Integer * i) {
+static void Integer_multiply_inplace(ObjectPtr _this, Integer * i) {
     Integer_multiply_inplace_int(_this, i->value);
 }
 
-Integer * Integer_divide_int(ObjectPtr _this, int i) {
+static Integer * Integer_divide_int(ObjectPtr _this, int i) {
     make_this(Integer, _this);
     return new(Integer, this->value / i);
 }
 
-Integer * Integer_divide(ObjectPtr _this, Integer * i) {
+static Integer * Integer_divide(ObjectPtr _this, Integer * i) {
     return Integer_divide_int(_this, i->value);
 }
 
-void Integer_divide_inplace_int(ObjectPtr _this, int i) {
+static void Integer_divide_inplace_int(ObjectPtr _this, int i) {
     make_this(Integer, _this);
     this->value /= i;
 }
 
-void Integer_divide_inplace(ObjectPtr _this, Integer * i) {
+static void Integer_divide_inplace(ObjectPtr _this, Integer * i) {
     Integer_divide_inplace_int(_this, i->value);
 }
 
-String * Integer_to_string(ObjectPtr _this) {
+static String * Integer_to_string(ObjectPtr _this) {
     make_this(Integer, _this);
     char buf[15];
     sprintf(buf, "%d", this->value);
     return new(String, buf);
 }
 
-bool Integer_from_string(ObjectPtr _this, String * string) {
+static bool Integer_from_string(ObjectPtr _this, String * string) {
     int v = (int) strtol(call(string, to_cstring), NULL, 10);
     if(v == 0 && !call(string, equals_cstring, "0")) {
         return false;
@@ -147,7 +147,7 @@ bool Integer_from_string(ObjectPtr _this, String * string) {
     return true;
 }
 
-bool Integer_equals(ObjectPtr _this, void * _other) {
+static bool Integer_equals(ObjectPtr _this, void * _other) {
     if(_this == _other) {
         return true;
     }
@@ -200,86 +200,86 @@ void Integer_delete(ObjectPtr _this) {
     super_delete(Object, _this);
 }
 
-Long * Long_add_long(ObjectPtr _this, long i) {
+static Long * Long_add_long(ObjectPtr _this, long i) {
     make_this(Long, _this);
     return new(Long, this->value + i);
 }
 
-Long * Long_add(ObjectPtr _this, Long * i) {
+static Long * Long_add(ObjectPtr _this, Long * i) {
     return Long_add_long(_this, i->value);
 }
 
-void Long_increment_long(ObjectPtr _this, long i) {
+static void Long_increment_long(ObjectPtr _this, long i) {
     make_this(Long, _this);
     this->value += i;
 }
 
-void Long_increment(ObjectPtr _this, Long * i) {
+static void Long_increment(ObjectPtr _this, Long * i) {
     Long_increment_long(_this, i->value);
 }
 
-Long * Long_subtract_long(ObjectPtr _this, long i) {
+static Long * Long_subtract_long(ObjectPtr _this, long i) {
     make_this(Long, _this);
     return new(Long, this->value - i);
 }
 
-Long * Long_subtract(ObjectPtr _this, Long * i) {
+static Long * Long_subtract(ObjectPtr _this, Long * i) {
     return Long_subtract_long(_this, i->value);
 }
 
-void Long_decrement_long(ObjectPtr _this, long i) {
+static void Long_decrement_long(ObjectPtr _this, long i) {
     make_this(Long, _this);
     this->value -= i;
 }
 
-void Long_decrement(ObjectPtr _this, Long * i) {
+static void Long_decrement(ObjectPtr _this, Long * i) {
     Long_decrement_long(_this, i->value);
 }
 
-Long * Long_multiply_long(ObjectPtr _this, long i) {
+static Long * Long_multiply_long(ObjectPtr _this, long i) {
     make_this(Long, _this);
     return new(Long, this->value * i);
 }
 
-Long * Long_multiply(ObjectPtr _this, Long * i) {
+static Long * Long_multiply(ObjectPtr _this, Long * i) {
     return Long_multiply_long(_this, i->value);
 }
 
-void Long_multiply_inplace_long(ObjectPtr _this, long i) {
+static void Long_multiply_inplace_long(ObjectPtr _this, long i) {
     make_this(Long, _this);
     this->value *= i;
 }
 
-void Long_multiply_inplace(ObjectPtr _this, Long * i) {
+static void Long_multiply_inplace(ObjectPtr _this, Long * i) {
     Long_multiply_inplace_long(_this, i->value);
 }
 
-Long * Long_divide_long(ObjectPtr _this, long i) {
+static Long * Long_divide_long(ObjectPtr _this, long i) {
     make_this(Long, _this);
     return new(Long, this->value / i);
 }
 
-Long * Long_divide(ObjectPtr _this, Long * i) {
+static Long * Long_divide(ObjectPtr _this, Long * i) {
     return Long_divide_long(_this, i->value);
 }
 
-void Long_divide_inplace_long(ObjectPtr _this, long i) {
+static void Long_divide_inplace_long(ObjectPtr _this, long i) {
     make_this(Long, _this);
     this->value /= i;
 }
 
-void Long_divide_inplace(ObjectPtr _this, Long * i) {
+static void Long_divide_inplace(ObjectPtr _this, Long * i) {
     Long_divide_inplace_long(_this, i->value);
 }
 
-String * Long_to_string(ObjectPtr _this) {
+static String * Long_to_string(ObjectPtr _this) {
     make_this(Long, _this);
     char buf[20];
     sprintf(buf, "%ld", this->value);
     return new(String, buf);
 }
 
-bool Long_from_string(ObjectPtr _this, String * string) {
+static bool Long_from_string(ObjectPtr _this, String * string) {
     long v = strtol(call(string, to_cstring), NULL, 10);
     if(v == 0 && !call(string, equals_cstring, "0")) {
         return false;
@@ -289,7 +289,7 @@ bool Long_from_string(ObjectPtr _this, String * string) {
     return true;
 }
 
-bool Long_equals(ObjectPtr _this, void * _other) {
+static bool Long_equals(ObjectPtr _this, void * _other) {
     if(_this == _other) {
         return true;
     }
@@ -342,86 +342,86 @@ void Long_delete(ObjectPtr _this) {
     super_delete(Object, _this);
 }
 
-Double * Double_add_double(ObjectPtr _this, double i) {
+static Double * Double_add_double(ObjectPtr _this, double i) {
     make_this(Double, _this);
     return new(Double, this->value + i);
 }
 
-Double * Double_add(ObjectPtr _this, Double * i) {
+static Double * Double_add(ObjectPtr _this, Double * i) {
     return Double_add_double(_this, i->value);
 }
 
-void Double_increment_double(ObjectPtr _this, double i) {
+static void Double_increment_double(ObjectPtr _this, double i) {
     make_this(Double, _this);
     this->value += i;
 }
 
-void Double_increment(ObjectPtr _this, Double * i) {
+static void Double_increment(ObjectPtr _this, Double * i) {
     Double_increment_double(_this, i->value);
 }
 
-Double * Double_subtract_double(ObjectPtr _this, double i) {
+static Double * Double_subtract_double(ObjectPtr _this, double i) {
     make_this(Double, _this);
     return new(Double, this->value - i);
 }
 
-Double * Double_subtract(ObjectPtr _this, Double * i) {
+static Double * Double_subtract(ObjectPtr _this, Double * i) {
     return Double_subtract_double(_this, i->value);
 }
 
-void Double_decrement_double(ObjectPtr _this, double i) {
+static void Double_decrement_double(ObjectPtr _this, double i) {
     make_this(Double, _this);
     this->value -= i;
 }
 
-void Double_decrement(ObjectPtr _this, Double * i) {
+static void Double_decrement(ObjectPtr _this, Double * i) {
     Double_decrement_double(_this, i->value);
 }
 
-Double * Double_multiply_double(ObjectPtr _this, double i) {
+static Double * Double_multiply_double(ObjectPtr _this, double i) {
     make_this(Double, _this);
     return new(Double, this->value * i);
 }
 
-Double * Double_multiply(ObjectPtr _this, Double * i) {
+static Double * Double_multiply(ObjectPtr _this, Double * i) {
     return Double_multiply_double(_this, i->value);
 }
 
-void Double_multiply_inplace_double(ObjectPtr _this, double i) {
+static void Double_multiply_inplace_double(ObjectPtr _this, double i) {
     make_this(Double, _this);
     this->value *= i;
 }
 
-void Double_multiply_inplace(ObjectPtr _this, Double * i) {
+static void Double_multiply_inplace(ObjectPtr _this, Double * i) {
     Double_multiply_inplace_double(_this, i->value);
 }
 
-Double * Double_divide_double(ObjectPtr _this, double i) {
+static Double * Double_divide_double(ObjectPtr _this, double i) {
     make_this(Double, _this);
     return new(Double, this->value / i);
 }
 
-Double * Double_divide(ObjectPtr _this, Double * i) {
+static Double * Double_divide(ObjectPtr _this, Double * i) {
     return Double_divide_double(_this, i->value);
 }
 
-void Double_divide_inplace_double(ObjectPtr _this, double i) {
+static void Double_divide_inplace_double(ObjectPtr _this, double i) {
     make_this(Double, _this);
     this->value /= i;
 }
 
-void Double_divide_inplace(ObjectPtr _this, Double * i) {
+static void Double_divide_inplace(ObjectPtr _this, Double * i) {
     Double_divide_inplace_double(_this, i->value);
 }
 
-String * Double_to_string(ObjectPtr _this) {
+static String * Double_to_string(ObjectPtr _this) {
     make_this(Double, _this);
     char buf[20];
     sprintf(buf, "%.4f", this->value);
     return new(String, buf);
 }
 
-bool Double_from_string(ObjectPtr _this, String * string) {
+static bool Double_from_string(ObjectPtr _this, String * string) {
     double v = strtod(call(string, to_cstring), NULL);
     if(v == 0.0 && !call(string, equals_cstring, "0.0")) {
         return false;
@@ -431,7 +431,7 @@ bool Double_from_string(ObjectPtr _this, String * string) {
     return true;
 }
 
-bool Double_equals(ObjectPtr _this, void * _other) {
+static bool Double_equals(ObjectPtr _this, void * _other) {
     if(_this == _other) {
         return true;
     }

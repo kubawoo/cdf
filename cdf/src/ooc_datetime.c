@@ -1,7 +1,7 @@
 #include "ooc_datetime.h"
 #include <stdio.h>
 
-String * DateTime_format(ObjectPtr _this, const char * format) {
+static String * DateTime_format(ObjectPtr _this, const char * format) {
     make_this(DateTime, _this);
     char stack_buf[256];
     size_t len = strftime(stack_buf, sizeof(stack_buf), format, &this->_time);
@@ -23,11 +23,11 @@ String * DateTime_format(ObjectPtr _this, const char * format) {
     }
 }
 
-String * DateTime_to_string(ObjectPtr _this) {
+static String * DateTime_to_string(ObjectPtr _this) {
     return DateTime_format(_this, "%FT%T");
 }
 
-DateTime * _base_new(DateTime * this) {
+static DateTime * _base_new(DateTime * this) {
     super(Object, DateTime);
     override(Object, to_string, DateTime_to_string);
     this->format = DateTime_format;

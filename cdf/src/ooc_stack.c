@@ -8,12 +8,12 @@ void Stack_delete(ObjectPtr _this) {
     super_delete(Collection, _this);
 }
 
-void Stack_push(ObjectPtr _this, ObjectPtr e) {
+static void Stack_push(ObjectPtr _this, ObjectPtr e) {
     make_this(Stack, _this);
     call(this->_list, add, e);
 }
 
-ObjectPtr Stack_pop(ObjectPtr _this) {
+static ObjectPtr Stack_pop(ObjectPtr _this) {
     make_this(Stack, _this);
     int pos = this->_list->length - 1;
     ObjectPtr e = call(this->_list, get, pos);
@@ -21,13 +21,13 @@ ObjectPtr Stack_pop(ObjectPtr _this) {
     return e;
 }
 
-ObjectPtr Stack_peek(ObjectPtr _this) {
+static ObjectPtr Stack_peek(ObjectPtr _this) {
     make_this(Stack, _this);
     int pos = this->_list->length - 1;
     return call(this->_list, get, pos);
 }
 
-int Stack_size(ObjectPtr _this) {
+static int Stack_size(ObjectPtr _this) {
     make_this(Stack, _this);
     return this->_list->length;
 }

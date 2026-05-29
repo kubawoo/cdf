@@ -2,7 +2,7 @@
 
 static Map * _cdf_singleton_map = NULL;
 
-void _cdf_singleton_cleanup() {
+static void _cdf_singleton_cleanup() {
 	REFCDEC(_cdf_singleton_map);
 }
 
