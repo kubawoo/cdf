@@ -1,7 +1,6 @@
 #ifndef CDF_TEST_FRAMEWORK_TYPES_H
 #define CDF_TEST_FRAMEWORK_TYPES_H
 
-#include <stdbool.h>
 
 #define TEST_CASE_ARGUMENTS_RAW TestResult *
 #define TEST_CASE_ARGUMENTS TestResult * _tr

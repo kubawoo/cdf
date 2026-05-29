@@ -1,4 +1,4 @@
-CC=gcc -std=c17
+CC=gcc -std=c23
 PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 LIBCDF_DIST:=../cdf/dist
 CDF_DB_SRC:=../cdf-db/src

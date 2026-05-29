@@ -2,7 +2,6 @@
 #define OOC_OBJECT_H
 
 #include "ooc_macros.h"
-#include <stdbool.h>
 
 typedef struct _String  String;
 

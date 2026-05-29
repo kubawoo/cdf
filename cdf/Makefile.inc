@@ -1,4 +1,4 @@
-CC=gcc -std=c17
+CC=gcc -std=c23
 CFLAGS=-c -Wall -fPIC -fmacro-prefix-map=$(PROJECT_ROOT)=
 LDFLAGS=
 PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
