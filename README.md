@@ -27,7 +27,7 @@ See [`cdf/doc/Tutorial.md`](cdf/doc/Tutorial.md) for a getting-started guide wit
 
 ## Build & install
 
-Requires `gcc` (>= 4.x), `make`, and `jq`. The `cdf-db-sqlite` module additionally needs `libsqlite3-dev`. Tested on Linux.
+Requires `gcc` (>= 14, for `-std=c23` support), `make`, and `jq`. The `cdf-db-sqlite` module additionally needs `libsqlite3-dev`. Tested on Linux.
 
 Each module declares its dependencies in `cdfmodule.json`. Modules install to `$CDF_HOME/{group}/{name}/{version}` (default `~/.cdf`).
 
