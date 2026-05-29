@@ -129,7 +129,7 @@ The `-l` flags are passed to dlopen for runtime linking.
 
 ## Compiler Requirements
 
-- Compiler: `gcc -std=c17` (uses GCC-specific varargs in src/ooc_macros.h)
+- Compiler: `gcc -std=c23` (uses GCC-specific varargs in src/ooc_macros.h)
 - Not portable to clang due to GCC-specific extensions
 - Debug builds get `-g`; release builds get `-Os` (controlled by SNAPSHOT in version string)
 
