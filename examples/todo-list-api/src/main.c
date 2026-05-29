@@ -2,17 +2,18 @@
 #include <http.h>
 #include <db_sqlite.h>
 #include <entitymanager.h>
+#include <log.h>
 #include <signal.h>
 #include <unistd.h>
-#include <stdio.h>
 #include "handlers.h"
 
 #define PORT 19876
-HttpServer * server = NULL;
+static HttpServer * server = NULL;
+static Logger * logger = NULL;
 
 void signal_handler(int signal) {
     if (signal == SIGINT) {
-        printf("\nStopping the server...\n");
+        call(logger, log, LOG_LEVEL_INFO, log_msg(REFCTMP(new(String, "Stopping the server..."))));
         if (server != NULL)
             call(server, stop);
     }
@@ -21,15 +22,20 @@ void signal_handler(int signal) {
 int main(int argc, char *argv[]) {
     signal(SIGINT, signal_handler);
 
+    logger = new(Logger, REFCTMP(new(String, "todo-list-api")), LOG_LEVEL_DEBUG);
+
     Database * db;
     if (argc > 1) {
         String * path = new(String, argv[1]);
         db = new(SQLiteDatabase, path);
         REFCDEC(path);
-        printf("Using database file: %s\n", argv[1]);
+        String * msg = new(String);
+        call(msg, format, "Using database file: %s", argv[1]);
+        call(logger, log, LOG_LEVEL_INFO, log_msg(msg));
+        REFCDEC(msg);
     } else {
         db = new(SQLiteDatabase);
-        printf("Using in-memory database\n");
+        call(logger, log, LOG_LEVEL_INFO, log_msg(REFCTMP(new(String, "Using in-memory database"))));
     }
 
     EntityManager * em = new(EntityManager, db);
@@ -40,11 +46,14 @@ int main(int argc, char *argv[]) {
     REFCINC(em);
 
     server = new(HttpServer, PORT, (HttpRequestHandler *)handler);
-    printf("Starting todo-list-api on port %d\n", PORT);
+    String * msg = new(String);
+    call(msg, format, "Starting todo-list-api on port %d", PORT);
+    call(logger, log, LOG_LEVEL_INFO, log_msg(msg));
+    REFCDEC(msg);
     call(server, start);
 
     if (call(server, is_running))
-        printf("Server started\n");
+        call(logger, log, LOG_LEVEL_INFO, log_msg(REFCTMP(new(String, "Server started"))));
 
     while (call(server, is_running))
         sleep(1);
@@ -52,6 +61,7 @@ int main(int argc, char *argv[]) {
     delete(server);
     REFCDEC(handler);
     REFCDEC(em);
-    printf("Bye bye\n");
+    call(logger, log, LOG_LEVEL_INFO, log_msg(REFCTMP(new(String, "Bye bye"))));
+    REFCDEC(logger);
     return 0;
 }

@@ -30,6 +30,7 @@ static void _log(ObjectPtr _this, LogLevel level, String * msg, const char * fil
 					call(now_string, to_cstring), _loglevel_to_cstring(level), filename, line, call(msg, to_cstring));
 		REFCDEC(now_string);
 		printf("%s\n", call(s, to_cstring));
+		fflush(stdout);
 		REFCDEC(s);
 	}
 }

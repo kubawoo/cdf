@@ -1,5 +1,5 @@
 CC=gcc -std=c17
-CFLAGS=-c -Wall -fPIC
+CFLAGS=-c -Wall -fPIC -fmacro-prefix-map=$(PROJECT_ROOT)=
 LDFLAGS=
 PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 CDF_HOME ?= ${HOME}/.cdf

@@ -1,5 +1,30 @@
 #include "handlers.h"
 #include "todo_item.h"
+#include <logger.h>
+
+static Logger * _handler_logger = NULL;
+
+static Logger * get_logger() {
+    if (_handler_logger == NULL) {
+        String * name = new(String, "handlers");
+        _handler_logger = new(Logger, name, LOG_LEVEL_DEBUG);
+        REFCDEC(name);
+    }
+    return _handler_logger;
+}
+
+static const char * _method_string(HttpMethod method) {
+    switch (method) {
+        case HTTP_METHOD_GET: return "GET";
+        case HTTP_METHOD_POST: return "POST";
+        case HTTP_METHOD_PATCH: return "PATCH";
+        case HTTP_METHOD_PUT: return "PUT";
+        case HTTP_METHOD_DELETE: return "DELETE";
+        case HTTP_METHOD_HEAD: return "HEAD";
+        case HTTP_METHOD_OPTIONS: return "OPTIONS";
+        default: return "UNKNOWN";
+    }
+}
 
 static void set_content_type(HttpResponse * response) {
     call(response, add_header, REFCTMP(new(HttpHeader,
@@ -17,6 +42,8 @@ static void send_error(HttpResponse * response, HttpStatus status, const char * 
 }
 
 static void handle_create(TodoRequestHandler * handler, HttpResponse * response, String * content) {
+    Logger * log = get_logger();
+
     StringInputStream * sis = new(StringInputStream, content);
     JsonObjectBuilderEventsHandler * h = new(JsonObjectBuilderEventsHandler);
     JsonEventsParser * p = new(JsonEventsParser, (JsonEventsHandler *)h);
@@ -25,6 +52,7 @@ static void handle_create(TodoRequestHandler * handler, HttpResponse * response,
     REFCDEC(p);
 
     if (result != CJSON_PARSE_SUCCESS) {
+        call(log, log, LOG_LEVEL_ERROR, log_msg(REFCTMP(new(String, "Invalid JSON in create request"))));
         REFCDEC(h);
         send_error(response, HTTP_STATUS_BAD_REQUEST, "Invalid JSON");
         return;
@@ -71,6 +99,11 @@ static void handle_create(TodoRequestHandler * handler, HttpResponse * response,
 
     call(handler->em, save, (Entity *)item);
 
+    String * log_msg_str = new(String);
+    call(log_msg_str, format, "Created todo item id=%ld", ((Entity *)item)->id->value);
+    call(log, log, LOG_LEVEL_INFO, log_msg(log_msg_str));
+    REFCDEC(log_msg_str);
+
     JsonObject * resp_obj = todo_item_to_json(item);
     String * json_str = call(resp_obj, to_string);
     REFCDEC(resp_obj);
@@ -84,11 +117,13 @@ static void handle_create(TodoRequestHandler * handler, HttpResponse * response,
 }
 
 static void handle_list(TodoRequestHandler * handler, HttpResponse * response) {
+    Logger * log = get_logger();
     String * sql = new(String, "SELECT * FROM TodoItem;");
     List * results = call(handler->em->conn, query, sql);
     REFCDEC(sql);
 
     List * items = new(List);
+    int count = 0;
     if (results) {
         for (int i = 0; i < results->length; i++) {
             Map * row = call(results, get, i);
@@ -99,9 +134,15 @@ static void handle_list(TodoRequestHandler * handler, HttpResponse * response) {
             REFCDEC(obj);
             REFCDEC(item);
             REFCDEC(row);
+            count++;
         }
         REFCDEC(results);
     }
+
+    String * log_msg_str = new(String);
+    call(log_msg_str, format, "Listed %d todo items", count);
+    call(log, log, LOG_LEVEL_INFO, log_msg(log_msg_str));
+    REFCDEC(log_msg_str);
 
     JsonObject * wrapper = new(JsonObject);
     call(wrapper, put_value, REFCTMP(new(String, "items")), items);
@@ -116,11 +157,16 @@ static void handle_list(TodoRequestHandler * handler, HttpResponse * response) {
 }
 
 static void handle_detail(TodoRequestHandler * handler, HttpResponse * response, long id) {
+    Logger * log = get_logger();
     TodoItem * item = new(TodoItem, id, NULL, NULL, NULL, NULL, NULL);
 
     call(handler->em, load, (Entity *)item);
 
     if (!((Entity *)item)->id || ((Entity *)item)->id->value < 0) {
+        String * log_msg_str = new(String);
+        call(log_msg_str, format, "Todo item not found: id=%ld", id);
+        call(log, log, LOG_LEVEL_WARN, log_msg(log_msg_str));
+        REFCDEC(log_msg_str);
         REFCDEC(item);
         send_error(response, HTTP_STATUS_NOT_FOUND, "Not found");
         return;
@@ -137,6 +183,8 @@ static void handle_detail(TodoRequestHandler * handler, HttpResponse * response,
 }
 
 static void handle_update(TodoRequestHandler * handler, HttpResponse * response, long id, String * content) {
+    Logger * log = get_logger();
+
     StringInputStream * sis = new(StringInputStream, content);
     JsonObjectBuilderEventsHandler * h = new(JsonObjectBuilderEventsHandler);
     JsonEventsParser * p = new(JsonEventsParser, (JsonEventsHandler *)h);
@@ -145,6 +193,7 @@ static void handle_update(TodoRequestHandler * handler, HttpResponse * response,
     REFCDEC(p);
 
     if (result != CJSON_PARSE_SUCCESS) {
+        call(log, log, LOG_LEVEL_ERROR, log_msg(REFCTMP(new(String, "Invalid JSON in update request"))));
         REFCDEC(h);
         send_error(response, HTTP_STATUS_BAD_REQUEST, "Invalid JSON");
         return;
@@ -158,6 +207,10 @@ static void handle_update(TodoRequestHandler * handler, HttpResponse * response,
     call(handler->em, load, (Entity *)item);
 
     if (!((Entity *)item)->id || ((Entity *)item)->id->value < 0) {
+        String * log_msg_str = new(String);
+        call(log_msg_str, format, "Todo item not found for update: id=%ld", id);
+        call(log, log, LOG_LEVEL_WARN, log_msg(log_msg_str));
+        REFCDEC(log_msg_str);
         REFCDEC(item);
         REFCDEC(obj);
         send_error(response, HTTP_STATUS_NOT_FOUND, "Not found");
@@ -242,11 +295,20 @@ static void handle_update(TodoRequestHandler * handler, HttpResponse * response,
     REFCDEC(sql);
 
     if (!ok) {
+        String * log_msg_str = new(String);
+        call(log_msg_str, format, "Update failed for todo item id=%ld", id);
+        call(log, log, LOG_LEVEL_ERROR, log_msg(log_msg_str));
+        REFCDEC(log_msg_str);
         REFCDEC(item);
         REFCDEC(obj);
         send_error(response, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Update failed");
         return;
     }
+
+    String * log_msg_str = new(String);
+    call(log_msg_str, format, "Updated todo item id=%ld", id);
+    call(log, log, LOG_LEVEL_INFO, log_msg(log_msg_str));
+    REFCDEC(log_msg_str);
 
     JsonObject * resp_obj = todo_item_to_json(item);
     String * json_str = call(resp_obj, to_string);
@@ -260,7 +322,14 @@ static void handle_update(TodoRequestHandler * handler, HttpResponse * response,
 }
 
 void TodoRequestHandler_handle(void * _this, HttpRequest * request, HttpResponse * response) {
+    Logger * log = get_logger();
     TodoRequestHandler * handler = (TodoRequestHandler *)_this;
+
+    String * log_msg_str = new(String);
+    call(log_msg_str, format, "%s %s", _method_string(request->method), call(request->path, to_cstring));
+    call(log, log, LOG_LEVEL_INFO, log_msg(log_msg_str));
+    REFCDEC(log_msg_str);
+
     if (call(request->path, equals_cstring, "/todos")) {
         if (request->method == HTTP_METHOD_POST) {
             handle_create(handler, response, request->content);
@@ -296,6 +365,7 @@ void TodoRequestHandler_handle(void * _this, HttpRequest * request, HttpResponse
         REFCDEC(id_long);
     }
 
+    call(log, log, LOG_LEVEL_WARN, log_msg(REFCTMP(new(String, "Route not found"))));
     response->status = HTTP_STATUS_NOT_FOUND;
 }
 
