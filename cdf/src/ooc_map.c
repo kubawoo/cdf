@@ -1,21 +1,21 @@
 #include "ooc_map.h"
 #include <stdio.h>
 
-void Map_remove(ObjectPtr _this, ObjectPtr key);
+static void Map_remove(ObjectPtr _this, ObjectPtr key);
 
-int Map_get_length(ObjectPtr _this) {
+static int Map_get_length(ObjectPtr _this) {
     make_this(Map, _this);
     return this->_keys->length;
 }
 
-void Map_put(ObjectPtr _this, ObjectPtr key, ObjectPtr value) {
+static void Map_put(ObjectPtr _this, ObjectPtr key, ObjectPtr value) {
     make_this(Map, _this);
     Map_remove(_this, key);
     call(this->_keys, add, key);
     call(this->_values, add, value);
 }
 
-ObjectPtr Map_get(ObjectPtr _this, ObjectPtr key) {
+static ObjectPtr Map_get(ObjectPtr _this, ObjectPtr key) {
     make_this(Map, _this);
     for(int i = 0; i < this->_keys->length; ++i) {
         ObjectPtr k = call(this->_keys, get, i);
@@ -27,7 +27,7 @@ ObjectPtr Map_get(ObjectPtr _this, ObjectPtr key) {
     return NULL;
 }
 
-void Map_remove(ObjectPtr _this, ObjectPtr key) {
+static void Map_remove(ObjectPtr _this, ObjectPtr key) {
     make_this(Map, _this);
     for(int i = 0; i < this->_keys->length; ++i) {
         ObjectPtr k = call(this->_keys, get, i);
@@ -40,17 +40,17 @@ void Map_remove(ObjectPtr _this, ObjectPtr key) {
     }
 }
 
-bool Map_contains_key(ObjectPtr _this, ObjectPtr key) {
+static bool Map_contains_key(ObjectPtr _this, ObjectPtr key) {
     make_this(Map, _this);
     return call(this->_keys, contains, key);
 }
 
-bool Map_contains_value(ObjectPtr _this, ObjectPtr value) {
+static bool Map_contains_value(ObjectPtr _this, ObjectPtr value) {
     make_this(Map, _this);
     return call(this->_values, contains, value);
 }
 
-List * Map_get_keys(ObjectPtr _this) {
+static List * Map_get_keys(ObjectPtr _this) {
 	make_this(Map, _this);
 	REFCINC(this->_keys);
 	return this->_keys;

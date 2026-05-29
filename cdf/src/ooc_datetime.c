@@ -1,27 +1,33 @@
 #include "ooc_datetime.h"
 #include <stdio.h>
 
-String * DateTime_format(ObjectPtr _this, const char * format) {
+static String * DateTime_format(ObjectPtr _this, const char * format) {
     make_this(DateTime, _this);
-    int buffer_length = 128;
-    String * s = NULL;
-    do {
-        char * buffer = malloc(buffer_length * sizeof(char));
-        size_t len = strftime(buffer, buffer_length, format, &this->_time);
-        if(len < buffer_length) {
-            s = new(String, buffer);
+    char stack_buf[256];
+    size_t len = strftime(stack_buf, sizeof(stack_buf), format, &this->_time);
+    if (len > 0 && len < sizeof(stack_buf)) {
+        return new(String, stack_buf);
+    }
+    size_t buffer_length = 512;
+    while (1) {
+        char * buffer = malloc(buffer_length);
+        if (!buffer) return NULL;
+        len = strftime(buffer, buffer_length, format, &this->_time);
+        if (len > 0 && len < buffer_length) {
+            String * s = new(String, buffer);
+            free(buffer);
+            return s;
         }
         free(buffer);
         buffer_length *= 2;
-    } while(s == NULL);
-    return s;
+    }
 }
 
-String * DateTime_to_string(ObjectPtr _this) {
+static String * DateTime_to_string(ObjectPtr _this) {
     return DateTime_format(_this, "%FT%T");
 }
 
-DateTime * _base_new(DateTime * this) {
+static DateTime * _base_new(DateTime * this) {
     super(Object, DateTime);
     override(Object, to_string, DateTime_to_string);
     this->format = DateTime_format;

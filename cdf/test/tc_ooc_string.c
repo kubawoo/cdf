@@ -10,13 +10,13 @@ void string_new(TEST_CASE_ARGUMENTS) {
     call(s, set_text, "12345");
     ASSERT_EQUAL(s->length, 5);
     ASSERT_NOT_NULL(s->_content);
-    ASSERT_EQUAL(s->_allocated, 6);
+    ASSERT_EQUAL(s->_allocated, 8);
     ASSERT_STRINGS_EQUAL(call(s, to_cstring), "12345");
 
     call(s, set_text, "");
     ASSERT_EQUAL(s->length, 0);
     ASSERT_NOT_NULL(s->_content);
-    ASSERT_EQUAL(s->_allocated, 6);
+    ASSERT_EQUAL(s->_allocated, 8);
     ASSERT_STRINGS_EQUAL(call(s, to_cstring), "");
     REFCDEC(s);
 }
@@ -29,7 +29,7 @@ void string_append(TEST_CASE_ARGUMENTS) {
 
     ASSERT_EQUAL(s1->length, 12);
     ASSERT_NOT_NULL(s1->_content);
-    ASSERT_EQUAL(s1->_allocated, 13);
+    ASSERT_EQUAL(s1->_allocated, 16);
     ASSERT_STRINGS_EQUAL(call(s1, to_cstring), "Hello world!");
     REFCDEC(s2);
     ASSERT_STRINGS_EQUAL(call(s1, to_cstring), "Hello world!");
@@ -44,7 +44,7 @@ void string_append_char(TEST_CASE_ARGUMENTS) {
 
     ASSERT_EQUAL(s1->length, 12);
     ASSERT_NOT_NULL(s1->_content);
-    ASSERT_EQUAL(s1->_allocated, 13);
+    ASSERT_EQUAL(s1->_allocated, 16);
     ASSERT_STRINGS_EQUAL(call(s1, to_cstring), "Hello world!");
     REFCDEC(s2);
     REFCDEC(s1);
@@ -178,21 +178,21 @@ void string_substring(TEST_CASE_ARGUMENTS) {
 void string_format(TEST_CASE_ARGUMENTS) {
     String * s = new(String, "abcdefghijkl");
     ASSERT_EQUAL(s->length, 12);
-    ASSERT_EQUAL(s->_allocated, 13);
+    ASSERT_EQUAL(s->_allocated, 16);
 
     call(s, format, "%s", "1");
     ASSERT_EQUAL(s->length, 1);
-    ASSERT_EQUAL(s->_allocated, 13);
+    ASSERT_EQUAL(s->_allocated, 16);
     ASSERT_STRINGS_EQUAL(call(s, to_cstring), "1");
 
     call(s, format, "%s%d%s", "12", 34, "56");
     ASSERT_EQUAL(s->length, 6);
-    ASSERT_EQUAL(s->_allocated, 13);
+    ASSERT_EQUAL(s->_allocated, 16);
     ASSERT_STRINGS_EQUAL(call(s, to_cstring), "123456");
 
     call(s, format, "%s%d%s%s", "aa", 34, "bb", "78901234567890");
     ASSERT_EQUAL(s->length, 20);
-    ASSERT_EQUAL(s->_allocated, 21);
+    ASSERT_EQUAL(s->_allocated, 32);
     ASSERT_STRINGS_EQUAL(call(s, to_cstring), "aa34bb78901234567890");
 
     REFCDEC(s);

@@ -1,17 +1,17 @@
 #include "ooc_object.h"
 #include "ooc_string.h"
 
-bool Object_equals(void * _this, void * _other) {
+static bool Object_equals(void * _this, void * _other) {
     return _this == _other;
 }
 
-String * _ooc_Object_to_string(ObjectPtr _this) {
+static String * _ooc_Object_to_string(ObjectPtr _this) {
     String * s = new(String, "Object of type ");
     call(s,  append_cstring, ((Object *)_this)->type);
     return s;
 }
 
-ObjectPtr Object_copy(ObjectPtr _this) {
+static ObjectPtr Object_copy(ObjectPtr _this) {
     return NULL;
 }
 

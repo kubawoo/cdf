@@ -1,14 +1,14 @@
 #include "ooc_array.h"
 #include <stdio.h>
 
-void _check_index(Array * this, int index) {
+static void _check_index(Array * this, int index) {
     if(index < 0 || index >= this->length) {
          fputs("index out of bound", stderr);
          abort();
     }
 }
 
-void _set(ObjectPtr _this, int index, ObjectPtr o) {
+static void _set(ObjectPtr _this, int index, ObjectPtr o) {
     make_this(Array, _this);
     _check_index(this, index);
     REFCINC(o);
@@ -16,7 +16,7 @@ void _set(ObjectPtr _this, int index, ObjectPtr o) {
 }
 
 
-ObjectPtr _get(ObjectPtr _this, int index) {
+static ObjectPtr _get(ObjectPtr _this, int index) {
     make_this(Array, _this);
     _check_index(this, index);
     ObjectPtr o = this->_values[index];

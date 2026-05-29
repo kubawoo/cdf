@@ -36,7 +36,7 @@ void List_delete(ObjectPtr _this) {
     super_delete(Object, _this);
 }
 
-void List_add(ObjectPtr _this, ObjectPtr e) {
+static void List_add(ObjectPtr _this, ObjectPtr e) {
     REFCINC(e);
     make_this(List, _this);
     if(this->length == 0) {
@@ -50,7 +50,7 @@ void List_add(ObjectPtr _this, ObjectPtr e) {
     this->length++;
 }
 
-void List_remove(ObjectPtr _this, int i) {
+static void List_remove(ObjectPtr _this, int i) {
     make_this(List, _this);
     if(i < 0 || i >= this->length) {
         return;
@@ -78,7 +78,7 @@ void List_remove(ObjectPtr _this, int i) {
     this->length--;
 }
 
-ObjectPtr List_get(ObjectPtr _this, int i) {
+static ObjectPtr List_get(ObjectPtr _this, int i) {
     make_this(List, _this);
     if(i < 0 || i >= this->length) {
         return NULL;
@@ -93,7 +93,7 @@ ObjectPtr List_get(ObjectPtr _this, int i) {
     return o;
 }
 
-void List_set(ObjectPtr _this, int i, ObjectPtr item) {
+static void List_set(ObjectPtr _this, int i, ObjectPtr item) {
     make_this(List, _this);
     if(i < 0 || i >= this->length) {
         return;
@@ -107,7 +107,7 @@ void List_set(ObjectPtr _this, int i, ObjectPtr item) {
     it->item = item;
 }
 
-void List_insert(ObjectPtr _this, int i, ObjectPtr e) {
+static void List_insert(ObjectPtr _this, int i, ObjectPtr e) {
     make_this(List, _this);
     if(i < 0 || i > this->length) {
         return;
