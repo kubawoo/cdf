@@ -61,8 +61,6 @@ void _obeh_array_end(ObjectPtr _this) {
 
 void _obeh_value(ObjectPtr _this, String * name, Object * value) {
     make_this(JsonObjectBuilderEventsHandler, _this);
-    String * vs = call(value, to_string);
-    REFCDEC(vs);
 
     if(_in_array(this)) {
         List * list = call(this->_stack, peek);

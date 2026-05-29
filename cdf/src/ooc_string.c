@@ -52,9 +52,10 @@ static String * String_to_string(void * _this) {
 
 static void String_append_cstring(void * _this, const char * txt) {
     String * this = (String *) _this;
-    size_t len = strlen(txt) + this->length;
+    size_t txt_len = strlen(txt);
+    size_t len = txt_len + this->length;
     if (!_String_resize(this, len)) return;
-    strcat(this->_content, txt);
+    memcpy(this->_content + this->length, txt, txt_len + 1);
     this->length = len;
 }
 
@@ -62,7 +63,7 @@ static void String_append(void * _this, String * str) {
     String * this = (String *) _this;
     size_t len = this->length + str->length;
     if (!_String_resize(this, len)) return;
-    strcat(this->_content, str->_content);
+    memcpy(this->_content + this->length, str->_content, str->length + 1);
     this->length = len;
 }
 
@@ -83,7 +84,7 @@ static void String_clear(void * _this) {
 
 static void trim_left(String * s) {
     int offset = 0;
-    while(isspace(s->_content[offset]) && offset < s->length) {
+    while(offset < s->length && isspace(s->_content[offset])) {
         offset++;
     }
 
@@ -91,11 +92,9 @@ static void trim_left(String * s) {
         s->_content[0] = '\0';
         s->length = 0;
     } else {
-        for(int i = 0; i + offset < s->length; ++i) {
-            s->_content[i] = s->_content[i + offset];
-            s->_content[i + offset] = '\0';
-        }
+        memmove(s->_content, s->_content + offset, s->length - offset);
         s->length = s->length - offset;
+        s->_content[s->length] = '\0';
     }
 }
 
@@ -152,7 +151,8 @@ static bool String_equals(void * _this, void * _other) {
 static bool String_contains_any_char(void * _this, const char * characters) {
     make_this(String, _this);
     const char * name_cstring = call(this, to_cstring);
-    for(int i = 0; i < strlen(characters); ++i) {
+    size_t clen = strlen(characters);
+    for(size_t i = 0; i < clen; ++i) {
         char c = characters[i];
         if(strchr(name_cstring, c) != NULL) {
             return true;
@@ -186,22 +186,10 @@ static int String_index_of_char(void *_this, const char c) {
 
 static int String_next_index_of_cstring(void * _this, int start, const char * cstring) {
     make_this(String, _this);
-    int cstring_len = strlen(cstring);
-    for(int i = start; i < this->length ; ++i) {
-        bool equal = false;
-        for(int j = 0; j < cstring_len; ++j) {
-            char c1 = this->_content[i+j];
-            char c2 = cstring[j];
-            if(c2 != c1) {
-                equal = false;
-                break;
-            } else {
-                equal = true;
-            }
-        }
-        if(equal) {
-            return i;
-        }
+    if (!cstring || cstring[0] == '\0') return -1;
+    const char * found = strstr(this->_content + start, cstring);
+    if (found) {
+        return (int)(found - this->_content);
     }
     return -1;
 }
@@ -225,9 +213,7 @@ static String * String_substring(void * _this, int from, int to) {
     int len = to - from;
     if (!_String_resize(sub, len) || !sub->_content) return NULL;
     sub->length = len;
-    for(int i = 0; i < len; ++i) {
-        sub->_content[i] = this->_content[from + i];
-    }
+    memcpy(sub->_content, this->_content + from, len);
     sub->_content[len] = '\0';
     return sub;
 }
@@ -245,17 +231,15 @@ static void format(ObjectPtr _this, const char * fmt, ...) {
 
     int required_size = vsnprintf(this->_content, this->_allocated, fmt, argptr);
 
-    if(required_size > this->length) {
+    if(required_size >= (int)this->_allocated) {
         va_list argptr2;
         va_start(argptr2, fmt);
         if (_String_resize(this, required_size)) {
             vsnprintf(this->_content, this->_allocated, fmt, argptr2);
-            this->length = required_size;
         }
         va_end(argptr2);
-    } else {
-        this->length = strlen(this->_content);
     }
+    this->length = required_size;
 
     va_end(argptr);
 }

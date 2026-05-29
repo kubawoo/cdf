@@ -43,7 +43,7 @@ typedef struct {
     bool (*hasNext)(ObjectPtr);
     ObjectPtr (*next)(ObjectPtr);
     List * list;
-    int index;
+    _ListItem * curr;
 } ListIterator;
 
 

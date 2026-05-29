@@ -1,7 +1,7 @@
 ifeq ($(origin CC), default)
 CC := gcc -std=c23
 endif
-CFLAGS=-c -Wall -fPIC -Os -fmacro-prefix-map=$(PROJECT_ROOT)=
+CFLAGS=-c -Wall -fPIC -fmacro-prefix-map=$(PROJECT_ROOT)=
 LDFLAGS=
 PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 CDF_HOME ?= ${HOME}/.cdf
@@ -17,3 +17,9 @@ TEST_RUNNER := $(TEST_FRAMEWORK_PATH)/bin/testrunner
 
 CDF_CORE_VERSION := $(shell jq -r '.dependencies[] | select(.group=="cdf") | select(.name=="cdf") | .version' $(PROJECT_ROOT)cdfmodule.json | sed 's|-|.|' | awk -F"." '{if ($$4) {print $$1"."$$2"-"$$4} else {print $$1"."$$2}}')
 CDF_CORE_PATH := $(CDF_HOME)/cdf/cdf/$(CDF_CORE_VERSION)
+
+ifneq (,$(findstring SNAPSHOT,$(MOD_VERSION)))
+CFLAGS += -g
+else
+CFLAGS += -Os
+endif
