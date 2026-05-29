@@ -27,6 +27,10 @@ typedef struct {
     int server_socket;
     int port;
     bool (*is_running)(ObjectPtr);
+
+    mtx_t conn_mutex;
+    cnd_t conn_cv;
+    int _active_connections;
 } HttpServer;
 
 HttpServer * HttpServer_new2(HttpServer *, int, HttpRequestHandler *);
@@ -36,8 +40,9 @@ typedef struct {
     inherits(Object);
     int conn_fd;
     HttpRequestHandler * handler;
+    HttpServer * _server;
 } _ConnectionData;
-_ConnectionData * _ConnectionData_new2(_ConnectionData *, int, HttpRequestHandler *);
+_ConnectionData * _ConnectionData_new3(_ConnectionData *, int, HttpRequestHandler *, HttpServer *);
 void _ConnectionData_delete(ObjectPtr);
 
 

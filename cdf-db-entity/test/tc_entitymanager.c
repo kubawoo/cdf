@@ -18,7 +18,7 @@ void entitymanager_test(TEST_CASE_ARGUMENTS) {
 	ASSERT_EQUAL(((Customer*)customer)->age->value, 55);
 
 	Entity * loaded_customer = new(Customer);
-	loaded_customer->id = REFCTMP(new(Long, 1L));
+    loaded_customer->id = new(Long, 1L);
     call(em, load, loaded_customer);
 
 	ASSERT_EQUAL(loaded_customer->id->value, 1L);

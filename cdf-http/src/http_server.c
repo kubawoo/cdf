@@ -225,10 +225,17 @@ static HttpRequest * _parse_request(int conn_fd) {
 
 static int connection_main(void* _conn) {
     _ConnectionData * conn = (_ConnectionData *) _conn;
+    HttpServer * server = conn->_server;
+
     HttpRequest * request = _parse_request(conn->conn_fd);
     if(request == NULL) {
         close(conn->conn_fd);
         delete(conn);
+
+        mtx_lock(&server->conn_mutex);
+        server->_active_connections--;
+        cnd_signal(&server->conn_cv);
+        mtx_unlock(&server->conn_mutex);
         return 0;
     }
 
@@ -256,6 +263,11 @@ static int connection_main(void* _conn) {
     delete(response);
     close(conn->conn_fd);
     delete(conn);
+
+    mtx_lock(&server->conn_mutex);
+    server->_active_connections--;
+    cnd_signal(&server->conn_cv);
+    mtx_unlock(&server->conn_mutex);
     return 0;
 }
 
@@ -288,10 +300,17 @@ static int server_main(void * _this) {
             fprintf(stderr, "no connection: %s\n", strerror(errno));
         } else {
             //fprintf(stderr, "got connection\n");
-            _ConnectionData * c = new(_ConnectionData, conn, this->_handler);
+            _ConnectionData * c = new(_ConnectionData, conn, this->_handler, this);
             thrd_t thread_id;
-            thrd_create(&thread_id, &connection_main, c);
-            thrd_detach(thread_id);
+            if(thrd_create(&thread_id, &connection_main, c) != thrd_success) {
+                fprintf(stderr, "failed to create connection thread\n");
+                delete(c);
+            } else {
+                mtx_lock(&this->conn_mutex);
+                this->_active_connections++;
+                mtx_unlock(&this->conn_mutex);
+                thrd_detach(thread_id);
+            }
         }
     }
     return 0;
@@ -348,6 +367,12 @@ static void HttpServer_stop(ObjectPtr _this) {
         _set_run(this, false);
         thrd_join(this->server_thread, NULL);
         close(this->server_socket);
+
+        mtx_lock(&this->conn_mutex);
+        while(this->_active_connections > 0) {
+            cnd_wait(&this->conn_cv, &this->conn_mutex);
+        }
+        mtx_unlock(&this->conn_mutex);
     }
 }
 
@@ -356,7 +381,10 @@ HttpServer * HttpServer_new2(HttpServer * this, int port, HttpRequestHandler * h
     this->start = HttpServer_start;
     this->stop = HttpServer_stop;
     mtx_init(&this->run_mutex, mtx_plain);
+    mtx_init(&this->conn_mutex, mtx_plain);
+    cnd_init(&this->conn_cv);
     this->run = false;
+    this->_active_connections = 0;
     this->port = port;
     if(handler == NULL) {
         this->_handler = (HttpRequestHandler *) new(DummyRequestHandler);
@@ -371,6 +399,8 @@ HttpServer * HttpServer_new2(HttpServer * this, int port, HttpRequestHandler * h
 void HttpServer_delete(ObjectPtr _this) {
     make_this(HttpServer, _this);
     mtx_destroy(&this->run_mutex);
+    mtx_destroy(&this->conn_mutex);
+    cnd_destroy(&this->conn_cv);
     REFCDEC(this->_handler);
     super_delete(Object, _this);
 }
@@ -385,14 +415,18 @@ void HttpRequestHandler_delete(ObjectPtr _this) {
     super_delete(Object, _this);
 }
 
-_ConnectionData * _ConnectionData_new2(_ConnectionData * this, int fd, HttpRequestHandler * handler) {
+_ConnectionData * _ConnectionData_new3(_ConnectionData * this, int fd, HttpRequestHandler * handler, HttpServer * server) {
     super(Object, _ConnectionData);
     this->conn_fd = fd;
+    REFCINC(handler);
     this->handler = handler;
+    this->_server = server;
     return this;
 }
 
 void _ConnectionData_delete(ObjectPtr _this) {
+    make_this(_ConnectionData, _this);
+    REFCDEC(this->handler);
     super_delete(Object, _this);
 }
 

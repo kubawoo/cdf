@@ -107,11 +107,11 @@ static void from_map(ObjectPtr _this, Map * map, List * fields) {
 	}
 	for(int i = 0; i < fields->length; ++i) {
 		FieldMetadata * fm = call(fields, get, i);
-		Object ** field = ((Object **) ((intptr_t) this + fm->offset));
-		REFCDEC(*field);
-		Object * value = call(map, get, fm->name);
-		*field = value;
-		REFCDEC(fm);
+        Object ** field = ((Object **) ((intptr_t) this + fm->offset));
+        REFCDEC(*field);
+        Object * value = call(map, get, fm->name);
+        *field = value;
+        REFCDEC(fm);
 	}
 	REFCDEC(fields);
 }
