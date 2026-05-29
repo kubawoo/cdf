@@ -1,4 +1,6 @@
-CC=gcc -std=c17
+ifeq ($(origin CC), default)
+CC := gcc -std=c23
+endif
 CFLAGS=-c -Wall -fPIC -Os -fmacro-prefix-map=$(PROJECT_ROOT)=
 LDFLAGS=
 PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))

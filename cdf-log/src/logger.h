@@ -2,7 +2,6 @@
 #define LOGGER_H
 
 #include <ooc.h>
-#include <stdbool.h>
 
 #define log_msg(x) x,__FILE__,__LINE__ 
 

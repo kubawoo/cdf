@@ -553,7 +553,9 @@ int cmd_build(void) {
 
     String * makefile_inc = new(String);
     call(makefile_inc, format,
-        "CC = gcc -std=c17\n"
+        "ifeq ($(origin CC), default)\n"
+        "CC := gcc -std=c23\n"
+        "endif\n"
         "CFLAGS = -c -Wall -fPIC -Os -fmacro-prefix-map=$(PROJECT_DIR)/=\n"
         "LDFLAGS =\n"
         "BUILD_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))\n"
