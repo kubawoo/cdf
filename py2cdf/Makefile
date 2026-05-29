@@ -1,4 +1,6 @@
-CC=gcc -std=c23
+ifeq ($(origin CC), default)
+CC := gcc -std=c23
+endif
 PROJECT_ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 LIBCDF_DIST:=../cdf/dist
 CDF_DB_SRC:=../cdf-db/src
