@@ -63,7 +63,7 @@ Root `Makefile` builds projects sequentially (order: `test-framework cdf cdf-jso
 
 ## Compiler & flags
 
-- Compiler: `gcc -std=c17` (uses GCC-specific varargs in `src/ooc_macros.h` — not portable to clang).
+- Compiler: `gcc -std=c23` (uses GCC-specific varargs in `src/ooc_macros.h` — not portable to clang).
 - Debug builds get `-g`; release builds get `-Os` (controlled by `SNAPSHOT` in version string).
 
 ## OOP conventions (src/ooc_macros.h)
