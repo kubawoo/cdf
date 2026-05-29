@@ -1,10 +1,10 @@
 #ifndef CDF_TEST_FRAMEWORK_H
 #define CDF_TEST_FRAMEWORK_H
 
-#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 #include <math.h>
 #include "test_framework_types.h"
 
@@ -14,7 +14,8 @@
 #define TEST_CASE(name) addTestCase(suite, #name,  name)
 
 
-#define _MSG(_msg, vargs...) { asprintf(&_tr->msg, "[%s:%d] " _msg, __FILE__, __LINE__, ##vargs); }
+void _format_msg(TestResult * _tr, const char * file, int line, const char * fmt, ...);
+#define _MSG(_msg, vargs...) _format_msg(_tr, __FILE__, __LINE__, _msg, ##vargs)
 #define ASSERT(x, _msg, vargs...) { if(!_tr->success) { return; }  if(!(x)) { _tr->success = false; _MSG(_msg, ##vargs); return; } }
 #define ASSERT_TRUE(x) ASSERT(x, #x " is not true")
 #define ASSERT_FALSE(x) ASSERT(!(x), #x " should be false")

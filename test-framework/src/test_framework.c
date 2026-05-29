@@ -27,6 +27,21 @@ TestSuite * newTestSuite(const char * name) {
 }
 
 
+void _format_msg(TestResult * _tr, const char * file, int line, const char * fmt, ...) {
+    va_list ap, ap2;
+    va_start(ap, fmt);
+    va_copy(ap2, ap);
+    int prefix_len = snprintf(NULL, 0, "[%s:%d] ", file, line);
+    int msg_len = vsnprintf(NULL, 0, fmt, ap);
+    _tr->msg = malloc(prefix_len + msg_len + 1);
+    if (_tr->msg) {
+        sprintf(_tr->msg, "[%s:%d] ", file, line);
+        vsprintf(_tr->msg + prefix_len, fmt, ap2);
+    }
+    va_end(ap2);
+    va_end(ap);
+}
+
 void addTestCase(TestSuite * suite, const char * name, void (* f)(TEST_CASE_ARGUMENTS_RAW)) {
     suite->count++;
     TestCase ** new_cases = realloc(suite->cases, suite->count * sizeof(TestCase *));

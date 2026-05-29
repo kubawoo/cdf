@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdint.h>
 
 void String_delete(void * _this) {
     String * this = (String *) _this;
@@ -12,25 +13,29 @@ void String_delete(void * _this) {
     super_delete(Object, _this);
 }
 
-void _String_resize(void * _this, size_t len) {
-    len++; // one more for '\0'
+bool _String_resize(void * _this, size_t len) {
+    size_t needed = len + 1;
     String * this = (String *) _this;
-    if(this->_allocated <= len) {
-        size_t new_allocated = this->_allocated ? this->_allocated : 1;
-        while (new_allocated <= len) {
-            new_allocated *= 2;
-        }
-        char * new_content = realloc(this->_content, new_allocated * sizeof(char));
-        if (!new_content) return;
-        this->_content = new_content;
-        this->_allocated = new_allocated;
+    if (this->_allocated >= needed) return true;
+
+    size_t new_allocated = this->_allocated ? this->_allocated : 1;
+    while (new_allocated < needed) {
+        if (new_allocated > SIZE_MAX / 2) return false;
+        new_allocated *= 2;
     }
+
+    char * new_content = realloc(this->_content, new_allocated);
+    if (!new_content) return false;
+
+    this->_content = new_content;
+    this->_allocated = new_allocated;
+    return true;
 }
 
 void String_set_text(void * _this, const char * text) {
     String * this = (String *) _this;
     size_t len = strlen(text);
-    _String_resize(this, len);
+    if (!_String_resize(this, len)) return;
     strcpy(this->_content, text);
     this->length = len;
 }
@@ -48,7 +53,7 @@ String * String_to_string(void * _this) {
 void String_append_cstring(void * _this, const char * txt) {
     String * this = (String *) _this;
     size_t len = strlen(txt) + this->length;
-    _String_resize(this, len);
+    if (!_String_resize(this, len)) return;
     strcat(this->_content, txt);
     this->length = len;
 }
@@ -56,7 +61,7 @@ void String_append_cstring(void * _this, const char * txt) {
 void String_append(void * _this, String * str) {
     String * this = (String *) _this;
     size_t len = this->length + str->length;
-    _String_resize(this, len);
+    if (!_String_resize(this, len)) return;
     strcat(this->_content, str->_content);
     this->length = len;
 }
@@ -64,7 +69,7 @@ void String_append(void * _this, String * str) {
 void String_append_char(void * _this, const char c) {
     make_this(String, _this);
     size_t len = this->length + 1;
-    _String_resize(this, len);
+    if (!_String_resize(this, len)) return;
     this->_content[len - 1] = c;
     this->_content[len - 0] = '\0';
     this->length = len;
@@ -218,7 +223,7 @@ String * String_substring(void * _this, int from, int to) {
     make_this(String, _this);
     String * sub = new(String);
     int len = to - from;
-    _String_resize(sub, len);
+    if (!_String_resize(sub, len) || !sub->_content) return NULL;
     sub->length = len;
     for(int i = 0; i < len; ++i) {
         sub->_content[i] = this->_content[from + i];
@@ -243,9 +248,10 @@ void format(ObjectPtr _this, const char * fmt, ...) {
     if(required_size > this->length) {
         va_list argptr2;
         va_start(argptr2, fmt);
-        _String_resize(this, required_size);
-        vsnprintf(this->_content, this->_allocated, fmt, argptr2);
-        this->length = required_size;
+        if (_String_resize(this, required_size)) {
+            vsnprintf(this->_content, this->_allocated, fmt, argptr2);
+            this->length = required_size;
+        }
         va_end(argptr2);
     } else {
         this->length = strlen(this->_content);
@@ -270,8 +276,9 @@ String * String_new(String * this) {
     this->length = 0;
     this->_allocated = 0;
     this->_content = NULL;
-    _String_resize(this, this->length);
-    this->_content[0] = '\0';
+    if (_String_resize(this, this->length)) {
+        this->_content[0] = '\0';
+    }
     this->set_text = String_set_text;
     this->to_cstring = String_to_cstring;
     this->append = String_append;
