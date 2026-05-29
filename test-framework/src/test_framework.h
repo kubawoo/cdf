@@ -1,6 +1,7 @@
 #ifndef CDF_TEST_FRAMEWORK_H
 #define CDF_TEST_FRAMEWORK_H
 
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,7 +14,7 @@
 #define TEST_CASE(name) addTestCase(suite, #name,  name)
 
 
-#define _MSG(_msg, vargs...) {_tr->msg = (char *) malloc((strlen(_msg) + 1024) * sizeof(char)); sprintf(_tr->msg, "[%s:%d] ", __FILE__, __LINE__); sprintf(_tr->msg + strlen(_tr->msg), _msg, ##vargs); }
+#define _MSG(_msg, vargs...) { asprintf(&_tr->msg, "[%s:%d] " _msg, __FILE__, __LINE__, ##vargs); }
 #define ASSERT(x, _msg, vargs...) { if(!_tr->success) { return; }  if(!(x)) { _tr->success = false; _MSG(_msg, ##vargs); return; } }
 #define ASSERT_TRUE(x) ASSERT(x, #x " is not true")
 #define ASSERT_FALSE(x) ASSERT(!(x), #x " should be false")

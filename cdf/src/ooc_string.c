@@ -16,8 +16,14 @@ void _String_resize(void * _this, size_t len) {
     len++; // one more for '\0'
     String * this = (String *) _this;
     if(this->_allocated <= len) {
-        this->_content = realloc(this->_content, len * sizeof(char));
-        this->_allocated = len;
+        size_t new_allocated = this->_allocated ? this->_allocated : 1;
+        while (new_allocated <= len) {
+            new_allocated *= 2;
+        }
+        char * new_content = realloc(this->_content, new_allocated * sizeof(char));
+        if (!new_content) return;
+        this->_content = new_content;
+        this->_allocated = new_allocated;
     }
 }
 

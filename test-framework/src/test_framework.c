@@ -29,7 +29,9 @@ TestSuite * newTestSuite(const char * name) {
 
 void addTestCase(TestSuite * suite, const char * name, void (* f)(TEST_CASE_ARGUMENTS_RAW)) {
     suite->count++;
-    suite->cases = realloc(suite->cases, suite->count * sizeof(TestCase *));
+    TestCase ** new_cases = realloc(suite->cases, suite->count * sizeof(TestCase *));
+    if (!new_cases) return;
+    suite->cases = new_cases;
     TestCase * c = malloc(sizeof(TestCase));
     c->f = f;
     c->result = malloc(sizeof(TestResult));
