@@ -197,15 +197,18 @@ List * List_new(List * this) {
 
 static ObjectPtr _next(ObjectPtr _this) {
     make_this(ListIterator, _this);
-    if(!call(this, hasNext)) {
+    if(!this->curr) {
         return NULL;
     }
-    return call(this->list, get, this->index++);
+    ObjectPtr o = this->curr->item;
+    REFCINC(o);
+    this->curr = this->curr->next;
+    return o;
 }
 
 static bool _hasNext(ObjectPtr _this) {
     make_this(ListIterator, _this);
-    return this->index < this->list->length;
+    return this->curr != NULL;
 }
 
 
@@ -217,7 +220,7 @@ ListIterator * ListIterator_new1(ListIterator * this, List * list) {
     REFCINC(list);
 
     this->list = list;
-    this->index = 0;
+    this->curr = list->_first;
     return this;
 }
 

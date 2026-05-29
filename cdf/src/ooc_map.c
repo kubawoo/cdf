@@ -10,7 +10,14 @@ static int Map_get_length(ObjectPtr _this) {
 
 static void Map_put(ObjectPtr _this, ObjectPtr key, ObjectPtr value) {
     make_this(Map, _this);
-    Map_remove(_this, key);
+    for(int i = 0; i < this->_keys->length; ++i) {
+        ObjectPtr k = call(this->_keys, get, i);
+        REFCDEC(k);
+        if(call((Object *)key, equals, k)) {
+            call(this->_values, set, i, value);
+            return;
+        }
+    }
     call(this->_keys, add, key);
     call(this->_values, add, value);
 }

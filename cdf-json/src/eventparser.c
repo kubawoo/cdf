@@ -66,8 +66,10 @@ JsonEventsParser * JsonEventsParser_new1(JsonEventsParser * this, JsonEventsHand
     this->_buffer = new(String);
     this->_name = new(String);
     this->_value = new(String);
-    this->_states = new(Stack);
-    call(this->_states, push, REFCTMP(new(Integer, IDLE)));
+    this->_state_depth = 0;
+    this->_states[this->_state_depth++] = IDLE;
+    this->_read_pos = 0;
+    this->_read_end = 0;
     return this;
 }
 
@@ -78,26 +80,23 @@ void JsonEventsParser_delete(ObjectPtr _this) {
     REFCDEC(this->_buffer);
     REFCDEC(this->_value);
     REFCDEC(this->_handler);
-    REFCDEC(this->_states);
     super_delete(Object, _this);
 }
 
-void push_state(JsonEventsParser * this, int state) {
-    Integer * s = new(Integer, state);
-    call(this->_states, push, s);
-    REFCDEC(s);
+static void push_state(JsonEventsParser * this, int state) {
+    if (this->_state_depth < CJSON_MAX_DEPTH) {
+        this->_states[this->_state_depth++] = state;
+    }
 }
 
-int peek_state(JsonEventsParser * this) {
-    Integer * s = call(this->_states, peek);
-    int state = s->value;
-    REFCDEC(s);
-    return state;
+static int peek_state(JsonEventsParser * this) {
+    return this->_state_depth > 0 ? this->_states[this->_state_depth - 1] : IDLE;
 }
 
-void pop_state(JsonEventsParser * this) {
-    Integer * s = call(this->_states, pop);
-    REFCDEC(s);
+static void pop_state(JsonEventsParser * this) {
+    if (this->_state_depth > 0) {
+        this->_state_depth--;
+    }
 }
 
 int _processIdle(ObjectPtr _this, char c) {
@@ -352,11 +351,18 @@ Object * _getValue(String * s, _Type type) {
 int _parse(ObjectPtr _this, InputStream * json_stream, bool ignore_trailing_characters) {
     make_this(JsonEventsParser, _this);
     while(true) {
-        int i = call(json_stream, read);
-        if(i < 0) {
-            break;
+        if (this->_read_pos >= this->_read_end) {
+            this->_read_pos = 0;
+            this->_read_end = 0;
+            while (this->_read_end < CJSON_BUFFER_SIZE) {
+                int i = call(json_stream, read);
+                if (i < 0) break;
+                this->_read_buf[this->_read_end++] = (char)i;
+            }
+            if (this->_read_end == 0) break;
         }
-        char c = (char) i;
+
+        char c = this->_read_buf[this->_read_pos++];
         int ret = CJSON_PARSE_SUCCESS;
 
         switch(peek_state(this)) {
