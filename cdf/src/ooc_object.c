@@ -32,7 +32,7 @@ Object * Object_new(Object * this) {
 }
 
 void * _refctmp(void * o) {
-    ((Object *) o)->_refc--;
+    atomic_fetch_sub(&((Object *) o)->_refc, 1);
     return o;
 }
 

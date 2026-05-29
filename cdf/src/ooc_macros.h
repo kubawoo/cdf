@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdatomic.h>
 #include "ooc_memory.h"
 
 #define GET_MACRO(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,NAME,...) NAME
@@ -68,8 +69,8 @@
 #define type_equal(x, _type) (strcmp(((Object *) (x))->type, _type) == 0)
 #define types_equal(x, y) (strcmp(((Object *) (x))->type, ((Object *) y)->type) == 0)
 
-#define REFCINC(x) do { if(!x) break; Object * _o = (Object *) x; _o->_refc++; } while(0)
-#define REFCDEC(x) do { if(!x) break; Object * _o = (Object *) x; _o->_refc--; if(_o->_refc <= 0)  delete(x); } while(0)
+#define REFCINC(x) do { if(!x) break; Object * _o = (Object *) x; atomic_fetch_add(&_o->_refc, 1); } while(0)
+#define REFCDEC(x) do { if(!x) break; Object * _o = (Object *) x; if(atomic_fetch_sub(&_o->_refc, 1) == 1) delete(x); } while(0)
 #define REFCTMP(x) _refctmp(x)
 
 

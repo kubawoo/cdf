@@ -8,7 +8,7 @@ typedef struct _String  String;
 
 typedef struct _Object {
     void (*_ooc_destructor)(ObjectPtr);
-    int _refc;
+    _Atomic int _refc;
     const char * type;
     bool (*equals)(ObjectPtr, ObjectPtr);
     String * (*to_string)(ObjectPtr);

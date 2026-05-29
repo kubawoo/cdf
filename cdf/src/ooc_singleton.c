@@ -1,4 +1,5 @@
 #include "ooc_map.h"
+#include <stdlib.h>
 
 static Map * _cdf_singleton_map = NULL;
 
@@ -6,15 +7,13 @@ static void _cdf_singleton_cleanup() {
 	REFCDEC(_cdf_singleton_map);
 }
 
-static void _cdf_ensure_initialized() {
-	if(_cdf_singleton_map == NULL) {
-		_cdf_singleton_map = new(Map);
-		atexit(_cdf_singleton_cleanup);
-	}
+__attribute__((constructor))
+static void _cdf_singleton_init() {
+	_cdf_singleton_map = new(Map);
+	atexit(_cdf_singleton_cleanup);
 }
 
 ObjectPtr _cdf_get_singleton(const char * name) {
-	_cdf_ensure_initialized();
 	String * name_string = new(String, name);
 	Object * singleton = NULL;
 

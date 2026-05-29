@@ -45,7 +45,7 @@ void object_refc(TEST_CASE_ARGUMENTS) {
     o = REFCTMP(new(Object));
     ASSERT_NOT_NULL(o);
     ASSERT_EQUAL(o->_refc, 0);
-    REFCDEC(o);
+    delete(o);
     ASSERT_NULL(o);
 }
 

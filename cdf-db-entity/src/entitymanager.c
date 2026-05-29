@@ -226,6 +226,7 @@ static void save(ObjectPtr _this, Entity * e) {
 	}
 
 	long id = call(this->conn, last_inserted_id);
+	REFCDEC(e->id);
 	e->id = new(Long, id);
 
 	REFCDEC(sql);
