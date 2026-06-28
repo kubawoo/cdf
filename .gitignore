@@ -54,11 +54,21 @@ dkms.conf
 # debug information files
 *.dwo
 
+# CMake build directory
+build/
+cmake-build-*/
 
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Makefile
+cmake_install.cmake
+CTestTestfile.cmake
+
+# Old build artifacts
 dist
-build
 *.log
-
 __pycache__
 *.csc
 *.csh

@@ -1,0 +1,6 @@
+option(CDF_BUILD_JSON       "Build JSON module"              ON)
+option(CDF_BUILD_HTTP       "Build HTTP module"              ON)
+option(CDF_BUILD_LOG        "Build Log module"               ON)
+option(CDF_BUILD_DB         "Build all DB modules"           ON)
+option(CDF_BUILD_EXAMPLES   "Build example programs"         ON)
+include(CTest)

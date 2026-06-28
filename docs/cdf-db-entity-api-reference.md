@@ -285,7 +285,7 @@ int main(void) {
 2. **Automatic Table Creation**:
    - When an entity is first used with an EntityManager, the manager checks if the corresponding table exists
    - If not, it creates the table with columns for each field (plus an `id INTEGER PRIMARY KEY` column)
-   - Field type mapping: `String` → `TEXT`, `Integer`/`Long` → `INT` (Note: This is a simplification; real implementations might need more precise mapping)
+   - Field type mapping: `String` - `TEXT`, `Integer`/`Long` - `INT` (Note: This is a simplification; real implementations might need more precise mapping)
 
 3. **JSON and Map Serialization**:
    - The `to_json`/`from_json` and `to_map`/`from_map` methods work with a field list

@@ -37,7 +37,7 @@ Object (root)
 ## Macros (ooc_macros.h)
 
 ### new(ClassName, ...)
-Creates a new instance of `ClassName`. Supports 0–10 additional arguments which are forwarded to the matching `ClassName_newN` constructor.
+Creates a new instance of `ClassName`. Supports 0-10 additional arguments which are forwarded to the matching `ClassName_newN` constructor.
 ```c
 String *s = new(String, "hello");
 List   *l = new(List);
@@ -506,7 +506,7 @@ Abstract base class for byte-level input streams.
 
 | Method | Signature | Description |
 |---|---|---|
-| `read` | `int (ObjectPtr self)` | Returns next byte (0–255) or -1 on EOF. Base implementation returns -1. |
+| `read` | `int (ObjectPtr self)` | Returns next byte (0-255) or -1 on EOF. Base implementation returns -1. |
 
 ---
 
@@ -558,7 +558,7 @@ Reads characters from a File object.
 
 | Method | Signature | Description |
 |---|---|---|
-| `read` | `int (ObjectPtr self)` | Delegates to `file->read_char()`. Returns char (0–255) or -1 on EOF. |
+| `read` | `int (ObjectPtr self)` | Delegates to `file->read_char()`. Returns char (0-255) or -1 on EOF. |
 
 ---
 

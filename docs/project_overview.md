@@ -1,24 +1,31 @@
-# CDF — C Development Framework
+# CDF - C Development Framework
 
 ## Overview
 
-CDF (C Development Framework) is a monorepo of object-oriented C libraries that implements OOP concepts in C using GCC-specific macros and vararg extensions. The framework provides a foundation for building C applications with object-oriented design patterns while maintaining compatibility with standard C.
+CDF (C Development Framework) is a monorepo of object-oriented C libraries that implements OOP concepts in C using GCC-specific macros and vararg extensions. All modules compile into a single static library (`libcdf.a`).
 
 ## Project Structure
 
 ```
-test-framework/   # Custom test runner (tc_*.c → .so files, run via testrunner)
-cdf/              # Core libs: Object, String, List, Map, Array, etc. (in src/), including IO streams
-cdf-json/         # JSON parser/serializer
-cdf-http/         # HTTP client + multithreaded server
-cdf-log/          # Logging framework
-cdf-db/           # Generic database abstraction
-cdf-db-sqlite/    # SQLite backend for cdf-db
-cdf-db-entity/    # Entity manager (ORM-like)
-cdftk/            # CLI toolkit (depends on cdf + cdf-json). Supports commands: `create-new-project <name>`, `build`, `test`
-py2cdf/           # Python-like syntax to CDF source translator (.cs files → .csc/.csh)
-examples/         # helloworld, shapes, shop, wwwserver
-docs/             # Documentation (this directory)
+cmake/            # CMake modules (Options.cmake, CompilerSettings.cmake)
+src/              # Library sources
+  core/           #   Core OOP: Object, String, List, Map, Array, IO streams
+  json/           #   JSON parser/serializer
+  http/           #   HTTP client + multithreaded server
+  log/            #   Logging framework
+  db/             #   Generic database abstraction
+  db-sqlite/      #   SQLite backend
+  db-entity/      #   Entity manager (ORM-like)
+tests/            # CTest test suites (tc_*.c files)
+  core/
+  json/
+  http/
+  log/
+  db/
+  db-sqlite/
+  db-entity/
+examples/         # helloworld, shapes, wwwserver, todo-list-api
+docs/             # Documentation
 ```
 
 ## Key Features
@@ -64,7 +71,7 @@ CDF provides a comprehensive set of macros for OOP programming in C:
 #### Memory Management
 - `delete(obj)` - Force deletion of an object
 - `REFCINC(obj)` - Increment reference count
-- `REFCDEC(obj)` - Decrement reference count and auto-delete if ≤ 0
+- `REFCDEC(obj)` - Decrement reference count and auto-delete if =0
 - `REFCTMP(obj)` - Temporary reference handling
 
 #### Type Information
@@ -77,114 +84,118 @@ CDF provides a comprehensive set of macros for OOP programming in C:
 
 ## Building and Installation
 
+### Requirements
+- CMake >= 3.20
+- gcc >= 14 (`-std=c23` support)
+- libsqlite3-dev (for database modules)
+
 ### Build Commands
-- `make` or `make build` - Compile sources within a module
-- `make test` - Build + run tests (output in output.log)
-- `make valgrind` - Build + run tests under valgrind
-- `make clean` - Remove build artifacts
-- `make install` - Copy dist/ to $CDF_HOME
-- `make dist` - Build + assemble headers + shared libs into dist/
 
-### Installation Path
-Built modules install to `$CDF_HOME/{group}/{name}/{version}` (default `~/.cdf`).
-Version strings are mangled by the Makefiles:
-- `0.3.0` → path `0.3`
-- `0.2.4-SNAPSHOT` → path `0.2-SNAPSHOT`
+| Command | What it does |
+|---|---|
+| `cmake -S . -B build` | Configure (pass `-D` flags to disable modules) |
+| `cmake --build build` | Compile `libcdf.a` + examples |
+| `ctest --test-dir build` | Run all tests |
+| `cmake --install build` | Install `libcdf.a` + headers to prefix (default `/usr/local`) |
 
-### Build Order
-Dependencies must be installed before dependent modules can link:
+### Disabling Modules
+
+All non-core modules are enabled by default. Disable them at configure time:
+
 ```sh
-make -C test-framework && make -C test-framework install
-make -C cdf && make -C cdf install
-make -C cdf-json && make -C cdf-json install
-# ... etc for cdf-http, cdf-log, cdf-db, cdf-db-sqlite, cdf-db-entity
+cmake -S . -B build \
+    -DCDF_BUILD_JSON=OFF \
+    -DCDF_BUILD_HTTP=OFF \
+    -DCDF_BUILD_LOG=OFF \
+    -DCDF_BUILD_DB=OFF
 ```
 
-Root Makefile builds projects sequentially but still requires `make install` for each dependency.
+The database modules (`cdf-db`, `cdf-db-sqlite`, `cdf-db-entity`) share a single `CDF_BUILD_DB` switch. Set it to `OFF` to disable all three.
+
+### Installation
+
+Installs to `/usr/local` by default:
+
+```sh
+cmake --install build
+```
+
+Custom prefix:
+
+```sh
+cmake --install build --prefix /opt/cdf
+```
+
+Output layout:
+```
+{prefix}/
+  lib/libcdf.a
+  include/cdf/core/*.h
+  include/cdf/json/*.h
+  include/cdf/http/*.h
+  include/cdf/log/*.h
+  include/cdf/db/*.h
+  include/cdf/db-sqlite/*.h
+  include/cdf/db-entity/*.h
+```
 
 ## Testing
 
 ### Test Requirements
 - Test source files must be named `tc_*.c`
-- Must use the `test_framework.h` API
-- Each test file compiles to a shared library (`tc_*.so`) via `-shared -fPIC`
-
-### Test Structure
-```c
-void testcase(TEST_CASE_ARGUMENTS) {
-    ASSERT_EQUAL(1, 1);
-}
-TEST_CASES_BEGIN
-    TEST_CASE(testcase);
-TEST_CASES_END
-```
+- Each test is a standalone executable using `assert()` from `<assert.h>`
+- Tests are registered with CTest and output to stdout
 
 ### Running Tests
-Tests are run with testrunner:
+
 ```sh
-LD_LIBRARY_PATH=".:../src:$CDF_HOME/cdf/<dep>/<ver>/lib" $TEST_RUNNER -l<lib> tc_*.so
+# All tests
+ctest --test-dir build
+
+# Specific test (regex match)
+ctest --test-dir build -R tc_list
+
+# Verbose output
+ctest --test-dir build -V
 ```
-The `-l` flags are passed to dlopen for runtime linking.
-**Important**: Test output goes to `output.log`, not stdout.
+
+### Writing a Test
+
+```c
+#include <assert.h>
+#include <cdf.h>
+
+static void test_string_creation(void) {
+    String *s = new(String, "hello");
+    assert(s != NULL);
+    REFCDEC(s);
+}
+
+int main(void) {
+    test_string_creation();
+    return 0;
+}
+```
 
 ## Compiler Requirements
 
-- Compiler: `gcc -std=c23` (uses GCC-specific varargs in src/ooc_macros.h)
+- Compiler: `gcc -std=c23` (uses GCC-specific varargs in `src/core/ooc_macros.h`)
 - Not portable to clang due to GCC-specific extensions
-- Debug builds get `-g`; release builds get `-Os` (controlled by SNAPSHOT in version string)
 
 ## Important Gotchas
 
-1. **Test output location**: Check `output.log` on failure, not stdout
-2. **Test linker flags**: `-l` flags to testrunner are critical — omitting a needed lib causes dlopen failures
-3. **Version string format**: `-SNAPSHOT` triggers debug builds; version mangling affects install paths
-4. **Build artifacts**: Pre-existing build artifacts (.o, .so, executables) are committed — cleaning before rebuild is recommended if source changes
-5. **Memory management**: Proper use of REF macros is essential to prevent leaks or premature deletion
-
-## Py2CDF Translator
-
-The py2cdf module provides a Python-like syntax translator that converts `.cs` files (Python-like DSL) into C source code using CDF's OOP macro system.
-
-### Usage
-```sh
-python3 py2cdf.py -s -I <include-dirs> -i file.cs      # Generate .csc source
-python3 py2cdf.py -h -i file.cs                          # Generate .csh header
-python3 py2cdf.py -s -h -o outdir -i file.cs             # Both, to output dir
-```
-
-### Input Language
-A restricted Python subset that maps directly to OOC constructs:
-```python
-import ooc.h
-import io.h
-
-def hello():
-    s = "hello"
-    i = 42
-    b = True
-    x = None
-    l = ['a', 1, True, x]
-    c = Console()
-    c.print_object(s)
-    call_return = obj.method(arg)
-```
-
-### Generated Code Conventions
-- String literals in constructor args are auto-wrapped: `new(String, "...")`
-- Variables declared at function top; cleaned up with `REFCDEC` at function end
-- Temp variables prefixed `_tmp_N` for intermediate values
+1. **Test output**: Goes to stdout, not a log file. Check test output on failure.
+2. **Module disable flags**: Database modules share one flag (`CDF_BUILD_DB`). Individual database modules cannot be toggled independently.
+3. **Examples controlled by `CDF_BUILD_EXAMPLES`**: Disable with `-DCDF_BUILD_EXAMPLES=OFF` to skip building samples.
+4. **Memory management**: Proper use of REF macros is essential to prevent leaks or premature deletion.
 
 ## Examples
 
 See the `examples/` directory for complete working examples:
 - helloworld - Basic introduction to CDF
 - shapes - Object-oriented geometry example
-- shop - Retail simulation demonstrating complex object interactions
 - wwwserver - Multithreaded HTTP server implementation
-
-## Module Dependencies
-
-Each module declares its dependencies in a `cdfmodule.json` file. The build system ensures dependencies are installed in the correct order under `$CDF_HOME`.
+- todo-list-api - REST API with SQLite persistence (requires DB + HTTP + Log)
 
 ## Conclusion
 

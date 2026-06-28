@@ -1,88 +1,74 @@
-# CDF — C Development Framework
+# CDF - C Development Framework
 
-Monorepo of object-oriented C libraries (OOP via macros, gcc-specific vararg extensions).
+Monorepo of object-oriented C libraries (OOP via macros, gcc-specific vararg extensions), built with CMake into a single static library `libcdf.a`.
 
 ## Project layout
 
 ```
-test-framework/   # custom test runner (tc_*.c → .so files, run via testrunner)
-cdf/              # core libs: Object, String, List, Map, Array, etc. (in src/), including IO streams
-cdf-json/         # JSON parser/serializer
-cdf-http/         # HTTP client + multithreaded server
-cdf-log/          # logging framework
-cdf-db/           # generic database abstraction
-cdf-db-sqlite/    # sqlite backend for cdf-db
-cdf-db-entity/    # entity manager (ORM-like)
-cdftk/            # CLI toolkit (depends on cdf + cdf-json). Supports commands: `create-new-project <name>`, `build`, `test`
-py2cdf/           # Python-like syntax to CDF source translator (.cs files → .csc/.csh)
-examples/         # helloworld, shapes, shop, wwwserver
+cmake/            # CMake modules (Options.cmake, CompilerSettings.cmake)
+src/              # Library sources
+  core/           #   Core OOP: Object, String, List, Map, Array, IO streams
+  json/           #   JSON parser/serializer
+  http/           #   HTTP client + multithreaded server
+  log/            #   Logging framework
+  db/             #   Generic database abstraction
+  db-sqlite/      #   SQLite backend
+  db-entity/      #   Entity manager (ORM-like)
+tests/            # CTest test suites (tc_*.c files)
+  core/
+  json/
+  http/
+  log/
+  db/
+  db-sqlite/
+  db-entity/
+examples/         # helloworld, shapes, wwwserver, todo-list-api
 ```
 
-## Dependencies & install
+## Build & install
 
-Modules declare deps in `cdfmodule.json`. Built modules install to `$CDF_HOME/{group}/{name}/{version}` (default `~/.cdf`). Version strings are mangled by the Makefiles (e.g., `0.3.0` → path `0.3`, `0.2.4-SNAPSHOT` → path `0.2-SNAPSHOT`).
+Requires CMake >= 3.20, gcc >= 14 (`-std=c23`), libsqlite3-dev.
 
-**Build + install order matters** — a module's tests and downstream consumers expect its deps to be installed under `$CDF_HOME`:
 ```sh
-make -C test-framework && make -C test-framework install
-make -C cdf && make -C cdf install
-make -C cdf-json && make -C cdf-json install
-# ... etc for cdf-http, cdf-log, cdf-db, cdf-db-sqlite, cdf-db-entity
+cmake -S . -B build        # configure (pass -D flags to disable modules)
+cmake --build build        # compile libcdf.a + examples
+ctest --test-dir build     # run tests (stdout, no output.log)
+cmake --install build      # install libcdf.a + headers
 ```
 
-## Commands
+## Module disable flags
 
-| Command | What it does |
+All non-core modules enabled by default. Toggle at configure time:
+
+| Flag | Controls |
 |---|---|
-| `make` or `make build` | Compile sources within a module |
-| `make test` | Build + run tests (output in `output.log`) |
-| `make valgrind` | Build + run tests under valgrind |
-| `make clean` | Remove build artifacts |
-| `make install` | Copy `dist/` to `$CDF_HOME` |
-| `make dist` | Build + assemble headers + shared libs into `dist/` |
-
-Root `Makefile` builds projects sequentially (order: `test-framework cdf cdf-json cdf-http cdf-log cdf-db cdf-db-sqlite cdf-db-entity`), but still needs `make install` for each dep before downstream modules can link.
+| `CDF_BUILD_JSON` | `cdf-json` |
+| `CDF_BUILD_HTTP` | `cdf-http` |
+| `CDF_BUILD_LOG` | `cdf-log` |
+| `CDF_BUILD_DB` | `cdf-db`, `cdf-db-sqlite`, `cdf-db-entity` (all three) |
+| `CDF_BUILD_EXAMPLES` | All example programs |
 
 ## Testing
 
-- Test source files **must** be named `tc_*.c` and use the `test_framework.h` API.
-- Each `tc_*.c` compiles to a **shared library** (`tc_*.so`) via `-shared -fPIC`.
-- Tests are run with `testrunner`:
-  ```sh
-  LD_LIBRARY_PATH=".:../src:$CDF_HOME/cdf/<dep>/<ver>/lib" $TEST_RUNNER -l<lib> tc_*.so
-  ```
-  The `-l` flags are passed to `dlopen` for runtime linking. Test output goes to `output.log`.
-- Test file structure:
-  ```c
-  void testcase(TEST_CASE_ARGUMENTS) { ASSERT_EQUAL(1, 1); }
-  TEST_CASES_BEGIN
-      TEST_CASE(testcase);
-  TEST_CASES_END
-  ```
-- `CDF_HOME` defaults to `$HOME/.cdf`. Makefiles resolve `TEST_FRAMEWORK_PATH` et al. from `cdfmodule.json`.
+- Test files named `tc_*.c`, each is a standalone executable using `assert()`.
+- Registered with CTest; output goes to stdout (no `output.log`).
+- Run all: `ctest --test-dir build`
+- Run one: `ctest --test-dir build -R tc_list`
+- `WORKING_DIRECTORY` set to each test's source directory.
 
 ## Compiler & flags
 
-- Compiler: `gcc -std=c23` (uses GCC-specific varargs in `src/ooc_macros.h` — not portable to clang).
-- Debug builds get `-g`; release builds get `-Os` (controlled by `SNAPSHOT` in version string).
+- Compiler: `gcc -std=c23` (uses GCC-specific varargs in `src/core/ooc_macros.h` - not portable to clang).
+- Flags: `-Wall -fPIC` (set in `cmake/CompilerSettings.cmake`).
 
-## OOP conventions (src/ooc_macros.h)
+## OOP conventions (`src/core/ooc_macros.h`)
 
 ```c
 String *s = new(String, "hello");     // constructor
 call(obj, method, arg);               // virtual method call
 obj->method(obj, arg);                // direct call equivalent
-REFCDEC(obj);                         // decref + auto-delete when refcount ≤ 0
+REFCDEC(obj);                         // decref + auto-delete when refcount = 0
 delete(obj);                          // force-delete
 super(BaseClass, ThisClass);          // constructor chaining
 override(BaseClass, base_method, fn); // virtual override
 ```
-
-
-## Key gotchas
-
-- **Test output goes to `output.log`**, not stdout. Check that file on failure.
-- **`-l` flags to `testrunner`** are critical — omitting a needed lib causes dlopen failures at test time.
-- **`cdfmodule.json` version format** with `-SNAPSHOT` triggers debug builds. The version mangling in `Makefile.inc` produces install paths like `0.3` (from `0.3.0`) or `0.2-SNAPSHOT` (from `0.2.4-SNAPSHOT`).
-- **`bootstrap.sh`** in `cdftk/` automates dep cloning + build + install from GitLab tags, but is not needed for monorepo workflow.
-- **Pre-existing build artifacts (`.o`, `.so`, executables) are committed** — cleaning before rebuild is recommended if source changes.

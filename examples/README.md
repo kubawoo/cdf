@@ -4,16 +4,20 @@ Sample applications demonstrating the CDF framework.
 
 ## Prerequisites
 
-All CDF modules must be built and installed first:
+Build the framework from the repository root:
 
 ```
-make install
+cmake -S .. -B ../build
+cmake --build ../build
 ```
 
-## Build
+Examples are built as part of the main build. Individual executables land in `build/examples/`.
 
 ```
-make -C examples
+../build/examples/helloworld/helloworld
+../build/examples/shapes/shapes
+../build/examples/wwwserver/wwwserver
+../build/examples/todo-list-api/todo-list-api
 ```
 
 ## Examples
@@ -21,10 +25,6 @@ make -C examples
 ### helloworld
 
 Basic CDF program — creates a `String` and prints it via `Console`.
-
-```
-make -C examples/helloworld run
-```
 
 ### shapes
 
@@ -37,28 +37,10 @@ Demonstrates OOP with inheritance and polymorphism:
 
 Creates a list of shapes and iterates polymorphically.
 
-```
-make -C examples/shapes run
-```
-
-### shop
-
-JSON-based HTTP API server with entity persistence. Uses `cdf-http`, `cdf-json`, `cdf-db`, `cdf-db-sqlite`, and `cdf-db-entity`. Serves customer data as JSON on port 19876.
-
-```
-make -C examples/shop run
-```
-
 ### wwwserver
 
 Minimal HTTP server serving an HTML page on port 19876. Uses `cdf-http`.
 
-```
-make -C examples/wwwserver run
-```
+### todo-list-api (disabled without DB + HTTP + Log)
 
-## Cleaning
-
-```
-make -C examples clean
-```
+JSON-based HTTP API server with SQLite persistence using `cdf-db`, `cdf-db-sqlite`, `cdf-db-entity`, `cdf-http`, `cdf-json`, and `cdf-log`.
