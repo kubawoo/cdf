@@ -1,25 +1,20 @@
-PROJECTS=test-framework cdf cdf-json cdf-http cdf-log cdf-db cdf-db-sqlite cdf-db-entity
+BUILD_DIR ?= build
 
 all: build
 
 .PHONY: build
-.PHONY: test
-
 build:
-	$(info Building the following projects: $(PROJECTS)) 
-	$(foreach p, $(PROJECTS), make -C $(p); )
+	cmake -S . -B $(BUILD_DIR)
+	cmake --build $(BUILD_DIR)
 
+.PHONY: test
 test: build
-	$(foreach p, $(PROJECTS), make -C $(p) test && ) echo 'All tests passed!'
+	ctest --test-dir $(BUILD_DIR) --output-on-failure
 
-valgrind: build
-	$(foreach p, $(PROJECTS), make -C $(p) valgrind && ) echo 'All tests passed'
-
+.PHONY: clean
 clean:
-	$(foreach p, $(PROJECTS), make -C $(p) clean; )
-	make -C examples clean
-	rm -rf examples/build
+	rm -rf $(BUILD_DIR)
 
-install:
-	$(foreach p, $(PROJECTS), make -C $(p) install; )
-
+.PHONY: install
+install: build
+	cmake --install $(BUILD_DIR)
