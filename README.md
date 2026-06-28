@@ -1,4 +1,4 @@
-# CDF — C Development Framework
+# CDF - C Development Framework
 
 Object-oriented libraries for C, built with macros and gcc-specific vararg extensions.
 
@@ -45,7 +45,7 @@ cmake -S . -B build \
     -DCDF_BUILD_DB=OFF
 ```
 
-Database modules (`cdf-db`, `cdf-db-sqlite`, `cdf-db-entity`) share the `CDF_BUILD_DB` switch — set it to `OFF` to disable all three.
+Database modules (`cdf-db`, `cdf-db-sqlite`, `cdf-db-entity`) share the `CDF_BUILD_DB` switch - set it to `OFF` to disable all three.
 
 ## OOP quick reference
 

@@ -1,4 +1,4 @@
-# CDF — C Development Framework
+# CDF - C Development Framework
 
 ## Overview
 
@@ -52,35 +52,35 @@ The framework uses reference counting for automatic memory management:
 CDF provides a comprehensive set of macros for OOP programming in C:
 
 #### Object Creation
-- `new(Class, ...)` — Creates a new instance of Class with variable arguments
+- `new(Class, ...)` - Creates a new instance of Class with variable arguments
   - Supports up to 11 constructor arguments through macro overloading
   - Example: `String *s = new(String, "hello");`
 
 #### Method Invocation
-- `call(obj, method, ...)` — Virtual method call (uses vtable)
+- `call(obj, method, ...)` - Virtual method call (uses vtable)
   - Supports up to 11 method arguments
   - Example: `call(s, length);` or `call(map, put, key, value);`
-- `obj->method(obj, ...)` — Direct method call equivalent to call()
+- `obj->method(obj, ...)` - Direct method call equivalent to call()
 
 #### Inheritance and Polymorphism
-- `inherits(BaseClass)` — Used in class definitions to inherit from BaseClass
-- `super(BaseClass, ThisClass)` — Constructor chaining to parent class
-- `override(BaseClass, base_method, fn)` — Override a base class method
-- `super_method(BaseClass, method)` — Access to overridden base class method
+- `inherits(BaseClass)` - Used in class definitions to inherit from BaseClass
+- `super(BaseClass, ThisClass)` - Constructor chaining to parent class
+- `override(BaseClass, base_method, fn)` - Override a base class method
+- `super_method(BaseClass, method)` - Access to overridden base class method
 
 #### Memory Management
-- `delete(obj)` — Force deletion of an object
-- `REFCINC(obj)` — Increment reference count
-- `REFCDEC(obj)` — Decrement reference count and auto-delete if ≤ 0
-- `REFCTMP(obj)` — Temporary reference handling
+- `delete(obj)` - Force deletion of an object
+- `REFCINC(obj)` - Increment reference count
+- `REFCDEC(obj)` - Decrement reference count and auto-delete if =0
+- `REFCTMP(obj)` - Temporary reference handling
 
 #### Type Information
-- `type_equal(obj, "TypeName")` — Check if object is of specific type
-- `types_equal(obj1, obj2)` — Check if two objects are of same type
+- `type_equal(obj, "TypeName")` - Check if object is of specific type
+- `types_equal(obj1, obj2)` - Check if two objects are of same type
 
 #### Utility Macros
-- `make_this(Class, this_ptr)` — Cast void* to Class* and assign to `this`
-- `ObjectPtr` — Typedef for void* used as generic object pointer
+- `make_this(Class, this_ptr)` - Cast void* to Class* and assign to `this`
+- `ObjectPtr` - Typedef for void* used as generic object pointer
 
 ## Building and Installation
 
@@ -192,10 +192,10 @@ int main(void) {
 ## Examples
 
 See the `examples/` directory for complete working examples:
-- helloworld — Basic introduction to CDF
-- shapes — Object-oriented geometry example
-- wwwserver — Multithreaded HTTP server implementation
-- todo-list-api — REST API with SQLite persistence (requires DB + HTTP + Log)
+- helloworld - Basic introduction to CDF
+- shapes - Object-oriented geometry example
+- wwwserver - Multithreaded HTTP server implementation
+- todo-list-api - REST API with SQLite persistence (requires DB + HTTP + Log)
 
 ## Conclusion
 

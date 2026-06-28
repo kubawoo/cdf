@@ -92,10 +92,10 @@ Represents a JSON object (map of string keys to JSON values) with serialization 
 | `get_map` | `Map *(ObjectPtr self)` | Returns the internal map (REFINC'd, caller must REFCDEC). |
 
 > **Serialization rules** (in `value_to_string` helper):
-> - `null` → `"null"`
-> - `String` → `"<quoted and escaped content>"` (quotes added, content not escaped beyond existing quotes)
-> - `List` → `"[elem1, elem2, ...]"` (elements serialized recursively)
-> - Other objects → `object->to_string()` (must return valid JSON fragment)
+> - `null` - `"null"`
+> - `String` - `"<quoted and escaped content>"` (quotes added, content not escaped beyond existing quotes)
+> - `List` - `"[elem1, elem2, ...]"` (elements serialized recursively)
+> - Other objects - `object->to_string()` (must return valid JSON fragment)
 
 ### JsonEventsHandler
 
@@ -319,8 +319,8 @@ int main(void) {
 
 4. **Number parsing**:
    - The parser uses simple heuristics: 
-     - Contains `.` → Double
-     - Else → Long
+     - Contains `.` - Double
+     - Else - Long
    - This means integers that fit in Long are parsed as Long, not Integer
    - Boolean and string literals are detected by content
 

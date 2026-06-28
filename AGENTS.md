@@ -1,4 +1,4 @@
-# CDF — C Development Framework
+# CDF - C Development Framework
 
 Monorepo of object-oriented C libraries (OOP via macros, gcc-specific vararg extensions), built with CMake into a single static library `libcdf.a`.
 
@@ -58,7 +58,7 @@ All non-core modules enabled by default. Toggle at configure time:
 
 ## Compiler & flags
 
-- Compiler: `gcc -std=c23` (uses GCC-specific varargs in `src/core/ooc_macros.h` — not portable to clang).
+- Compiler: `gcc -std=c23` (uses GCC-specific varargs in `src/core/ooc_macros.h` - not portable to clang).
 - Flags: `-Wall -fPIC` (set in `cmake/CompilerSettings.cmake`).
 
 ## OOP conventions (`src/core/ooc_macros.h`)
@@ -67,7 +67,7 @@ All non-core modules enabled by default. Toggle at configure time:
 String *s = new(String, "hello");     // constructor
 call(obj, method, arg);               // virtual method call
 obj->method(obj, arg);                // direct call equivalent
-REFCDEC(obj);                         // decref + auto-delete when refcount ≤ 0
+REFCDEC(obj);                         // decref + auto-delete when refcount = 0
 delete(obj);                          // force-delete
 super(BaseClass, ThisClass);          // constructor chaining
 override(BaseClass, base_method, fn); // virtual override

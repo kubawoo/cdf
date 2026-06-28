@@ -5,7 +5,7 @@ EAPI=8
 
 inherit cmake
 
-DESCRIPTION="C Development Framework — OOP libraries for C"
+DESCRIPTION="C Development Framework - Object Oriented libraries for C"
 HOMEPAGE="https://github.com/kubawoo/cdf"
 SRC_URI="https://github.com/kubawoo/cdf/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 
