@@ -3,17 +3,19 @@
 
 EAPI=8
 
-inherit cmake
+inherit cmake git-r3
 
 DESCRIPTION="C Development Framework - Object Oriented libraries for C"
 HOMEPAGE="https://github.com/kubawoo/cdf"
-SRC_URI="https://github.com/kubawoo/cdf/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+EGIT_REPO_URI="https://github.com/kubawoo/cdf.git"
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS=""
 
 IUSE="+sqlite examples"
+
+RESTRICT="mirror"
 
 DEPEND="
 	sqlite? ( dev-db/sqlite )

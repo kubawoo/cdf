@@ -1,0 +1,39 @@
+find_package(Git QUIET)
+
+if(Git_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --tags --dirty --match "v*" --long
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_DESCRIBE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+  )
+endif()
+
+if(GIT_DESCRIBE)
+  string(REGEX REPLACE "^v" "" GIT_DESCRIBE "${GIT_DESCRIBE}")
+  string(REGEX REPLACE "^([0-9]+)\\..*" "\\1" CDF_VERSION_MAJOR "${GIT_DESCRIBE}")
+  string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*" "\\1" CDF_VERSION_MINOR "${GIT_DESCRIBE}")
+  string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" CDF_VERSION_PATCH "${GIT_DESCRIBE}")
+  string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.[0-9]+-([0-9]+).*" "\\1" CDF_VERSION_TWEAK "${GIT_DESCRIBE}")
+  string(REGEX REPLACE "^.*-g([0-9a-f]+)" "\\1" CDF_VERSION_HASH "${GIT_DESCRIBE}")
+
+  set(CDF_VERSION "${CDF_VERSION_MAJOR}.${CDF_VERSION_MINOR}.${CDF_VERSION_PATCH}")
+
+  if(GIT_DESCRIBE MATCHES "-dirty$")
+    set(CDF_VERSION_DIRTY "-dirty")
+  endif()
+
+  if(NOT CDF_VERSION_TWEAK STREQUAL "0")
+    set(CDF_VERSION "${CDF_VERSION}+dev.${CDF_VERSION_TWEAK}.g${CDF_VERSION_HASH}${CDF_VERSION_DIRTY}")
+  elseif(CDF_VERSION_DIRTY)
+    set(CDF_VERSION "${CDF_VERSION}${CDF_VERSION_DIRTY}")
+  endif()
+else()
+  set(CDF_VERSION_MAJOR 0)
+  set(CDF_VERSION_MINOR 0)
+  set(CDF_VERSION_PATCH 0)
+  set(CDF_VERSION "0.0.0")
+endif()
+
+message(STATUS "CDF version: ${CDF_VERSION}")

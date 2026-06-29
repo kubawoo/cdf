@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
-project(cdf VERSION 0.5.0 LANGUAGES C)
+project(cdf LANGUAGES C)
+
+include(cmake/GetGitVersion.cmake)
+set(PROJECT_VERSION      "${CDF_VERSION}")
+set(PROJECT_VERSION_MAJOR "${CDF_VERSION_MAJOR}")
+set(PROJECT_VERSION_MINOR "${CDF_VERSION_MINOR}")
+set(PROJECT_VERSION_PATCH "${CDF_VERSION_PATCH}")
 
 include(cmake/Options.cmake)
 include(cmake/CompilerSettings.cmake)
