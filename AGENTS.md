@@ -1,6 +1,6 @@
 # CDF - C Development Framework
 
-Monorepo of object-oriented C libraries (OOP via macros, gcc-specific vararg extensions), built with CMake into a single static library `libcdf.a`.
+Monorepo of object-oriented C libraries (OOP via macros, gcc-specific vararg extensions), built with CMake into a single shared library `libcdf.so` (with optional static library `libcdf.a`).
 
 ## Project layout
 
@@ -31,9 +31,9 @@ Requires CMake >= 3.20, gcc >= 14 (`-std=c23`), libsqlite3-dev.
 
 ```sh
 cmake -S . -B build        # configure (pass -D flags to disable modules)
-cmake --build build        # compile libcdf.a + examples
+cmake --build build        # compile libcdf.so + examples
 ctest --test-dir build     # run tests (stdout, no output.log)
-cmake --install build      # install libcdf.a + headers
+cmake --install build      # install libcdf.so + headers; add -DCDF_BUILD_STATIC=ON for static
 ```
 
 ## Module disable flags
@@ -46,6 +46,7 @@ All non-core modules enabled by default. Toggle at configure time:
 | `CDF_BUILD_HTTP` | `cdf-http` |
 | `CDF_BUILD_LOG` | `cdf-log` |
 | `CDF_BUILD_DB` | `cdf-db`, `cdf-db-sqlite`, `cdf-db-entity` (all three) |
+| `CDF_BUILD_STATIC` | Static library (`libcdf.a`) in addition to default shared |
 | `CDF_BUILD_EXAMPLES` | All example programs |
 
 ## Testing
