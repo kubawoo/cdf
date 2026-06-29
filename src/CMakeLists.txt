@@ -1,3 +1,5 @@
+include(CMakePackageConfigHelpers)
+
 add_library(cdf_objects OBJECT
     core/ooc_array.c
     core/ooc_collection.c
@@ -72,6 +74,35 @@ install(TARGETS cdf
     LIBRARY DESTINATION lib
 )
 
+set(CDF_INCLUDE_INSTALL_DIR "include/cdf")
+set(CDF_LIB_INSTALL_DIR "lib")
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/cdfConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+    ${CMAKE_SOURCE_DIR}/cmake/cdfConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/cdfConfig.cmake
+    INSTALL_DESTINATION ${CDF_LIB_INSTALL_DIR}/cmake/cdf
+    PATH_VARS CDF_INCLUDE_INSTALL_DIR CDF_LIB_INSTALL_DIR
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/cdfConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/cdfConfigVersion.cmake"
+    DESTINATION ${CDF_LIB_INSTALL_DIR}/cmake/cdf
+)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cdf.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/cdf.h
+)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/cdf.h" DESTINATION ${CDF_INCLUDE_INSTALL_DIR})
+
 install(DIRECTORY
     ${CMAKE_CURRENT_SOURCE_DIR}/core
     ${CMAKE_CURRENT_SOURCE_DIR}/json
@@ -80,6 +111,7 @@ install(DIRECTORY
     ${CMAKE_CURRENT_SOURCE_DIR}/db
     ${CMAKE_CURRENT_SOURCE_DIR}/db-sqlite
     ${CMAKE_CURRENT_SOURCE_DIR}/db-entity
-    DESTINATION include/cdf
+    DESTINATION ${CDF_INCLUDE_INSTALL_DIR}
     FILES_MATCHING PATTERN "*.h"
+    PATTERN "http_utils.h" EXCLUDE
 )

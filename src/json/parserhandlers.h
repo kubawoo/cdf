@@ -3,7 +3,7 @@
 
 #include "eventparser.h"
 #include "jsonobject.h"
-#include <cdf.h>
+#include "../core/cdf.h"
 
 typedef struct  {
     inherits(JsonEventsHandler);

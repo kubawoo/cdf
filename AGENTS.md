@@ -34,6 +34,9 @@ cmake -S . -B build        # configure (pass -D flags to disable modules)
 cmake --build build        # compile libcdf.so + examples
 ctest --test-dir build     # run tests (stdout, no output.log)
 cmake --install build      # install libcdf.so + headers; add -DCDF_BUILD_STATIC=ON for static
+
+CMake package config is generated at `lib/cmake/cdf/cdfConfig.cmake`, so downstream
+projects can use `find_package(cdf)` and link with `target_link_libraries(... cdf::cdf)`.
 ```
 
 ## Module disable flags
@@ -48,6 +51,9 @@ All non-core modules enabled by default. Toggle at configure time:
 | `CDF_BUILD_DB` | `cdf-db`, `cdf-db-sqlite`, `cdf-db-entity` (all three) |
 | `CDF_BUILD_STATIC` | Static library (`libcdf.a`) in addition to default shared |
 | `CDF_BUILD_EXAMPLES` | All example programs |
+
+A top-level convenience header `<cdf/cdf.h>` is generated at build time and
+includes all enabled module headers.
 
 ## Testing
 

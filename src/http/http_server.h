@@ -1,7 +1,7 @@
 #ifndef HTTP_SERVER_H
 #define HTTP_SERVER_H
 
-#include <ooc.h>
+#include "../core/ooc.h"
 #include <threads.h>
 #include <time.h>
 #include "http_types.h"

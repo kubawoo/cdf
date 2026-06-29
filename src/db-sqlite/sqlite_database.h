@@ -1,7 +1,7 @@
 #ifndef SQLITE_DATABASE_H
 #define SQLITE_DATABASE_H
 
-#include "database.h"
+#include "../db/database.h"
 
 typedef struct {
     inherits(Database);
