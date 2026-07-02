@@ -1,4 +1,4 @@
-add_library(cdf STATIC
+add_library(cdf_objects OBJECT
     core/ooc_array.c
     core/ooc_collection.c
     core/ooc_datetime.c
@@ -43,7 +43,7 @@ add_library(cdf STATIC
     $<$<BOOL:${CDF_BUILD_DB}>:db-entity/entitymanager.c>
 )
 
-target_include_directories(cdf PUBLIC
+target_include_directories(cdf_objects PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/core
     $<$<BOOL:${CDF_BUILD_JSON}>:${CMAKE_CURRENT_SOURCE_DIR}/json>
     $<$<BOOL:${CDF_BUILD_HTTP}>:${CMAKE_CURRENT_SOURCE_DIR}/http>
@@ -53,13 +53,22 @@ target_include_directories(cdf PUBLIC
     $<$<BOOL:${CDF_BUILD_DB}>:${CMAKE_CURRENT_SOURCE_DIR}/db-entity>
 )
 
-target_link_libraries(cdf PUBLIC
+target_link_libraries(cdf_objects PUBLIC
     $<$<BOOL:${CDF_BUILD_DB}>:sqlite3>
     m
 )
 
+add_library(cdf SHARED $<TARGET_OBJECTS:cdf_objects>)
+target_link_libraries(cdf PUBLIC cdf_objects)
+
+if(CDF_BUILD_STATIC)
+    add_library(cdf_static STATIC $<TARGET_OBJECTS:cdf_objects>)
+    target_link_libraries(cdf_static PUBLIC cdf_objects)
+    set_target_properties(cdf_static PROPERTIES OUTPUT_NAME cdf)
+    install(TARGETS cdf_static ARCHIVE DESTINATION lib)
+endif()
+
 install(TARGETS cdf
-    ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
 )
 

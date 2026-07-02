@@ -32,7 +32,7 @@ jobs:
 
       - name: Verify install
         run: |
-          test -f /tmp/cdf-install/lib/libcdf.a
+          test -f /tmp/cdf-install/lib/libcdf.so
           test -d /tmp/cdf-install/include/cdf/core
           echo "Install OK"
 
