@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 include(CMakePackageConfigHelpers)
 
-=======
->>>>>>> main
 add_library(cdf_objects OBJECT
     core/ooc_array.c
     core/ooc_collection.c

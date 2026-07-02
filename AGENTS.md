@@ -34,12 +34,9 @@ cmake -S . -B build        # configure (pass -D flags to disable modules)
 cmake --build build        # compile libcdf.so + examples
 ctest --test-dir build     # run tests (stdout, no output.log)
 cmake --install build      # install libcdf.so + headers; add -DCDF_BUILD_STATIC=ON for static
-<<<<<<< HEAD
 
 CMake package config is generated at `lib/cmake/cdf/cdfConfig.cmake`, so downstream
 projects can use `find_package(cdf)` and link with `target_link_libraries(... cdf::cdf)`.
-=======
->>>>>>> main
 ```
 
 ## Module disable flags
