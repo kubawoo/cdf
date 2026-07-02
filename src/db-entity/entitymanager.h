@@ -1,9 +1,9 @@
 #ifndef DB_ENTITY_MANAGER_H
 #define DB_ENTITY_MANAGER_H
 
-#include <ooc.h>
+#include "../core/ooc.h"
 #include "entity.h"
-#include "database.h"
+#include "../db/database.h"
 
 typedef struct _EntityMetadata {
 	inherits(Object);

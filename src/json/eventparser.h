@@ -1,8 +1,8 @@
 #ifndef CJSON_EVENT_PARSER_H
 #define CJSON_EVENT_PARSER_H
 
-#include <ooc.h>
-#include <io.h>
+#include "../core/ooc.h"
+#include "../core/io.h"
 
 typedef struct {
     inherits(Object);

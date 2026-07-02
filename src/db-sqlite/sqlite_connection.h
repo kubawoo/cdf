@@ -1,7 +1,7 @@
 #ifndef SQLITE_CONNECTION_H
 #define SQLITE_CONNECTION_H
 
-#include "database.h"
+#include "../db/database.h"
 #include <sqlite3.h>
 
 typedef struct {

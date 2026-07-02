@@ -1,0 +1,20 @@
+@PACKAGE_INIT@
+
+set_and_check(cdf_INCLUDE_DIRS "@PACKAGE_CDF_INCLUDE_INSTALL_DIR@")
+set_and_check(cdf_LIBRARY_DIR "@PACKAGE_CDF_LIB_INSTALL_DIR@")
+
+if(NOT TARGET cdf::cdf)
+    add_library(cdf::cdf SHARED IMPORTED)
+    set_target_properties(cdf::cdf PROPERTIES
+        IMPORTED_LOCATION "${cdf_LIBRARY_DIR}/libcdf.so"
+        INTERFACE_INCLUDE_DIRECTORIES "${cdf_INCLUDE_DIRS}"
+    )
+endif()
+
+if(@CDF_BUILD_STATIC@ AND NOT TARGET cdf::cdf_static)
+    add_library(cdf::cdf_static STATIC IMPORTED)
+    set_target_properties(cdf::cdf_static PROPERTIES
+        IMPORTED_LOCATION "${cdf_LIBRARY_DIR}/libcdf.a"
+        INTERFACE_INCLUDE_DIRECTORIES "${cdf_INCLUDE_DIRS}"
+    )
+endif()

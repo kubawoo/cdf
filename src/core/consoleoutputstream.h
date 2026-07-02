@@ -1,5 +1,5 @@
-#ifndef STRINGOUTPUTSTREAM_H
-#define STRINGOUTPUTSTREAM_H
+#ifndef CONSOLEOUTPUTSTREAM_H
+#define CONSOLEOUTPUTSTREAM_H
 
 #include "outputstream.h"
 

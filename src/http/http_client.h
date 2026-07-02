@@ -1,7 +1,7 @@
 #ifndef HTTP_CLIENT_H
 #define HTTP_CLIENT_H
 
-#include <ooc.h>
+#include "../core/ooc.h"
 #include "http_types.h"
 
 

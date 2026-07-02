@@ -1,8 +1,8 @@
 #ifndef SQLITE_PREPARED_STATEMENT_H
 #define SQLITE_PREPARED_STATEMENT_H
 
-#include <ooc.h>
-#include <prepared_statement.h>
+#include "../core/ooc.h"
+#include "../db/prepared_statement.h"
 #include <sqlite3.h>
 
 typedef struct {

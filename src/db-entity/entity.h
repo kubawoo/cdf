@@ -1,7 +1,11 @@
 #ifndef DB_ENTITY_H
 #define DB_ENTITY_H
 
-#include <cdf.h>
+#include "../core/cdf.h"
+#include "../core/ooc_primitives.h"
+#include "../core/ooc_string.h"
+#include "../core/ooc_list.h"
+#include "../core/ooc_map.h"
 #include <stdint.h>
 
 typedef struct _Entity {

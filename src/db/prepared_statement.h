@@ -1,7 +1,7 @@
 #ifndef DB_PREPARED_STATEMENT_H
 #define DB_PREPARED_STATEMENT_H
 
-#include <ooc.h>
+#include "../core/ooc.h"
 
 typedef struct {
 	inherits(Object);
