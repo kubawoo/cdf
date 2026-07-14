@@ -1,6 +1,5 @@
 #include "eventparser.h"
 #include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 
 void JsonEventsHandler_delete(ObjectPtr _this) {

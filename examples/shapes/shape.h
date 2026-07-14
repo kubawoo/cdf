@@ -1,7 +1,7 @@
 #ifndef SHAPE_H
 #define SHAPE_H
 
-#include <cdf.h>
+#include <core.h>
 
 typedef struct {
     inherits(Object);

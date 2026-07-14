@@ -2,8 +2,7 @@
 #ifndef DB_ENTITY_SAMPLES_CUSTOMER_H_
 #define DB_ENTITY_SAMPLES_CUSTOMER_H_
 
-#include <ooc.h>
-#include <ooc_macros.h>
+#include <core.h>
 #include <entity.h>
 
 typedef struct _Customer {

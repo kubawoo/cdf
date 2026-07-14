@@ -1,7 +1,7 @@
 #ifndef JSONOBJECT_H
 #define JSONOBJECT_H
 
-#include "../core/cdf.h"
+#include "../core/core.h"
 
 
 typedef struct {
