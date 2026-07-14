@@ -2,6 +2,7 @@
 #define CDF_CORE_OBJECT_H
 
 #include "macros.h"
+#include <stdbool.h>
 
 typedef struct _String  String;
 

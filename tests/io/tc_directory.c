@@ -23,13 +23,15 @@ static void directory_create(void)
     REFCDEC(dir);
     
     // Remove test directory
-    system("rm -rf /tmp/test_dir_cdf");
+    int ok = system("rm -rf /tmp/test_dir_cdf");
+    assert(ok == 0);
 }
 
 static void directory_create_existing(void)
 {
     // Create a directory first
-    system("mkdir -p /tmp/test_dir_cdf_existing");
+    int ok = system("mkdir -p /tmp/test_dir_cdf_existing");
+    assert(ok == 0);
     
     Directory *dir = new(Directory);
     String *path = new(String, "/tmp/test_dir_cdf_existing");
@@ -43,7 +45,8 @@ static void directory_create_existing(void)
     REFCDEC(dir);
     
     // Remove test directory
-    system("rm -rf /tmp/test_dir_cdf_existing");
+    ok = system("rm -rf /tmp/test_dir_cdf_existing");
+    assert(ok == 0);
 }
 int main(void)
 {

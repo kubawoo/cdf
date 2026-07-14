@@ -28,6 +28,7 @@ BDEPEND="
 
 src_configure() {
         local mycmakeargs=(
+                -DCDF_BUILD_IO=ON
                 -DCDF_BUILD_JSON=ON
                 -DCDF_BUILD_HTTP=ON
                 -DCDF_BUILD_LOG=ON

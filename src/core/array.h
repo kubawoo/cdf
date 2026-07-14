@@ -14,7 +14,7 @@ typedef struct {
     Iterator* (*iterator)(ObjectPtr);
 } Array;
 
-Array * Array_new1(Array * this, int size);
+Array * Array_new1(Array * _this, int size);
 void Array_delete(ObjectPtr);
 
 // Iterator implementation for Array
@@ -27,7 +27,7 @@ typedef struct {
 } ArrayIterator;
 
 
-ArrayIterator * ArrayIterator_new1(ArrayIterator * this, Array * array);
+ArrayIterator * ArrayIterator_new1(ArrayIterator * _this, Array * array);
 void ArrayIterator_delete(ObjectPtr);
 
 #endif

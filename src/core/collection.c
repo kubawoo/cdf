@@ -1,5 +1,4 @@
 #include "collection.h"
-#include "iterator.h"
 
 Collection * Collection_new(Collection * this) {
     super(Object, Collection);

@@ -32,7 +32,8 @@ static void file_open_close(void)
     REFCDEC(file);
     
     // Remove test file
-    system("rm -f /tmp/test_file_cdf_open.txt");
+    int ok = system("rm -f /tmp/test_file_cdf_open.txt");
+    assert(ok == 0);
 }
 
 static void file_exists(void)
@@ -45,7 +46,8 @@ static void file_exists(void)
     REFCDEC(file1);
     
     // Create file
-    system("touch /tmp/test_file_cdf_exists.txt");
+    int ok = system("touch /tmp/test_file_cdf_exists.txt");
+    assert(ok == 0);
     
     // Test existing file
     File *file2 = new(File, path);
@@ -54,7 +56,8 @@ static void file_exists(void)
     
     // Clean up
     REFCDEC(path);
-    system("rm -f /tmp/test_file_cdf_exists.txt");
+    ok = system("rm -f /tmp/test_file_cdf_exists.txt");
+    assert(ok == 0);
 }
 
 static void file_write_read(void)
@@ -87,7 +90,8 @@ static void file_write_read(void)
     call(file, close);
     REFCDEC(path);
     REFCDEC(file);
-    system("rm -f /tmp/test_file_cdf_rw.txt");
+    int ok = system("rm -f /tmp/test_file_cdf_rw.txt");
+    assert(ok == 0);
 }
 int main(void)
 {

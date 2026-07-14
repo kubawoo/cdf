@@ -9,7 +9,7 @@ typedef struct {
     Iterator* (*iterator)(ObjectPtr);
 } Collection;
 
-Collection * Collection_new(Collection * this);
+Collection * Collection_new(Collection * _this);
 void Collection_delete(ObjectPtr);
 
 #endif

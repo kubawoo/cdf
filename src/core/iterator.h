@@ -9,7 +9,7 @@ typedef struct _Iterator {
     ObjectPtr (*next)(ObjectPtr);
 } Iterator;
 
-Iterator * Iterator_new(Iterator * this);
+Iterator * Iterator_new(Iterator * _this);
 void Iterator_delete(ObjectPtr);
 
 #endif
