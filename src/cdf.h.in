@@ -2,33 +2,16 @@
 #define CDF_H
 
 #include "core/core.h"
+#include "db/db.h"
+#include "db-entity/db_entity.h"
+#include "http/http.h"
+#include "io/io.h"
+#include "json/json.h"
+#include "log/log.h"
 
-#cmakedefine CDF_BUILD_DB
-#ifdef CDF_BUILD_DB
-#  include "db/db.h"
+#cmakedefine CDF_BUILD_DB_SQLITE
+#ifdef CDF_BUILD_DB_SQLITE
 #  include "db-sqlite/db_sqlite.h"
-#  include "db-entity/db_entity.h"
 #endif
-
-#cmakedefine CDF_BUILD_HTTP
-#ifdef CDF_BUILD_HTTP
-#  include "http/http.h"
-#endif
-
-#cmakedefine CDF_BUILD_IO
-#ifdef CDF_BUILD_IO
-#  include "io/io.h"
-#endif
-
-#cmakedefine CDF_BUILD_JSON
-#ifdef CDF_BUILD_JSON
-#  include "json/json.h"
-#endif
-
-#cmakedefine CDF_BUILD_LOG
-#ifdef CDF_BUILD_LOG
-#  include "log/log.h"
-#endif
-
 
 #endif

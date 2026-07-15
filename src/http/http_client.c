@@ -11,7 +11,6 @@
 typedef enum {_PARSING_STATUS_LINE, _PARSING_HEADERS, _PARSING_BODY} _HttpClient_ParsingState;
 
 
-
 HttpStatus _status_from_string(String * s) {
     int code = atoi(call(s, to_cstring));
     switch(code) {
@@ -70,7 +69,7 @@ bool _HttpClient_parse_status_line(String * status_line, HttpResponse * response
 
     String * status_code_string = call(status_line, substring, status_code_start, status_code_end);
     HttpStatus status = _status_from_string(status_code_string);
-    delete(status_code_string);
+    REFCDEC(status_code_string);
     if(status == HTTP_STATUS_UNKNOWN) {
         return false;
     }
@@ -84,14 +83,18 @@ bool _HttpClient_process_header_line(String * header_line, HttpResponse * respon
     if(pos < 0) {
         return false;
     }
-    String * name = REFCTMP(call(header_line, substring, 0, pos));
-    String * value = REFCTMP(call(header_line, substring_from, pos + 2));
-    if(name->length <= 0 || value->length <= 0) {
-        delete(name);
-        delete(value);
+    String * name = call(header_line, substring, 0, pos);
+    String * value = call(header_line, substring_from, pos + 2);
+    if(name->length <= 0) {
+        REFCDEC(name);
+        REFCDEC(value);
         return false;
     }
-    call(response, add_header, REFCTMP(new(HttpHeader, name, value)));
+
+    HttpHeader * header = new(HttpHeader, name, value);
+    REFCDEC(name);
+    REFCDEC(value);
+    call(response, add_header, header);
     return true;
 }
 
@@ -131,7 +134,7 @@ static bool _process_buffer(String * buffer, HttpResponse * response, _HttpClien
             }
             String * header_line = call(buffer, substring, prev_pos, pos);
             bool ok = _HttpClient_process_header_line(header_line, response);
-            delete(header_line);
+            REFCDEC(header_line);
             if(!ok) {
                 return false;
             }
@@ -166,18 +169,15 @@ static HttpResponse * _parse_response(int conn_fd) {
         buffer[last_bytes_read] = '\0';
         call(s, append_cstring, buffer);
         parsing_ok = _process_buffer(s, response, &state);
-        if(!parsing_ok) {
-            break;
-        }
-        if(last_bytes_read < buffer_len) {
+        if(!parsing_ok || last_bytes_read < buffer_len) {
             break;
         }
     }
 
     if(!parsing_ok) {
         fprintf(stderr, "Unable to parse this part of response: %s\n", call(s, to_cstring));
-        delete(s);
-        delete(response);
+        REFCDEC(s);
+        REFCDEC(response);
         return NULL;
     }
 
@@ -185,7 +185,7 @@ static HttpResponse * _parse_response(int conn_fd) {
 
     if(last_bytes_read < 0) {
         fprintf(stderr, "error while reading from socket: %s\n", strerror(errno));
-        delete(response);
+        REFCDEC(response);
         return NULL;
     }
 
@@ -248,7 +248,6 @@ HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
     HttpResponse * response = _parse_response(sock);
     close(sock);
     String * response_string = call(response, to_string);
-    fprintf(stderr, "RESPONSE: %s\n\n", call(response_string, to_cstring));
     REFCDEC(response_string);
     return response;
 }

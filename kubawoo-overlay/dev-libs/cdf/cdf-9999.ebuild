@@ -28,11 +28,7 @@ BDEPEND="
 
 src_configure() {
         local mycmakeargs=(
-                -DCDF_BUILD_IO=ON
-                -DCDF_BUILD_JSON=ON
-                -DCDF_BUILD_HTTP=ON
-                -DCDF_BUILD_LOG=ON
-                -DCDF_BUILD_DB=$(usex sqlite ON OFF)
+                -DCDF_BUILD_DB_SQLITE=$(usex sqlite ON OFF)
                 -DCDF_BUILD_STATIC=$(usex static-libs ON OFF)
                 -DCDF_BUILD_EXAMPLES=$(usex examples ON OFF)
                 -DBUILD_TESTING=$(usex test ON OFF)

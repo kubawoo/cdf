@@ -17,52 +17,53 @@ add_library(cdf_objects OBJECT
     core/thestring.c
     core/stringtokenizer.c
 
-    $<$<BOOL:${CDF_BUILD_DB}>:db/connection.c>
-    $<$<BOOL:${CDF_BUILD_DB}>:db/database.c>
-    $<$<BOOL:${CDF_BUILD_DB}>:db/prepared_statement.c>
-    $<$<BOOL:${CDF_BUILD_DB}>:db-sqlite/sqlite_connection.c>
-    $<$<BOOL:${CDF_BUILD_DB}>:db-sqlite/sqlite_database.c>
-    $<$<BOOL:${CDF_BUILD_DB}>:db-sqlite/sqlite_prepared_statement.c>
-    $<$<BOOL:${CDF_BUILD_DB}>:db-entity/entity.c>
-    $<$<BOOL:${CDF_BUILD_DB}>:db-entity/entitymanager.c>
+    db/connection.c
+    db/database.c
+    db/prepared_statement.c
+    db-entity/entity.c
+    db-entity/entitymanager.c
 
-    $<$<BOOL:${CDF_BUILD_HTTP}>:http/http_client.c>
-    $<$<BOOL:${CDF_BUILD_HTTP}>:http/http_server.c>
-    $<$<BOOL:${CDF_BUILD_HTTP}>:http/http_types.c>
-    $<$<BOOL:${CDF_BUILD_HTTP}>:http/http_utils.c>
+    $<$<BOOL:${CDF_BUILD_DB_SQLITE}>:db-sqlite/sqlite_connection.c>
+    $<$<BOOL:${CDF_BUILD_DB_SQLITE}>:db-sqlite/sqlite_database.c>
+    $<$<BOOL:${CDF_BUILD_DB_SQLITE}>:db-sqlite/sqlite_prepared_statement.c>
 
-    $<$<BOOL:${CDF_BUILD_IO}>:io/console.c>
-    $<$<BOOL:${CDF_BUILD_IO}>:io/consoleoutputstream.c>
-    $<$<BOOL:${CDF_BUILD_IO}>:io/directory.c>
-    $<$<BOOL:${CDF_BUILD_IO}>:io/file.c>
-    $<$<BOOL:${CDF_BUILD_IO}>:io/fileinputstream.c>
-    $<$<BOOL:${CDF_BUILD_IO}>:io/fileoutputstream.c>
-    $<$<BOOL:${CDF_BUILD_IO}>:io/inputstream.c>
-    $<$<BOOL:${CDF_BUILD_IO}>:io/outputstream.c>
-    $<$<BOOL:${CDF_BUILD_IO}>:io/stringinputstream.c>
-    $<$<BOOL:${CDF_BUILD_IO}>:io/stringoutputstream.c>
+    http/http_client.c
+    http/http_server.c
+    http/http_types.c
+    http/http_utils.c
 
-    $<$<BOOL:${CDF_BUILD_JSON}>:json/eventparser.c>
-    $<$<BOOL:${CDF_BUILD_JSON}>:json/jsonobject.c>
-    $<$<BOOL:${CDF_BUILD_JSON}>:json/parserhandlers.c>
+    io/console.c
+    io/consoleoutputstream.c
+    io/directory.c
+    io/file.c
+    io/fileinputstream.c
+    io/fileoutputstream.c
+    io/inputstream.c
+    io/outputstream.c
+    io/stringinputstream.c
+    io/stringoutputstream.c
 
-    $<$<BOOL:${CDF_BUILD_LOG}>:log/loggerfactory.c>
-    $<$<BOOL:${CDF_BUILD_LOG}>:log/logger.c>
+    json/eventparser.c
+    json/jsonobject.c
+    json/parserhandlers.c
+
+    log/loggerfactory.c
+    log/logger.c
 )
 
 target_include_directories(cdf_objects PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/core
-    $<$<BOOL:${CDF_BUILD_DB}>:${CMAKE_CURRENT_SOURCE_DIR}/db>
-    $<$<BOOL:${CDF_BUILD_DB}>:${CMAKE_CURRENT_SOURCE_DIR}/db-entity>
-    $<$<BOOL:${CDF_BUILD_DB}>:${CMAKE_CURRENT_SOURCE_DIR}/db-sqlite>
-    $<$<BOOL:${CDF_BUILD_HTTP}>:${CMAKE_CURRENT_SOURCE_DIR}/http>
-    $<$<BOOL:${CDF_BUILD_IO}>:${CMAKE_CURRENT_SOURCE_DIR}/io>
-    $<$<BOOL:${CDF_BUILD_JSON}>:${CMAKE_CURRENT_SOURCE_DIR}/json>
-    $<$<BOOL:${CDF_BUILD_LOG}>:${CMAKE_CURRENT_SOURCE_DIR}/log>
+    ${CMAKE_CURRENT_SOURCE_DIR}/db
+    ${CMAKE_CURRENT_SOURCE_DIR}/db-entity
+    $<$<BOOL:${CDF_BUILD_DB_SQLITE}>:${CMAKE_CURRENT_SOURCE_DIR}/db-sqlite>
+    ${CMAKE_CURRENT_SOURCE_DIR}/http
+    ${CMAKE_CURRENT_SOURCE_DIR}/io
+    ${CMAKE_CURRENT_SOURCE_DIR}/json
+    ${CMAKE_CURRENT_SOURCE_DIR}/log
 )
 
 target_link_libraries(cdf_objects PUBLIC
-    $<$<BOOL:${CDF_BUILD_DB}>:sqlite3>
+    $<$<BOOL:${CDF_BUILD_DB_SQLITE}>:sqlite3>
 )
 
 add_library(cdf SHARED $<TARGET_OBJECTS:cdf_objects>)
