@@ -4,7 +4,6 @@
 #include "sqlite_database.h"
 #include <assert.h>
 #include <string.h>
-#include <math.h>
 
 static void entitymanager_test(void)
 {

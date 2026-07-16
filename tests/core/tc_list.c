@@ -6,7 +6,7 @@ static void list_test(void)
 {
     List * list = new(List);
     assert(type_equal(list, "List"));
-    assert((list->length) == (0));
+    assert((list->_length) == (0));
     assert(list->_first == NULL);
     assert(list->_last == NULL);
 
@@ -14,20 +14,20 @@ static void list_test(void)
     call(list, add, s);
     REFCDEC(s);
 
-    assert((list->length) == (1));
+    assert((list->_length) == (1));
     assert(list->_first != NULL);
     assert((void*)(list->_first) == (void*)(list->_last));
-    assert((void*)(list->_first->item) == (void*)(s));
+    assert((void*)(list->_first->_item) == (void*)(s));
 
     String * s2 = new(String, "world");
     call(list, add, s2);
     REFCDEC(s2);
-    assert((list->length) == (2));
+    assert((list->_length) == (2));
     assert(list->_first != NULL);
     assert(list->_last != NULL);
     assert((void*)(list->_first) != (void*)(list->_last));
-    assert((void*)(list->_first->item) == (void*)(s));
-    assert((void*)(list->_last->item) == (void*)(s2));
+    assert((void*)(list->_first->_item) == (void*)(s));
+    assert((void*)(list->_last->_item) == (void*)(s2));
     REFCDEC(list);
 }
 
@@ -41,7 +41,7 @@ static void list_get(void)
     call(list, add, REFCTMP(new(String, "3")));
     call(list, add, REFCTMP(new(String, "4")));
 
-    assert((list->length) == (5));
+    assert((list->_length) == (5));
     for(int i = 0; i < 5; ++i) {
         char buffer[2] = "x";
         buffer[0] = '0' + i;
@@ -54,7 +54,7 @@ static void list_get(void)
     assert(call(list, get, 5) == NULL);
     assert(call(list, get, 1234) == NULL);
 
-    assert((list->length) == (5));
+    assert((list->_length) == (5));
     REFCDEC(list);
 }
 
@@ -67,7 +67,7 @@ static void list_set(void)
     call(list, add, REFCTMP(new(String, "3")));
     call(list, add, REFCTMP(new(String, "4")));
 
-    assert((list->length) == (5));
+    assert((list->_length) == (5));
 
     call(list, set, 0, REFCTMP(new(String, "a")));
     call(list, set, 2, REFCTMP(new(String, "c")));
@@ -84,7 +84,7 @@ static void list_set(void)
         REFCDEC(s);
     }
 
-    assert((list->length) == (5));
+    assert((list->_length) == (5));
     REFCDEC(list);
 }
 
@@ -98,7 +98,7 @@ static void list_remove(void)
     call(list, add, REFCTMP(new(String, "3")));
     call(list, add, REFCTMP(new(String, "4")));
 
-    assert((list->length) == (5));
+    assert((list->_length) == (5));
 
     call(list, remove, 0);
 
@@ -149,7 +149,7 @@ static void list_insert(void)
     call(list, add, REFCTMP(new(String, "1")));
     call(list, add, REFCTMP(new(String, "3")));
 
-    assert((list->length) == (2));
+    assert((list->_length) == (2));
     String * s = call(list, get, 0);
     assert(strcmp(call(s, to_cstring), "1") == 0);
     REFCDEC(s);
@@ -160,7 +160,7 @@ static void list_insert(void)
 
     call(list, insert, 2, (Object*) REFCTMP(new(String, "4")));
 
-    assert((list->length) == (3));
+    assert((list->_length) == (3));
     s = call(list, get, 0);
     assert(strcmp(call(s, to_cstring), "1") == 0);
     REFCDEC(s);
@@ -174,7 +174,7 @@ static void list_insert(void)
 
     call(list, insert, 0, (Object*) REFCTMP(new(String, "0")));
 
-    assert((list->length) == (4));
+    assert((list->_length) == (4));
     s = call(list, get, 0);
     assert(strcmp(call(s, to_cstring), "0") == 0);
     REFCDEC(s);
@@ -191,7 +191,7 @@ static void list_insert(void)
 
     call(list, insert, 2, (Object*) REFCTMP(new(String, "2")));
 
-    assert((list->length) == (5));
+    assert((list->_length) == (5));
     s = call(list, get, 0);
     assert(strcmp(call(s, to_cstring), "0") == 0);
     REFCDEC(s);

@@ -2,7 +2,6 @@
 #include "console.h"
 #include <assert.h>
 #include <string.h>
-#include <math.h>
 
 static void entity_test(void)
 {

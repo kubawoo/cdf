@@ -6,13 +6,13 @@ static void map_basic(void)
 {
     Map * map = new(Map);
     assert(type_equal(map, "Map"));
-    assert((call(map, get_length)) == (0));
+    assert((call(map, size)) == (0));
 
     String * key = new(String, "color");
     String * val = new(String, "blue");
     call(map, put, REFCTMP(key), REFCTMP(val));
 
-    assert((call(map, get_length)) == (1));
+    assert((call(map, size)) == (1));
     assert(call(map, contains_key, key));
     assert(call(map, contains_value, val));
 
@@ -21,7 +21,7 @@ static void map_basic(void)
     REFCDEC(got);
 
     call(map, remove, key);
-    assert((call(map, get_length)) == (0));
+    assert((call(map, size)) == (0));
     assert(!(call(map, contains_key, key)));
 
     REFCDEC(map);
@@ -43,7 +43,7 @@ static void map_multiple_entries(void)
     for (int i = 0; i < n; i++) {
         call(map, put, REFCTMP(keys[i]), REFCTMP(vals[i]));
     }
-    assert((call(map, get_length)) == (5));
+    assert((call(map, size)) == (5));
 
     for (int i = 0; i < n; i++) {
         assert(call(map, contains_key, keys[i]));
@@ -64,10 +64,10 @@ static void map_update(void)
     call(map, put, key1, NULL);
     assert(call(map, contains_key, key1));
     assert(call(map, get, key1) == NULL);
-    assert((call(map, get_length)) == (1));
+    assert((call(map, size)) == (1));
 
     call(map, put, key1, REFCTMP(new(String, "abc")));
-    assert((call(map, get_length)) == (1));
+    assert((call(map, size)) == (1));
 
     String * abc = new(String, "abc");
     String * map_abc = call(map, get, key1);
@@ -88,10 +88,10 @@ static void map_remove_first(void)
     call(map, put, k1, REFCTMP(new(String, "10")));
     call(map, put, k2, REFCTMP(new(String, "20")));
     call(map, put, k3, REFCTMP(new(String, "30")));
-    assert((call(map, get_length)) == (3));
+    assert((call(map, size)) == (3));
 
     call(map, remove, k1);
-    assert((call(map, get_length)) == (2));
+    assert((call(map, size)) == (2));
     assert(!(call(map, contains_key, k1)));
     assert(call(map, contains_key, k2));
     assert(call(map, contains_key, k3));
@@ -120,7 +120,7 @@ static void map_remove_middle(void)
     call(map, put, k3, REFCTMP(new(String, "30")));
 
     call(map, remove, k2);
-    assert((call(map, get_length)) == (2));
+    assert((call(map, size)) == (2));
     assert(call(map, contains_key, k1));
     assert(!(call(map, contains_key, k2)));
     assert(call(map, contains_key, k3));
@@ -149,7 +149,7 @@ static void map_remove_last(void)
     call(map, put, k3, REFCTMP(new(String, "30")));
 
     call(map, remove, k3);
-    assert((call(map, get_length)) == (2));
+    assert((call(map, size)) == (2));
     assert(call(map, contains_key, k1));
     assert(call(map, contains_key, k2));
     assert(!(call(map, contains_key, k3)));
@@ -172,12 +172,12 @@ static void map_remove_all(void)
     for (int i = 0; i < n; i++) {
         call(map, put, REFCTMP(keys[i]), REFCTMP(new(Integer, i)));
     }
-    assert((call(map, get_length)) == (4));
+    assert((call(map, size)) == (4));
 
     for (int i = 0; i < n; i++) {
         call(map, remove, keys[i]);
     }
-    assert((call(map, get_length)) == (0));
+    assert((call(map, size)) == (0));
 
     for (int i = 0; i < n; i++) {
         assert(!(call(map, contains_key, keys[i])));
@@ -190,11 +190,11 @@ static void map_remove_nonexistent(void)
     Map * map = new(Map);
     String * k = new(String, "k");
     call(map, put, REFCTMP(k), REFCTMP(new(String, "v")));
-    assert((call(map, get_length)) == (1));
+    assert((call(map, size)) == (1));
 
     String * absent = new(String, "absent");
     call(map, remove, absent);
-    assert((call(map, get_length)) == (1));
+    assert((call(map, size)) == (1));
     assert(call(map, contains_key, k));
 
     REFCDEC(absent);
@@ -210,7 +210,7 @@ static void map_get_keys(void)
     call(map, put, REFCTMP(k2), REFCTMP(new(String, "v2")));
 
     List * keys = call(map, get_keys);
-    assert((keys->length) == (2));
+    assert(call(keys, size) == (2));
 
     String * first = call(keys, get, 0);
     String * second = call(keys, get, 1);
@@ -232,7 +232,7 @@ static void map_get_nonexistent(void)
     Map * map = new(Map);
     String * k = new(String, "missing");
     assert(call(map, get, k) == NULL);
-    assert((call(map, get_length)) == (0));
+    assert((call(map, size)) == (0));
     REFCDEC(k);
     REFCDEC(map);
 }
@@ -265,7 +265,7 @@ static void map_contains_key_value(void)
 static void map_empty_ops(void)
 {
     Map * map = new(Map);
-    assert((call(map, get_length)) == (0));
+    assert((call(map, size)) == (0));
 
     String * any = new(String, "any");
     assert(call(map, get, any) == NULL);
@@ -303,13 +303,13 @@ static void map_remove_then_put(void)
     String * k = new(String, "key");
 
     call(map, put, k, REFCTMP(new(String, "first")));
-    assert((call(map, get_length)) == (1));
+    assert((call(map, size)) == (1));
 
     call(map, remove, k);
-    assert((call(map, get_length)) == (0));
+    assert((call(map, size)) == (0));
 
     call(map, put, k, REFCTMP(new(String, "second")));
-    assert((call(map, get_length)) == (1));
+    assert((call(map, size)) == (1));
 
     String * v = call(map, get, k);
     assert(strcmp(call(v, to_cstring), "second") == 0);

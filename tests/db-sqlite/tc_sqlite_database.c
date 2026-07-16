@@ -37,7 +37,7 @@ static void db_test(void)
 	List * results = call(conn, query, sql);
 	REFCDEC(sql);
 	call(c, print_object, results);
-	assert((results->length) == (8));
+    assert(call(results, size) == (8));
 	REFCDEC(results);
 
 	sql = new(String, "SELECT * FROM Cars WHERE Price > ?");
@@ -50,7 +50,7 @@ static void db_test(void)
 
 	REFCDEC(bindings);
 	call(c, print_object, results);
-	assert((results->length) == (4));
+    assert(call(results, size) == (4));
 	REFCDEC(results);
 
 	bindings = new(List);
@@ -59,7 +59,7 @@ static void db_test(void)
 	results = call(conn, query_statement, stmt, bindings);
 
 	call(c, print_object, results);
-	assert((results->length) == (3));
+    assert(call(results, size) == (3));
 	REFCDEC(results);
 
 	sql = new(String, "INSERT INTO Cars VALUES (?, ?, ?);");
@@ -88,7 +88,7 @@ static void db_test(void)
 	results = call(conn, query_statement, stmt, bindings);
 
 	call(c, print_object, results);
-	assert((results->length) == (5));
+    assert(call(results, size) == (5));
 	REFCDEC(results);
 
 

@@ -11,13 +11,13 @@ String * value_to_string(Object * value) {
 	} else if (type_equal(value, "List")) {
 		List * list = (List *) value;
 		call(s, append_char, '[');
-		for (int j = 0; j < list->length; ++j) {
+        for (int j = 0; j < call(list, size); ++j) {
 			Object * o = call(list, get, j);
 			String * buf = value_to_string(o);
 			REFCDEC(o);
 			call(s, append, buf);
 			REFCDEC(buf);
-			if (j < list->length - 1) {
+            if (j < call(list, size) - 1) {
 				call(s, append_char, ',');
 			}
 		}
@@ -35,7 +35,7 @@ String * JsonObject_to_string(ObjectPtr _this) {
 	String * s = new(String, "{");
 
 	List * keys = call(this->_map, get_keys);
-	for (int i = 0; i < keys->length; ++i) {
+    for (int i = 0; i < call(keys, size); ++i) {
 		String * key = call(keys, get, i);
 		call(s, append_char, '"');
 		call(s, append_cstring, call(key, to_cstring));
@@ -48,7 +48,7 @@ String * JsonObject_to_string(ObjectPtr _this) {
 		REFCDEC(value);
 		REFCDEC(key);
 
-		if (i < keys->length - 1) {
+        if (i < call(keys, size) - 1) {
 			call(s, append_char, ',');
 		}
 	}

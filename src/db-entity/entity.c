@@ -21,7 +21,7 @@ void FieldMetadata_delete(ObjectPtr _this) {
 }
 
 static String * table_name(ObjectPtr _this) {
-	return new(String, ((Object *)_this)->type);
+    return new(String, ((Object *)_this)->_type);
 }
 
 
@@ -32,7 +32,7 @@ static String * to_json(ObjectPtr _this, List * fields) {
     Map * entity_map = call(this, to_map, fields);
     List * keys = call(entity_map, get_keys);
 
-    for(int i = 0; i < keys->length; ++i) {
+    for(int i = 0; i < call(keys, size); ++i) {
     	String * key = call(keys, get, i);
     	Object * value = call(entity_map, get, key);
 
@@ -88,7 +88,7 @@ static Map * to_map(ObjectPtr _this, List * fields) {
 	} else {
 		REFCINC(fields);
 	}
-	for(int i = 0; i < fields->length; ++i) {
+    for(int i = 0; i < call(fields, size); ++i) {
 		FieldMetadata * fm = call(fields, get, i);
 		Object * field = *((Object **) ((intptr_t) this + fm->offset));
 		call(map, put, fm->name, field);
@@ -105,7 +105,7 @@ static void from_map(ObjectPtr _this, Map * map, List * fields) {
 	} else {
 		REFCINC(fields);
 	}
-	for(int i = 0; i < fields->length; ++i) {
+    for(int i = 0; i < call(fields, size); ++i) {
 		FieldMetadata * fm = call(fields, get, i);
         Object ** field = ((Object **) ((intptr_t) this + fm->offset));
         REFCDEC(*field);

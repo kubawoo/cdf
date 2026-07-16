@@ -12,10 +12,10 @@ typedef struct {
     void (*push)(ObjectPtr, ObjectPtr);
     ObjectPtr (*pop)(ObjectPtr);
     ObjectPtr (*peek)(ObjectPtr);
-    int (*size)(ObjectPtr);
 
     String * (*to_string)(ObjectPtr);
     Iterator* (*iterator)(ObjectPtr);
+    unsigned int (*size)(ObjectPtr);
 } Stack;
 
 Stack * Stack_new(Stack * this);
@@ -25,8 +25,8 @@ typedef struct {
     inherits(Iterator);
     bool (*hasNext)(ObjectPtr);
     ObjectPtr (*next)(ObjectPtr);
-    List * list;
-    int index;
+    List * _list;
+    int _index;
 } StackIterator;
 
 StackIterator * StackIterator_new1(StackIterator * this, List * list);

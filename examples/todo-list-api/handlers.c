@@ -125,7 +125,7 @@ static void handle_list(TodoRequestHandler * handler, HttpResponse * response) {
     List * items = new(List);
     int count = 0;
     if (results) {
-        for (int i = 0; i < results->length; i++) {
+        for (int i = 0; i < call(results, size); i++) {
             Map * row = call(results, get, i);
             TodoItem * item = new(TodoItem);
             call((Entity *)item, from_map, row, NULL);
@@ -266,7 +266,7 @@ static void handle_update(TodoRequestHandler * handler, HttpResponse * response,
 
     List * fields = call((Entity *)item, fields, false);
     String * sql = new(String, "UPDATE TodoItem SET ");
-    for (int i = 0; i < fields->length; i++) {
+    for (int i = 0; i < call(fields, size); i++) {
         FieldMetadata * fm = call(fields, get, i);
         Object * fval = *((Object **)((intptr_t)item + fm->offset));
         call(sql, append, fm->name);
@@ -280,7 +280,7 @@ static void handle_update(TodoRequestHandler * handler, HttpResponse * response,
         } else {
             call(sql, append_cstring, "NULL");
         }
-        if (i < fields->length - 1)
+        if (i < call(fields, size) - 1)
             call(sql, append_cstring, ", ");
         REFCDEC(fm);
     }

@@ -58,7 +58,7 @@ static void create_table(DbConnection * conn, String * tablename, List * fields)
 
 	call(sql, append, tablename);
 	call(sql, append_cstring, "(id INTEGER PRIMARY KEY, ");
-	for(int i = 0; i < fields->length; ++i) {
+    for(int i = 0; i < call(fields, size); ++i) {
 		FieldMetadata * field = (FieldMetadata*) call(fields, get, i);
 
 		String * datatype = NULL;
@@ -76,7 +76,7 @@ static void create_table(DbConnection * conn, String * tablename, List * fields)
 			call(sql, append_char, ' ');
 			call(sql, append, datatype);
 			REFCDEC(datatype);
-			if(i != fields->length - 1) {
+            if(i != call(fields, size) - 1) {
 				call(sql, append_cstring, ", ");
 			}
 		} else {
@@ -97,7 +97,7 @@ static void create_table(DbConnection * conn, String * tablename, List * fields)
 
 static EntityMetadata * get_metadata(ObjectPtr _this, Entity * e) {
 	make_this(EntityManager, _this);
-	String * type = new(String, ((Object*)e)->type);
+    String * type = new(String, ((Object*)e)->_type);
 	EntityMetadata * em = call(this->known_entities, get, type);
 	if(em == NULL) {
 		List * fields = call(e, fields, false);
@@ -142,7 +142,7 @@ static void load(ObjectPtr _this, Entity * e) {
     fprintf(stderr, "result=%s\n", call(s, to_cstring));
 	REFCDEC(s);
 
-    if(result->length == 1) {
+    if(call(result, size) == 1) {
 		Map * m = call(result, get, 0);
 		call(e, from_map, m, metadata->fields);
     	REFCDEC(m);
@@ -192,7 +192,7 @@ static void save(ObjectPtr _this, Entity * e) {
 	String * sql_values = new(String);
 
 	Map * map = call(e, to_map, em->fields);
-	for(int i = 0; i < em->fields->length; ++i) {
+    for(int i = 0; i < call(em->fields, size); ++i) {
 		FieldMetadata * fm = (FieldMetadata*) call(em->fields, get, i);
 
 		call(sql, append, fm->name);
@@ -205,7 +205,7 @@ static void save(ObjectPtr _this, Entity * e) {
 
 		REFCDEC(fm);
 
-		if(i < em->fields->length - 1) {
+        if(i < call(em->fields, size)- 1) {
 			call(sql, append_cstring, ", ");
 			call(sql_values, append_cstring, ", ");
 		} else {

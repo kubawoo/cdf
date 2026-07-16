@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 static void _check_index(Array * this, int index) {
-    if(index < 0 || index >= this->length) {
+    if(index < 0 || index >= this->_length) {
          fputs("index out of bound", stderr);
          abort();
     }
@@ -24,6 +24,11 @@ static ObjectPtr _get(ObjectPtr _this, int index) {
     return o;
 }
 
+static unsigned int _size(ObjectPtr _this) {
+    make_this(Array, _this);
+    return this->_length;
+}
+
 static Iterator * _iterator(ObjectPtr _this) {
     make_this(Array, _this);
     return new(ArrayIterator, this);
@@ -35,10 +40,12 @@ Array * Array_new1(Array * this, int size) {
     }
     super(Collection, Array);
     override(Collection, iterator, _iterator);
-    this->length = size;
+    override(Collection, size, _size);
+
+    this->_length = size;
     this->_values = malloc(size * sizeof(Object *));
-    for(int i = 0; i < this->length; ++i) {
-        this->_values[i] = NULL;
+    for(int i = 0; i < this->_length; ++i) {
+        this->_values[i] = nullptr;
     }
     this->set = _set;
     this->get = _get;
@@ -47,7 +54,7 @@ Array * Array_new1(Array * this, int size) {
 
 void Array_delete(ObjectPtr _this) {
     make_this(Array, _this);
-    for(int i = 0; i < this->length; ++i) {
+    for(int i = 0; i < this->_length; ++i) {
         REFCDEC(this->_values[i]);
     }
     free(this->_values);
@@ -60,12 +67,12 @@ static ObjectPtr _next(ObjectPtr _this) {
     if(!call(this, hasNext)) {
         return NULL;
     }
-    return call(this->array, get, this->index++);
+    return call(this->_array, get, this->_index++);
 }
 
 static bool _hasNext(ObjectPtr _this) {
     make_this(ArrayIterator, _this);
-    return this->index < this->array->length;
+    return this->_index < this->_array->_length;
 }
 
 
@@ -74,13 +81,13 @@ ArrayIterator * ArrayIterator_new1(ArrayIterator * this, Array * array) {
     override(Iterator, next, _next);
     override(Iterator, hasNext, _hasNext);
     REFCINC(array);
-    this->array = array;
-    this->index = 0;
+    this->_array = array;
+    this->_index = 0;
     return this;
 }
 
 void ArrayIterator_delete(ObjectPtr _this) {
     make_this(ArrayIterator, _this);
-    REFCDEC(this->array);
+    REFCDEC(this->_array);
     super_delete(Iterator, _this);
 }

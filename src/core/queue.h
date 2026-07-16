@@ -12,10 +12,10 @@ typedef struct {
     void (*enqueue)(ObjectPtr, ObjectPtr);
     ObjectPtr (*dequeue)(ObjectPtr);
     ObjectPtr (*peek)(ObjectPtr);
-    int (*size)(ObjectPtr);
 
     String * (*to_string)(ObjectPtr);
     Iterator* (*iterator)(ObjectPtr);
+    unsigned int (*size)(ObjectPtr);
 } Queue;
 
 Queue * Queue_new(Queue * this);
@@ -25,8 +25,8 @@ typedef struct {
     inherits(Iterator);
     bool (*hasNext)(ObjectPtr);
     ObjectPtr (*next)(ObjectPtr);
-    List * list;
-    int index;
+    List * _list;
+    int _index;
 } QueueIterator;
 
 QueueIterator * QueueIterator_new1(QueueIterator * this, List * list);

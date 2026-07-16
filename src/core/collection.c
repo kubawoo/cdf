@@ -3,7 +3,8 @@
 Collection * Collection_new(Collection * this) {
     super(Object, Collection);
     // The iterator method must be implemented by subclasses
-    this->iterator = NULL;
+    this->iterator = nullptr;
+    this->size = nullptr;
     return this;
 }
 

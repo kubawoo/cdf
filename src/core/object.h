@@ -9,7 +9,7 @@ typedef struct _String  String;
 typedef struct _Object {
     void (*_ooc_destructor)(ObjectPtr);
     _Atomic int _refc;
-    const char * type;
+    const char * _type;
     bool (*equals)(ObjectPtr, ObjectPtr);
     String * (*to_string)(ObjectPtr);
     ObjectPtr (*copy)(ObjectPtr);

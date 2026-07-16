@@ -161,7 +161,7 @@ static void build_string_array(void)
     assert(value != NULL);
     assert(type_equal(value, "List"));
     List * list = (List *) value;
-    assert((list->length) == (3));
+    assert(call(list, size) == (3));
 
     String * s0 = call(list, get, 0);
     assert(strcmp(call(s0, to_cstring), "hello") == 0);
@@ -197,7 +197,7 @@ static void build_object_with_array_then_fields(void)
     assert(items_val != NULL);
     assert(type_equal(items_val, "List"));
     List * items = (List *) items_val;
-    assert((items->length) == (2));
+    assert(call(items, size) == (2));
     String * s0 = call(items, get, 0);
     assert(strcmp(call(s0, to_cstring), "hello") == 0);
     REFCDEC(s0);

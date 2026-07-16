@@ -71,7 +71,7 @@ String * HttpRequest_to_string(ObjectPtr _this) {
     call(s, append, this->path);
     call(s, append_cstring, " HTTP/1.1");
     call(s, append_cstring, EOL);
-    for(int i = 0; i < this->headers->length; ++i) {
+    for(int i = 0; i < call(this->headers, size); ++i) {
         HttpHeader * header = (HttpHeader *) call(this->headers, get, i);
         String * header_string = call(header, to_string);
         REFCDEC(header);
@@ -171,23 +171,23 @@ Map * _HttpRequest_parse_query_string(String * query_string) {
     StringTokenizer * st = new(StringTokenizer, query_string);
     List * list = call(st, split_by_char, '&');
     REFCDEC(st);
-    for(int i = 0; i < list->length; ++i) {
+    for(int i = 0; i < call(list, size); ++i) {
         String * pair = call(list, get, i);
         StringTokenizer * st = new(StringTokenizer, pair);
         List * pair_list = call(st, split_by_char, '=');
         REFCDEC(st);
-        if(pair_list->length == 2) {
+        if(call(pair_list, size) == 2) {
             ObjectPtr pair0 = call(pair_list, get, 0);
             ObjectPtr pair1 = call(pair_list, get, 1);
             call(params, put, pair0, pair1);
             REFCDEC(pair0);
             REFCDEC(pair1);
-        } else if(pair_list->length == 1) {
+        } else if(call(pair_list, size) == 1) {
             ObjectPtr pair0 = call(pair_list, get, 0);
             call(params, put, pair0, NULL);
             REFCDEC(pair0);
         } else {
-            fprintf(stderr, "Invalid pair_list length for query params %d [%s]\n", pair_list->length, call(pair, to_cstring));
+            fprintf(stderr, "Invalid pair_list length for query params %d [%s]\n", call(pair_list, size), call(pair, to_cstring));
         }
         REFCDEC(pair);
         REFCDEC(pair_list);
@@ -353,7 +353,7 @@ String * HttpResponse_to_string(ObjectPtr _this) {
     String * s = new(String, "HTTP/1.1 ");
     call(s, append_cstring, _HttpResponse_status_code_with_text(this->status));
     call(s, append_cstring, EOL);
-    for(int i = 0; i < this->headers->length; ++i) {
+    for(int i = 0; i < call(this->headers, size); ++i) {
         HttpHeader * header = (HttpHeader *) call(this->headers, get, i);
         String * header_string = call(header, to_string);
         REFCDEC(header);

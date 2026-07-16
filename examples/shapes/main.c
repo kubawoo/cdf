@@ -24,7 +24,7 @@ int main(void) {
     call(shapes, add, shape);
     REFCDEC(shape);
 
-    for(int i = 0; i < shapes->length; i++) {
+    for(int i = 0; i < call(shapes, size); i++) {
         shape = call(shapes, get, i);
         call(c, print_object, shape);
 	call(c, print_cstring, "\n");

@@ -3,14 +3,9 @@
 
 static void Map_remove(ObjectPtr _this, ObjectPtr key);
 
-static int Map_get_length(ObjectPtr _this) {
-    make_this(Map, _this);
-    return this->_keys->length;
-}
-
 static void Map_put(ObjectPtr _this, ObjectPtr key, ObjectPtr value) {
     make_this(Map, _this);
-    for(int i = 0; i < this->_keys->length; ++i) {
+    for(int i = 0; i < call(this->_keys, size); ++i) {
         ObjectPtr k = call(this->_keys, get, i);
         REFCDEC(k);
         if(call((Object *)key, equals, k)) {
@@ -24,7 +19,7 @@ static void Map_put(ObjectPtr _this, ObjectPtr key, ObjectPtr value) {
 
 static ObjectPtr Map_get(ObjectPtr _this, ObjectPtr key) {
     make_this(Map, _this);
-    for(int i = 0; i < this->_keys->length; ++i) {
+    for(int i = 0; i < call(this->_keys, size); ++i) {
         ObjectPtr k = call(this->_keys, get, i);
         REFCDEC(k);
         if(call((Object *)key, equals, k)) {
@@ -36,7 +31,7 @@ static ObjectPtr Map_get(ObjectPtr _this, ObjectPtr key) {
 
 static void Map_remove(ObjectPtr _this, ObjectPtr key) {
     make_this(Map, _this);
-    for(int i = 0; i < this->_keys->length; ++i) {
+    for(int i = 0; i < call(this->_keys, size); ++i) {
         ObjectPtr k = call(this->_keys, get, i);
         REFCDEC(k);
         if(call((Object *)key, equals, k)) {
@@ -67,7 +62,7 @@ static String * Map_to_string(ObjectPtr _this) {
 	make_this(Map, _this);
 	String * s = new(String, "{");
 
-	for(int i = 0; i < this->_keys->length; ++i) {
+    for(int i = 0; i < call(this->_keys, size); ++i) {
 		Object * key = call(this->_keys, get, i);
 		String * key_string = call(key, to_string);
 		REFCDEC(key);
@@ -85,13 +80,18 @@ static String * Map_to_string(ObjectPtr _this) {
 		call(s, append, value_string);
 		REFCDEC(key_string);
 		REFCDEC(value_string);
-		if(i < this->_keys->length -1) {
+        if(i < call(this->_keys, size) - 1) {
 			call(s, append_cstring, "; ");
 		}
 	}
 
 	call(s, append_char, '}');
 	return s;
+}
+
+static unsigned int _size(ObjectPtr _this) {
+    make_this(Map, _this);
+    return call(this->_keys, size);
 }
 
 static Iterator * _iterator(ObjectPtr _this) {
@@ -103,6 +103,7 @@ Map * Map_new(Map * this) {
     super(Collection, Map);
     override(Object, to_string, Map_to_string);
     override(Collection, iterator, _iterator);
+    override(Collection, size, _size);
     this->_values = new(List);
     this->_keys = new(List);
 
@@ -111,7 +112,6 @@ Map * Map_new(Map * this) {
     this->remove = Map_remove;
     this->contains_key = Map_contains_key;
     this->contains_value = Map_contains_value;
-    this->get_length = Map_get_length;
     this->get_keys = Map_get_keys;
     return this;
 }
@@ -128,12 +128,12 @@ static ObjectPtr _next(ObjectPtr _this) {
     if(!call(this, hasNext)) {
         return NULL;
     }
-    return call(this->map->_keys, get, this->index++);
+    return call(this->_map->_keys, get, this->_index++);
 }
 
 static bool _hasNext(ObjectPtr _this) {
     make_this(MapIterator, _this);
-    return this->index < this->map->_keys->length;
+    return this->_index < this->_map->_keys->_length;
 }
 
 MapIterator * MapIterator_new1(MapIterator * this, Map * map) {
@@ -141,13 +141,13 @@ MapIterator * MapIterator_new1(MapIterator * this, Map * map) {
     override(Iterator, hasNext, _hasNext);
     override(Iterator, next, _next);
     REFCINC(map);
-    this->map = map;
-    this->index = 0;
+    this->_map = map;
+    this->_index = 0;
     return this;
 }
 
 void MapIterator_delete(ObjectPtr _this) {
     make_this(MapIterator, _this);
-    REFCDEC(this->map);
+    REFCDEC(this->_map);
     super_delete(Iterator, _this);
 }

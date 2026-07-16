@@ -9,7 +9,7 @@ static void string_split_by_char(void)
     REFCDEC(s);
     List* l = call(st, split_by_char, ',');
     REFCDEC(st);
-    assert((l->length) == (3));
+    assert(call(l, size) == (3));
 
     String * e = call(l, get, 0);
     assert(strcmp(call(e, to_cstring), "a") == 0);
@@ -33,7 +33,7 @@ static void string_split_by_char2(void)
     REFCDEC(s);
     List* l = call(st, split_by_char, ',');
     REFCDEC(st);
-    assert((l->length) == (3));
+    assert(call(l, size) == (3));
 
     String * e = call(l, get, 0);
     assert(strcmp(call(e, to_cstring), "a") == 0);

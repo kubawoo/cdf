@@ -214,7 +214,7 @@ static void query_parameters_test(void)
     assert(strcmp(call(request->query_string, to_cstring), "foo=bar&baz=&foo2=123&bar2") == 0);
     assert(request->query_parameters != NULL);
 
-    assert((call(request->query_parameters, get_length)) == (4));
+    assert((call(request->query_parameters, size)) == (4));
 
     String * foo_key = new(String, "foo");
     String * foo_value = call(request->query_parameters, get, foo_key);
