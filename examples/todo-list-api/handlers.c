@@ -58,8 +58,7 @@ static void handle_create(TodoRequestHandler * handler, HttpResponse * response,
         return;
     }
 
-    JsonObject * obj = h->object;
-    REFCINC(obj);
+    JsonObject * obj = call(h, get_object);
     REFCDEC(h);
 
     String * key;
@@ -199,8 +198,7 @@ static void handle_update(TodoRequestHandler * handler, HttpResponse * response,
         return;
     }
 
-    JsonObject * obj = h->object;
-    REFCINC(obj);
+    JsonObject * obj = call(h, get_object);
     REFCDEC(h);
 
     TodoItem * item = new(TodoItem, id, NULL, NULL, NULL, NULL, NULL);

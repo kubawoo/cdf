@@ -1,6 +1,6 @@
 #include "parserhandlers.h"
 
-bool _in_array(ObjectPtr _this) {
+static bool _in_array(ObjectPtr _this) {
     make_this(JsonObjectBuilderEventsHandler, _this);
     Object * o = call(this->_stack, peek);
     bool ret = false;
@@ -11,13 +11,13 @@ bool _in_array(ObjectPtr _this) {
     return ret;
 }
 
-void _obeh_object_begin(ObjectPtr _this, String * name) {
+static void _obeh_object_begin(ObjectPtr _this, String * name) {
     make_this(JsonObjectBuilderEventsHandler, _this);
     if(name == NULL) {
         if(call(this->_stack, size) == 0) {
             // root object
-            this->object = new(JsonObject);
-            call(this->_stack, push, this->object);
+            this->_object = new(JsonObject);
+            call(this->_stack, push, this->_object);
         } else if (_in_array(this)) {
             // in array
             List * list = call(this->_stack, peek);
@@ -37,13 +37,13 @@ void _obeh_object_begin(ObjectPtr _this, String * name) {
     }
 }
 
-void _obeh_object_end(ObjectPtr _this) {
+static void _obeh_object_end(ObjectPtr _this) {
     make_this(JsonObjectBuilderEventsHandler, _this);
     JsonObject * obj = call(this->_stack, pop);
     REFCDEC(obj);
 }
 
-void _obeh_array_begin(ObjectPtr _this, String * name) {
+static void _obeh_array_begin(ObjectPtr _this, String * name) {
     make_this(JsonObjectBuilderEventsHandler, _this);
 
     List * list = REFCTMP(new(List));
@@ -53,13 +53,13 @@ void _obeh_array_begin(ObjectPtr _this, String * name) {
     REFCDEC(jo);
 }
 
-void _obeh_array_end(ObjectPtr _this) {
+static void _obeh_array_end(ObjectPtr _this) {
     make_this(JsonObjectBuilderEventsHandler, _this);
     List * list = call(this->_stack, pop);
     REFCDEC(list);
 }
 
-void _obeh_value(ObjectPtr _this, String * name, Object * value) {
+static void _obeh_value(ObjectPtr _this, String * name, Object * value) {
     make_this(JsonObjectBuilderEventsHandler, _this);
 
     if(_in_array(this)) {
@@ -73,6 +73,13 @@ void _obeh_value(ObjectPtr _this, String * name, Object * value) {
     }
 }
 
+static JsonObject * _get_object(ObjectPtr _this) {
+    make_this(JsonObjectBuilderEventsHandler, _this);
+    JsonObject * obj = this->_object;
+    REFCINC(obj);
+    return obj;
+}
+
 JsonObjectBuilderEventsHandler * JsonObjectBuilderEventsHandler_new(JsonObjectBuilderEventsHandler * this) {
     super(JsonEventsHandler, JsonObjectBuilderEventsHandler);
     override(JsonEventsHandler, object_begin, _obeh_object_begin);
@@ -81,13 +88,16 @@ JsonObjectBuilderEventsHandler * JsonObjectBuilderEventsHandler_new(JsonObjectBu
     override(JsonEventsHandler, array_end, _obeh_array_end);
     override(JsonEventsHandler, value, _obeh_value);
 
+    this->get_object = _get_object;
+
     this->_stack = new(Stack);
+    this->_object = nullptr;
     return this;
 }
 
 void JsonObjectBuilderEventsHandler_delete(ObjectPtr _this) {
     make_this(JsonObjectBuilderEventsHandler, _this);
     REFCDEC(this->_stack);
-    REFCDEC(this->object);
+    REFCDEC(this->_object);
     super_delete(JsonEventsHandler, _this);
 }

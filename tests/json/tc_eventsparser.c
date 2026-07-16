@@ -114,7 +114,7 @@ static void build_object(void)
     REFCDEC(json);
     assert((ret) == (CJSON_PARSE_SUCCESS));
 
-    String * object_string = call(handler->object, to_string);
+    String * object_string = call(handler->_object, to_string);
     assert(strcmp(call(object_string, to_cstring), expected_json) == 0);
 
     REFCDEC(object_string);
@@ -137,7 +137,7 @@ static void build_complex_object(void)
     REFCDEC(json);
     assert((ret) == (CJSON_PARSE_SUCCESS));
 
-    String * object_string = call(handler->object, to_string);
+    String * object_string = call(handler->_object, to_string);
     assert(strcmp(call(object_string, to_cstring), expected_json) == 0);
 
     REFCDEC(object_string);
@@ -157,7 +157,7 @@ static void build_string_array(void)
     assert((ret) == (CJSON_PARSE_SUCCESS));
 
     String * name = new(String, "strings");
-    Object * value = call(handler->object, get_value, name);
+    Object * value = call(handler->_object, get_value, name);
     assert(value != NULL);
     assert(type_equal(value, "List"));
     List * list = (List *) value;
@@ -193,7 +193,7 @@ static void build_object_with_array_then_fields(void)
     assert((ret) == (CJSON_PARSE_SUCCESS));
 
     String * items_name = new(String, "items");
-    Object * items_val = call(handler->object, get_value, items_name);
+    Object * items_val = call(handler->_object, get_value, items_name);
     assert(items_val != NULL);
     assert(type_equal(items_val, "List"));
     List * items = (List *) items_val;
@@ -208,7 +208,7 @@ static void build_object_with_array_then_fields(void)
     REFCDEC(items_name);
 
     String * total_name = new(String, "total");
-    Object * total_val = call(handler->object, get_value, total_name);
+    Object * total_val = call(handler->_object, get_value, total_name);
     assert(total_val != NULL);
     assert(type_equal(total_val, "Long"));
     Long * total = (Long *) total_val;
@@ -217,7 +217,7 @@ static void build_object_with_array_then_fields(void)
     REFCDEC(total_val);
 
     String * active_name = new(String, "active");
-    Object * active_val = call(handler->object, get_value, active_name);
+    Object * active_val = call(handler->_object, get_value, active_name);
     assert(active_val != NULL);
     assert(type_equal(active_val, "Boolean"));
     Boolean * active = (Boolean *) active_val;
@@ -241,7 +241,7 @@ static void parse_string_comma_value(void)
     assert((ret) == (CJSON_PARSE_SUCCESS));
 
     String * name = new(String, "value");
-    Object * val = call(handler->object, get_value, name);
+    Object * val = call(handler->_object, get_value, name);
     assert(val != NULL);
     assert(type_equal(val, "String"));
     String * s = (String *) val;
@@ -265,7 +265,7 @@ static void build_string_with_commas(void)
     assert((ret) == (CJSON_PARSE_SUCCESS));
 
     String * title_name = new(String, "title");
-    Object * title_val = call(handler->object, get_value, title_name);
+    Object * title_val = call(handler->_object, get_value, title_name);
     assert(title_val != NULL);
     assert(type_equal(title_val, "String"));
     String * title = (String *) title_val;
@@ -274,7 +274,7 @@ static void build_string_with_commas(void)
     REFCDEC(title_val);
 
     String * desc_name = new(String, "description");
-    Object * desc_val = call(handler->object, get_value, desc_name);
+    Object * desc_val = call(handler->_object, get_value, desc_name);
     assert(desc_val != NULL);
     assert(type_equal(desc_val, "String"));
     String * desc = (String *) desc_val;
@@ -283,7 +283,7 @@ static void build_string_with_commas(void)
     REFCDEC(desc_val);
 
     String * date_name = new(String, "due_date");
-    Object * date_val = call(handler->object, get_value, date_name);
+    Object * date_val = call(handler->_object, get_value, date_name);
     assert(date_val != NULL);
     assert(type_equal(date_val, "String"));
     String * date = (String *) date_val;
@@ -292,7 +292,7 @@ static void build_string_with_commas(void)
     REFCDEC(date_val);
 
     String * ass_name = new(String, "assignee");
-    Object * ass_val = call(handler->object, get_value, ass_name);
+    Object * ass_val = call(handler->_object, get_value, ass_name);
     assert(ass_val != NULL);
     assert(type_equal(ass_val, "String"));
     String * ass = (String *) ass_val;

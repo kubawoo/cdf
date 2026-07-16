@@ -60,7 +60,9 @@ void from_json(ObjectPtr _this, String * json, List * fields) {
     REFCDEC(json_stream);
 
     if(ret == CJSON_PARSE_SUCCESS) {
-		Map * map = call((JsonObject*) handler->object, get_map);
+        JsonObject * jo = call(handler, get_object);
+        Map * map = call(jo, get_map);
+        REFCDEC(jo);
 		call(this, from_map, map, fields);
 		REFCDEC(map);
     }
