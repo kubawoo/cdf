@@ -10,7 +10,6 @@ static void _cdf_singleton_cleanup() {
 __attribute__((constructor))
 static void _cdf_singleton_init() {
 	_cdf_singleton_map = new(Map);
-    // atexit(_cdf_singleton_cleanup);
 }
 
 ObjectPtr _cdf_get_singleton(const char * name) {
