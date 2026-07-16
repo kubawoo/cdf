@@ -3,16 +3,26 @@
 
 EAPI=8
 
-inherit git-r3 cmake
+inherit cmake
 
 DESCRIPTION="C Development Framework - Object Oriented libraries for C"
 HOMEPAGE="https://github.com/kubawoo/cdf"
-EGIT_REPO_URI="https://github.com/kubawoo/cdf.git"
-EGIT_BRANCH="main"
+
+
+if [[ ${PV} == *9999* ]]; then
+        inherit git-r3
+        EGIT_REPO_URI="https://github.com/kubawoo/cdf.git"
+        EGIT_BRANCH="main"
+        KEYWORDS=""
+else
+        SRC_URI="https://github.com/kubawoo/cdf/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+        KEYWORDS="~amd64"
+fi
+
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS=""
+
 
 IUSE="+sqlite test examples static-libs"
 
