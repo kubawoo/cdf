@@ -1,25 +1,78 @@
 # CDF - C Development Framework
 
-Object-oriented libraries for C, built with macros and gcc-specific vararg extensions.
+Object-oriented libraries for the C programming language.
+
+## Key Features
+
+### Object-Oriented Programming in C
+
+CDF implements OOP concepts through a set of macros that provide:
+
+    Class definition and instantiation
+    Inheritance
+    Polymorphism (virtual method calls)
+    Reference counting for automatic memory management
+    Constructor/destructor patterns
+
+### Memory Management
+
+The framework uses reference counting for automatic memory management:
+
+    Objects are allocated with new() constructor macros
+    Reference counts are incremented with REFCINC() and decremented with REFCDEC()
+    When reference count reaches zero, objects are automatically deleted
+    
+### Custom Macros
+
+CDF provides a comprehensive set of macros for OOP programming in C:
+Object Creation
+
+    new(Class, ...) - Creates a new instance of Class with variable arguments
+        Supports up to 11 constructor arguments through macro overloading
+        Example: String *s = new(String, "hello");
+
+Method Invocation
+
+    call(obj, method, ...) - Virtual method call (uses vtable)
+        Supports up to 11 method arguments
+        Example: call(s, length); or call(map, put, key, value);
+    obj->method(obj, ...) - Direct method call equivalent to call()
+
+Inheritance and Polymorphism
+
+    inherits(BaseClass) - Used in class definitions to inherit from BaseClass
+    super(BaseClass, ThisClass) - Constructor chaining to parent class
+    override(BaseClass, base_method, fn) - Override a base class method
+    super_method(BaseClass, method) - Access to overridden base class method
+
+Memory Management
+
+    REFCINC(obj) - Increment reference count
+    REFCDEC(obj) - Decrement reference count and auto-delete if =0
+
+Type Information
+
+    type_equal(obj, "TypeName") - Check if object is of specific type
+    types_equal(obj1, obj2) - Check if two objects are of same type
+
 
 ## Modules
 
 | Module | Description |
 |---|---|
-| `cdf` | Core: Object, String, List, Map, Array, IO streams |
-| `cdf-json` | JSON parser/serializer |
-| `cdf-http` | HTTP client and multithreaded server |
-| `cdf-log` | Logging framework |
-| `cdf-db` | Generic database abstraction |
-| `cdf-db-sqlite` | SQLite backend for `cdf-db` |
-| `cdf-db-entity` | Entity manager (ORM-like) |
-| `examples/` | helloworld, shapes, wwwserver, todo-list-api |
+| `core` | Core classes and macros, includinf memory management |
+| `db` | Generic database abstraction |
+| `db-entity` | Entity manager (ORM-like) |
+| `db-sqlite` | SQLite backend for `cdf-db` |
+| `http` | HTTP client and multithreaded server |
+| `io` | I/O classes - files, streams, etc. |
+| `json` | JSON parser/serializer |
+| `log` | Logging framework |
 
-See [`docs/Tutorial.md`](docs/Tutorial.md) for a getting-started guide.
 
 ## Build & install
 
-Requires CMake >= 3.20, gcc >= 14 (`-std=c23`), and `libsqlite3-dev`.
+Requires CMake >= 3.20, gcc >= 14 (`-std=c23`). `db-sqlite` requires `libsqlite3-dev`.
 
 ```sh
 cmake -S . -B build
@@ -35,28 +88,20 @@ cmake --install build --prefix /usr/local
 | `ctest --test-dir build` | Run all tests (stdout, no output.log) |
 | `cmake --install build` | Install `libcdf.a` + headers to `prefix` |
 
-All modules are built into a single static library (`libcdf.a`). Disable individual modules at configure time:
+All modules are built into a single library (`libcdf.so`). Disable optional modules at configure time:
 
 ```sh
 cmake -S . -B build \
-    -DCDF_BUILD_JSON=OFF \
-    -DCDF_BUILD_HTTP=OFF \
-    -DCDF_BUILD_LOG=OFF \
-    -DCDF_BUILD_DB=OFF
+    -DBUILD_TESTING=OFF \
+    -DCDF_BUILD_EXAMPLES=OFF \
+    -DCDF_BUILD_DB_SQLITE=OFF
 ```
 
-Database modules (`cdf-db`, `cdf-db-sqlite`, `cdf-db-entity`) share the `CDF_BUILD_DB` switch - set it to `OFF` to disable all three.
 
-## OOP quick reference
+## OOP with CDF quick reference
 
-```c
-String *s = new(String, "hello");     // constructor
-call(obj, method, arg);               // virtual method call
-REFCDEC(obj);                         // decref, auto-delete at 0
-delete(obj);                          // force-delete
-super(BaseClass, ThisClass);          // constructor chaining
-override(BaseClass, base_method, fn); // virtual override
-```
+See [`docs/Tutorial.md`](docs/Tutorial.md) for a getting-started guide.
+
 
 ## License
 
