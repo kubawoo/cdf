@@ -48,7 +48,7 @@
 #define _this11(class, a, b, c, d, e, f, g, h, i, j) this = class##_new10(this, a, b, c, d, e, f, g, h, i, j)
 #define this(...) GET_MACRO(__VA_ARGS__, _this11, _this10, _this9, _this8, _this7, _this6, _this5, _this4, _this3, _this2, _this1)(__VA_ARGS__)
 
-#define delete(x) do { Object * _o = (Object *)(x); if(_o) { _o->_ooc_destructor(_o); pool_free(_o); } x = NULL; } while(0)
+#define _delete(x) do { Object * _o = (Object *)(x); if(_o) { _o->_ooc_destructor(_o); pool_free(_o); } x = NULL; } while(0)
 
 #define inherits(class) class _ooc_base
 
@@ -70,7 +70,7 @@
 #define types_equal(x, y) (strcmp(((Object *) (x))->type, ((Object *) y)->type) == 0)
 
 #define REFCINC(x) do { if(!x) break; Object * _o = (Object *) x; atomic_fetch_add(&_o->_refc, 1); } while(0)
-#define REFCDEC(x) do { if(!x) break; Object * _o = (Object *) x; if(atomic_fetch_sub(&_o->_refc, 1) == 1) delete(x); } while(0)
+#define REFCDEC(x) do { if(!x) break; Object * _o = (Object *) x; if(atomic_fetch_sub(&_o->_refc, 1) == 1) _delete(x); } while(0)
 #define REFCTMP(x) _refctmp(x)
 
 

@@ -83,7 +83,7 @@ bool _parse_status_line(String * status_line, HttpRequest * request) {
 
     String * method_string = call(status_line, substring, 0, method_end);
     HttpMethod method = _method_from_string(method_string);
-    delete(method_string);
+    REFCDEC(method_string);
     if(method == HTTP_METHOD_UNKNOWN) {
         return false;
     }
@@ -107,8 +107,8 @@ static bool _process_header_line(String * header_line, HttpRequest * request) {
     String * name = REFCTMP(call(header_line, substring, 0, pos));
     String * value = REFCTMP(call(header_line, substring_from, pos + 2));
     if(name->length <= 0 || value->length <= 0) {
-        delete(name);
-        delete(value);
+        REFCDEC(name);
+        REFCDEC(value);
         return false;
     }
     call(request, add_header, REFCTMP(new(HttpHeader, name, value)));
@@ -128,14 +128,14 @@ static bool _process_buffer(String * buffer, HttpRequest * request, _HttpServer_
          } else {
              String * status_line = call(buffer, substring, 0, eol_pos);
              bool ok = _parse_status_line(status_line, request);
-             delete(status_line);
+             REFCDEC(status_line);
              if(!ok) {
                  return false;
              }
 
              String * buffer_tmp = call(buffer, substring_from, eol_pos + 2 /* strlen(EOL) */);
              call(buffer, set_text, call(buffer_tmp, to_cstring));
-             delete(buffer_tmp);
+             REFCDEC(buffer_tmp);
              *state = _PARSING_HEADERS;
          }
     }
@@ -151,7 +151,7 @@ static bool _process_buffer(String * buffer, HttpRequest * request, _HttpServer_
             }
             String * header_line = call(buffer, substring, prev_pos, pos);
             bool ok = _process_header_line(header_line, request);
-            delete(header_line);
+            REFCDEC(header_line);
             if(!ok) {
                 return false;
             }
@@ -161,7 +161,7 @@ static bool _process_buffer(String * buffer, HttpRequest * request, _HttpServer_
 
         String * buffer_tmp = call(buffer, substring_from, prev_pos);
         call(buffer, set_text, call(buffer_tmp, to_cstring));
-        delete(buffer_tmp);
+        REFCDEC(buffer_tmp);
     }
 
     if(*state == _PARSING_BODY) {
@@ -195,16 +195,16 @@ static HttpRequest * _parse_request(int conn_fd) {
 
     if(!parsing_ok) {
         fprintf(stderr, "Unable to parse this part of request: %s\n", call(s, to_cstring));
-        delete(s);
-        delete(request);
+        REFCDEC(s);
+        REFCDEC(request);
         return NULL;
     }
 
-    delete(s);
+    REFCDEC(s);
 
     if(last_bytes_read < 0) {
         fprintf(stderr, "error while reading from socket: %s\n", strerror(errno));
-        delete(request);
+        REFCDEC(request);
         return NULL;
     }
 
@@ -218,7 +218,7 @@ static int connection_main(void* _conn) {
     HttpRequest * request = _parse_request(conn->conn_fd);
     if(request == NULL) {
         close(conn->conn_fd);
-        delete(conn);
+        REFCDEC(conn);
 
         mtx_lock(&server->conn_mutex);
         server->_active_connections--;
@@ -236,17 +236,17 @@ static int connection_main(void* _conn) {
         String * fmt = call(dt, format, "%a, %d %b %Y %H:%M:%S");
         REFCDEC(server->_cached_date);
         server->_cached_date = fmt;
-        delete(dt);
+        REFCDEC(dt);
         server->_last_date_update = now_sec;
     }
     call(response, add_header, REFCTMP(new(HttpHeader, REFCTMP(new(String, "Date")), REFCTMP(call(server->_cached_date, copy)))));
 
     call(conn->handler, handle, request, response);
-    delete(request);
+    REFCDEC(request);
     if(response->content->length > 0) {
         Integer * content_length = new(Integer, response->content->length);
         HttpHeader * header = REFCTMP(new(HttpHeader, REFCTMP(new(String, "Content-Length")), REFCTMP(call(content_length, to_string))));
-        delete(content_length);
+        REFCDEC(content_length);
         call(response, add_header, header);
     }
     String * response_string = call(response, to_string);
@@ -254,10 +254,10 @@ static int connection_main(void* _conn) {
     const void * data = call(response_string, to_cstring);
     _http_send_all(conn->conn_fd, data, len);
 
-    delete(response_string);
-    delete(response);
+    REFCDEC(response_string);
+    REFCDEC(response);
     close(conn->conn_fd);
-    delete(conn);
+    REFCDEC(conn);
 
     mtx_lock(&server->conn_mutex);
     server->_active_connections--;

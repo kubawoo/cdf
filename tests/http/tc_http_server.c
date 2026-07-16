@@ -18,8 +18,8 @@ static void status_line_test(void)
     assert((request->method) == (HTTP_METHOD_GET));
     assert(strcmp(call(request->path, to_cstring), "/index.html") == 0);
 
-    delete(status_line);
-    delete(request);
+    REFCDEC(status_line);
+    REFCDEC(request);
 }
 int main(void)
 {

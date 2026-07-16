@@ -76,7 +76,7 @@ String * HttpRequest_to_string(ObjectPtr _this) {
         String * header_string = call(header, to_string);
         REFCDEC(header);
         call(s, append, header_string);
-        delete(header_string);
+        REFCDEC(header_string);
         call(s, append_cstring, EOL);
     }
     call(s, append_cstring, EOL);
@@ -358,7 +358,7 @@ String * HttpResponse_to_string(ObjectPtr _this) {
         String * header_string = call(header, to_string);
         REFCDEC(header);
         call(s, append, header_string);
-        delete(header_string);
+        REFCDEC(header_string);
         call(s, append_cstring, EOL);
     }
     call(s, append_cstring, EOL);
