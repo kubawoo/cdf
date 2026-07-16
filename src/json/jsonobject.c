@@ -1,5 +1,4 @@
 #include "jsonobject.h"
-#include <ooc.h>
 
 String * value_to_string(Object * value) {
 	String * s = new(String);

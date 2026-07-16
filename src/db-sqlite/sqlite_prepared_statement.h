@@ -1,7 +1,7 @@
 #ifndef SQLITE_PREPARED_STATEMENT_H
 #define SQLITE_PREPARED_STATEMENT_H
 
-#include "../core/ooc.h"
+#include "../core/core.h"
 #include "../db/prepared_statement.h"
 #include <sqlite3.h>
 

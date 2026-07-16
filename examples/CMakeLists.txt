@@ -21,9 +21,9 @@ endif()
 # todo-list-api — depends on core + http + json + db + db-sqlite + db-entity + log
 if(CDF_BUILD_DB AND CDF_BUILD_HTTP AND CDF_BUILD_LOG)
     add_executable(todo-list-api
-        todo-list-api/src/main.c
-        todo-list-api/src/handlers.c
-        todo-list-api/src/todo_item.c
+        todo-list-api/main.c
+        todo-list-api/handlers.c
+        todo-list-api/todo_item.c
     )
     target_link_libraries(todo-list-api cdf)
 endif()

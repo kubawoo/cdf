@@ -1,4 +1,5 @@
-#include <cdf.h>
+#include <core.h>
+#include <io.h>
 #include <stdio.h>
 
 int main(void) {

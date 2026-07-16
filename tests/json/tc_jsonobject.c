@@ -1,12 +1,7 @@
 #include "jsonobject.h"
+#include <assert.h>
+#include <math.h>
 
-#include <ooc.h>
-#include <assert.h>
-#include <string.h>
-#include <math.h>
-#include <assert.h>
-#include <string.h>
-#include <math.h>
 
 static void integer_to_json(void)
 {

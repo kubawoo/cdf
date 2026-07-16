@@ -2,6 +2,7 @@
 #include "rectangle.h"
 #include "square.h"
 #include "circle.h"
+#include <io.h>
 
 int main(void) {
     Console * c = singleton(Console);

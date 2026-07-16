@@ -1,7 +1,7 @@
 #ifndef HTTP_REQUEST_H
 #define HTTP_REQUEST_H
 
-#include "../core/ooc.h"
+#include "../core/core.h"
 
 #define EOL "\r\n"
 

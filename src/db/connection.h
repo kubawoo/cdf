@@ -1,7 +1,7 @@
-#ifndef DB_CONNECTION_H
-#define DB_CONNECTION_H
+#ifndef CDF_DB_CONNECTION_H
+#define CDF_DB_CONNECTION_H
 
-#include "../core/ooc.h"
+#include "../core/core.h"
 #include "prepared_statement.h"
 
 typedef struct {

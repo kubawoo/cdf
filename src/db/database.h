@@ -1,7 +1,7 @@
-#ifndef DATABASE_H
-#define DATABASE_H
+#ifndef CDF_DB_DATABASE_H
+#define CDF_DB_DATABASE_H
 
-#include "../core/ooc.h"
+#include "../core/core.h"
 #include "connection.h"
 
 typedef struct {

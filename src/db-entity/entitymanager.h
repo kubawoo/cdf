@@ -1,7 +1,7 @@
-#ifndef DB_ENTITY_MANAGER_H
-#define DB_ENTITY_MANAGER_H
+#ifndef DB_ENTITY_ENTITY_MANAGER_H
+#define DB_ENTITY_ENTITY_MANAGER_H
 
-#include "../core/ooc.h"
+#include "../core/core.h"
 #include "entity.h"
 #include "../db/database.h"
 

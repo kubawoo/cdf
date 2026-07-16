@@ -1,5 +1,4 @@
 #include "http_types.h"
-#include "ooc_stringtokenizer.h"
 #include <stdio.h>
 
 String * HttpHeader_to_string(ObjectPtr _this) {

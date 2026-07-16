@@ -1,7 +1,7 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include "../core/ooc.h"
+#include "../core/core.h"
 
 #define log_msg(x) x,__FILE__,__LINE__ 
 
