@@ -27,4 +27,3 @@ void Logger_delete(ObjectPtr);
 
 
 #endif
-
