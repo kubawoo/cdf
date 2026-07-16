@@ -14,8 +14,8 @@ static void object_equals(void)
     assert(!(call(o1, equals, o2)));
     assert(!(call(o1, equals, NULL)));
 
-    delete(o1);
-    delete(o2);
+    _delete(o1);
+    _delete(o2);
 }
 
 static void object_copy(void)
@@ -24,7 +24,7 @@ static void object_copy(void)
     Object * copy = call(o, copy);
     assert(copy == NULL);
 
-    delete(o);
+    _delete(o);
 }
 
 static void object_refc(void)
@@ -49,7 +49,7 @@ static void object_refc(void)
     o = REFCTMP(new(Object));
     assert(o != NULL);
     assert((o->_refc) == (0));
-    delete(o);
+    _delete(o);
     assert(o == NULL);
 }
 int main(void)

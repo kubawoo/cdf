@@ -10,8 +10,8 @@ static void constructor_test(void)
     String * s = call(dt, to_string);
     assert(s != NULL);
 
-    delete(dt);
-    delete(s);
+    REFCDEC(dt);
+    REFCDEC(s);
 }
 
 static void to_string_test1(void)
@@ -19,8 +19,8 @@ static void to_string_test1(void)
     DateTime * dt = new(DateTime, 2001, 1, 1);
     String * s = call(dt, to_string);
     assert(strcmp(call(s, to_cstring), "2001-01-01T00:00:00") == 0);
-    delete(s);
-    delete(dt);
+    REFCDEC(s);
+    REFCDEC(dt);
 }
 
 static void to_string_test2(void)
@@ -28,8 +28,8 @@ static void to_string_test2(void)
     DateTime * dt = new(DateTime, 2001, 12, 21, 14, 55, 3);
     String * s = call(dt, to_string);
     assert(strcmp(call(s, to_cstring), "2001-12-21T14:55:03") == 0);
-    delete(s);
-    delete(dt);
+    REFCDEC(s);
+    REFCDEC(dt);
 }
 
 static void http_format(void)
@@ -37,8 +37,8 @@ static void http_format(void)
     DateTime * dt = new(DateTime, 1994, 11, 15, 8, 12, 31);
     String * s = call(dt, format, "%a, %d %b %Y %H:%M:%S");
     assert(strcmp(call(s, to_cstring), "Tue, 15 Nov 1994 08:12:31") == 0);
-    delete(s);
-    delete(dt); 
+    REFCDEC(s);
+    REFCDEC(dt);
 }
 int main(void)
 {

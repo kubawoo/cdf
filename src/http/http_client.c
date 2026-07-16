@@ -111,14 +111,14 @@ static bool _process_buffer(String * buffer, HttpResponse * response, _HttpClien
          } else {
              String * status_line = call(buffer, substring, 0, eol_pos);
              bool ok = _HttpClient_parse_status_line(status_line, response);
-             delete(status_line);
+             REFCDEC(status_line);
              if(!ok) {
                  return false;
              }
 
              String * buffer_tmp = call(buffer, substring_from, eol_pos + 2 /* strlen(EOL) */);
              call(buffer, set_text, call(buffer_tmp, to_cstring));
-             delete(buffer_tmp);
+             REFCDEC(buffer_tmp);
              *state = _PARSING_HEADERS;
          }
     }
@@ -144,7 +144,7 @@ static bool _process_buffer(String * buffer, HttpResponse * response, _HttpClien
 
         String * buffer_tmp = call(buffer, substring_from, prev_pos);
         call(buffer, set_text, call(buffer_tmp, to_cstring));
-        delete(buffer_tmp);
+        REFCDEC(buffer_tmp);
     }
 
     if(*state == _PARSING_BODY) {

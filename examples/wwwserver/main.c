@@ -16,7 +16,7 @@ typedef struct {
 void WwwRequestHandler_handle(void * _this, HttpRequest * request, HttpResponse * response) {
     String * content = new(String, "<html><body bgcolor=\"#abcdef\"><h3>Hello CDF world!</h3></body></html>");
     call(response, append_content, content);
-    delete(content);
+    REFCDEC(content);
     call(response, add_header, REFCTMP(new(HttpHeader, REFCTMP(new(String, "Content-Type")), REFCTMP(new(String, "text/html")))));
 }
 
@@ -53,7 +53,7 @@ int main(void) {
     while(call(server, is_running)) {
         sleep(1);
     }
-    delete(server);
+    REFCDEC(server);
     printf("Bye bye\n");
     return 0;
 }

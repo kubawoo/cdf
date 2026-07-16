@@ -84,9 +84,9 @@ cmake --install build --prefix /usr/local
 | Command | What it does |
 |---|---|
 | `cmake -S . -B build` | Configure (pass `-DCDF_BUILD_JSON=OFF` etc. to disable modules) |
-| `cmake --build build` | Compile `libcdf.a` + examples |
+| `cmake --build build` | Compile `libcdf.so` + examples |
 | `ctest --test-dir build` | Run all tests (stdout, no output.log) |
-| `cmake --install build` | Install `libcdf.a` + headers to `prefix` |
+| `cmake --install build` | Install `libcdf.so` + headers to `prefix` |
 
 All modules are built into a single library (`libcdf.so`). Disable optional modules at configure time:
 

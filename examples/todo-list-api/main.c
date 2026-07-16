@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     while (call(server, is_running))
         sleep(1);
 
-    delete(server);
+    REFCDEC(server);
     REFCDEC(handler);
     REFCDEC(em);
     call(logger, log, LOG_LEVEL_INFO, log_msg(REFCTMP(new(String, "Bye bye"))));
