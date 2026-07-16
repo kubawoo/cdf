@@ -1,7 +1,6 @@
 #include "http_client.h"
 #include "http_utils.h"
 #include "../log/log.h"
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -157,7 +156,7 @@ static bool _process_buffer(String * buffer, HttpResponse * response, _HttpClien
 }
 
 
-static HttpResponse * _parse_response(int conn_fd) {
+static HttpResponse * _parse_response(HttpClient * this, int conn_fd) {
     HttpResponse * response = new(HttpResponse);
     String * s = new(String);
     _HttpClient_ParsingState state = _PARSING_STATUS_LINE;
@@ -176,16 +175,22 @@ static HttpResponse * _parse_response(int conn_fd) {
     }
 
     if(!parsing_ok) {
-        fprintf(stderr, "Unable to parse this part of response: %s\n", call(s, to_cstring));
+        String * msg = new(String, "Unable to parse this part of response: ");
+        call(msg, append, s);
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
         REFCDEC(s);
         REFCDEC(response);
         return NULL;
     }
 
-    delete(s);
+    REFCDEC(s);
 
     if(last_bytes_read < 0) {
-        fprintf(stderr, "error while reading from socket: %s\n", strerror(errno));
+        String * msg = new(String, "Error while reading from socket: ");
+        call(msg, append_cstring, strerror(errno));
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
         REFCDEC(response);
         return NULL;
     }
@@ -193,18 +198,26 @@ static HttpResponse * _parse_response(int conn_fd) {
     return response;
 }
 
-static String * resolve_hostname(String * hostname) {
+static String * resolve_hostname(HttpClient * this, String * hostname) {
     struct hostent *h;
 
     if ((h = gethostbyname(call(hostname, to_cstring))) == NULL) {
-        fprintf(stderr, "error while resolving host %s: %s\n", call(hostname, to_cstring), strerror(errno));
+        String * msg = new(String, "Error while resolving host [");
+        call(msg, append, hostname);
+        call(msg, append_cstring, "]: ");
+        call(msg, append_cstring, strerror(errno));
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
         return NULL;
     }
 
     struct in_addr ** addr_list = (struct in_addr **) h->h_addr_list;
     //take the first one
     if(addr_list[0] == NULL) {
-        fprintf(stderr, "no ip found for host %s\n", call(hostname, to_cstring));
+        String * msg = new(String, "No IP address found for host [");
+        call(msg, append, hostname);
+        call(msg, append_cstring, "]");
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
         return NULL;
     }
     String * ip = new(String, inet_ntoa(*addr_list[0]));
@@ -231,10 +244,12 @@ HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
 
     struct sockaddr_in server;
 
-    String * ip = resolve_hostname(request->host);
+    String * ip = resolve_hostname(this, request->host);
     if(!ip) {
         REFCDEC(ip);
-        fprintf(stderr, "%s\n", "Error while resolving hostname");
+        String * msg = new(String, "Error while resolving hostname");
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
         return NULL;
     }
     server.sin_addr.s_addr = inet_addr(call(ip, to_cstring));
@@ -243,7 +258,12 @@ HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
 
     if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)  {
         REFCDEC(ip);
-        fprintf(stderr, "connect to %s:%d failed: %s\n", call(request->host, to_cstring), request->port->value, strerror(errno));
+
+        String * msg = new(String);
+        call(msg, format, "Connecting to %s:%d failed: %s", call(request->host, to_cstring), request->port->value, strerror(errno));
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
+
         return NULL;
     }
 
@@ -257,7 +277,7 @@ HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
         return NULL;
     }
     REFCDEC(ip);
-    HttpResponse * response = _parse_response(sock);
+    HttpResponse * response = _parse_response(this, sock);
     close(sock);
     String * response_string = call(response, to_string);
     REFCDEC(response_string);
