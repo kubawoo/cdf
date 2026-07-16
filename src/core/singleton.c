@@ -1,8 +1,8 @@
 #include "map.h"
-#include <stdlib.h>
 
 static Map * _cdf_singleton_map = NULL;
 
+__attribute__((destructor))
 static void _cdf_singleton_cleanup() {
 	REFCDEC(_cdf_singleton_map);
 }
@@ -10,7 +10,7 @@ static void _cdf_singleton_cleanup() {
 __attribute__((constructor))
 static void _cdf_singleton_init() {
 	_cdf_singleton_map = new(Map);
-	atexit(_cdf_singleton_cleanup);
+    // atexit(_cdf_singleton_cleanup);
 }
 
 ObjectPtr _cdf_get_singleton(const char * name) {

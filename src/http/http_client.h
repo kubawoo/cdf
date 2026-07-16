@@ -2,11 +2,13 @@
 #define HTTP_CLIENT_H
 
 #include "../core/core.h"
+#include "../log/log.h"
 #include "http_types.h"
 
 
 typedef struct {
     inherits(Object);
+    Logger * _logger;
 
     HttpResponse * (*send_request)(ObjectPtr, HttpRequest *);
 } HttpClient;

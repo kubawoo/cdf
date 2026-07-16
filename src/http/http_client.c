@@ -1,5 +1,6 @@
 #include "http_client.h"
 #include "http_utils.h"
+#include "../log/log.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -9,7 +10,6 @@
 #include <netdb.h>
 
 typedef enum {_PARSING_STATUS_LINE, _PARSING_HEADERS, _PARSING_BODY} _HttpClient_ParsingState;
-
 
 HttpStatus _status_from_string(String * s) {
     int code = atoi(call(s, to_cstring));
@@ -95,6 +95,7 @@ bool _HttpClient_process_header_line(String * header_line, HttpResponse * respon
     REFCDEC(name);
     REFCDEC(value);
     call(response, add_header, header);
+    REFCDEC(header);
     return true;
 }
 
@@ -211,11 +212,22 @@ static String * resolve_hostname(String * hostname) {
 }
 
 HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
+    make_this(HttpClient, _this);
     int sock = socket(AF_INET , SOCK_STREAM , 0);
     if (sock == -1) {
-        fprintf(stderr, "socket call failed: %s\n", strerror(errno));
+        String * msg = new(String, "Socket call failed: ");
+        call(msg, append_cstring, strerror(errno));
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
         return NULL;
     }
+
+    if(call(this->_logger, is_enabled, LOG_LEVEL_TRACE)) {
+        String * msg = new(String, "Socket call successful");
+        call(this->_logger, log, LOG_LEVEL_TRACE, log_msg(msg));
+        REFCDEC(msg);
+    }
+
 
     struct sockaddr_in server;
 
@@ -255,10 +267,16 @@ HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
 HttpClient * HttpClient_new(HttpClient * this) {
     super(Object, HttpClient);
     this->send_request = HttpClient_send_request;
+
+    LoggerFactory * lf = singleton(LoggerFactory);
+    this->_logger = call(lf, get_logger_cstring, "cdf-http-client");
+
     return this;
 }
 
 void HttpClient_delete(ObjectPtr _this) {
+    make_this(HttpClient, _this);
+    REFCDEC(this->_logger);
     super_delete(Object, _this);
 }
 
