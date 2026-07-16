@@ -1,6 +1,6 @@
 #include "http_client.h"
 #include "http_utils.h"
-#include <stdio.h>
+#include "../log/log.h"
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -9,8 +9,6 @@
 #include <netdb.h>
 
 typedef enum {_PARSING_STATUS_LINE, _PARSING_HEADERS, _PARSING_BODY} _HttpClient_ParsingState;
-
-
 
 HttpStatus _status_from_string(String * s) {
     int code = atoi(call(s, to_cstring));
@@ -70,7 +68,7 @@ bool _HttpClient_parse_status_line(String * status_line, HttpResponse * response
 
     String * status_code_string = call(status_line, substring, status_code_start, status_code_end);
     HttpStatus status = _status_from_string(status_code_string);
-    delete(status_code_string);
+    REFCDEC(status_code_string);
     if(status == HTTP_STATUS_UNKNOWN) {
         return false;
     }
@@ -84,14 +82,19 @@ bool _HttpClient_process_header_line(String * header_line, HttpResponse * respon
     if(pos < 0) {
         return false;
     }
-    String * name = REFCTMP(call(header_line, substring, 0, pos));
-    String * value = REFCTMP(call(header_line, substring_from, pos + 2));
-    if(name->length <= 0 || value->length <= 0) {
-        delete(name);
-        delete(value);
+    String * name = call(header_line, substring, 0, pos);
+    String * value = call(header_line, substring_from, pos + 2);
+    if(name->length <= 0) {
+        REFCDEC(name);
+        REFCDEC(value);
         return false;
     }
-    call(response, add_header, REFCTMP(new(HttpHeader, name, value)));
+
+    HttpHeader * header = new(HttpHeader, name, value);
+    REFCDEC(name);
+    REFCDEC(value);
+    call(response, add_header, header);
+    REFCDEC(header);
     return true;
 }
 
@@ -131,7 +134,7 @@ static bool _process_buffer(String * buffer, HttpResponse * response, _HttpClien
             }
             String * header_line = call(buffer, substring, prev_pos, pos);
             bool ok = _HttpClient_process_header_line(header_line, response);
-            delete(header_line);
+            REFCDEC(header_line);
             if(!ok) {
                 return false;
             }
@@ -153,7 +156,7 @@ static bool _process_buffer(String * buffer, HttpResponse * response, _HttpClien
 }
 
 
-static HttpResponse * _parse_response(int conn_fd) {
+static HttpResponse * _parse_response(HttpClient * this, int conn_fd) {
     HttpResponse * response = new(HttpResponse);
     String * s = new(String);
     _HttpClient_ParsingState state = _PARSING_STATUS_LINE;
@@ -166,44 +169,55 @@ static HttpResponse * _parse_response(int conn_fd) {
         buffer[last_bytes_read] = '\0';
         call(s, append_cstring, buffer);
         parsing_ok = _process_buffer(s, response, &state);
-        if(!parsing_ok) {
-            break;
-        }
-        if(last_bytes_read < buffer_len) {
+        if(!parsing_ok || last_bytes_read < buffer_len) {
             break;
         }
     }
 
     if(!parsing_ok) {
-        fprintf(stderr, "Unable to parse this part of response: %s\n", call(s, to_cstring));
-        delete(s);
-        delete(response);
+        String * msg = new(String, "Unable to parse this part of response: ");
+        call(msg, append, s);
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
+        REFCDEC(s);
+        REFCDEC(response);
         return NULL;
     }
 
-    delete(s);
+    REFCDEC(s);
 
     if(last_bytes_read < 0) {
-        fprintf(stderr, "error while reading from socket: %s\n", strerror(errno));
-        delete(response);
+        String * msg = new(String, "Error while reading from socket: ");
+        call(msg, append_cstring, strerror(errno));
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
+        REFCDEC(response);
         return NULL;
     }
 
     return response;
 }
 
-static String * resolve_hostname(String * hostname) {
+static String * resolve_hostname(HttpClient * this, String * hostname) {
     struct hostent *h;
 
     if ((h = gethostbyname(call(hostname, to_cstring))) == NULL) {
-        fprintf(stderr, "error while resolving host %s: %s\n", call(hostname, to_cstring), strerror(errno));
+        String * msg = new(String, "Error while resolving host [");
+        call(msg, append, hostname);
+        call(msg, append_cstring, "]: ");
+        call(msg, append_cstring, strerror(errno));
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
         return NULL;
     }
 
     struct in_addr ** addr_list = (struct in_addr **) h->h_addr_list;
     //take the first one
     if(addr_list[0] == NULL) {
-        fprintf(stderr, "no ip found for host %s\n", call(hostname, to_cstring));
+        String * msg = new(String, "No IP address found for host [");
+        call(msg, append, hostname);
+        call(msg, append_cstring, "]");
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
         return NULL;
     }
     String * ip = new(String, inet_ntoa(*addr_list[0]));
@@ -211,18 +225,31 @@ static String * resolve_hostname(String * hostname) {
 }
 
 HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
+    make_this(HttpClient, _this);
     int sock = socket(AF_INET , SOCK_STREAM , 0);
     if (sock == -1) {
-        fprintf(stderr, "socket call failed: %s\n", strerror(errno));
+        String * msg = new(String, "Socket call failed: ");
+        call(msg, append_cstring, strerror(errno));
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
         return NULL;
     }
 
+    if(call(this->_logger, is_enabled, LOG_LEVEL_TRACE)) {
+        String * msg = new(String, "Socket call successful");
+        call(this->_logger, log, LOG_LEVEL_TRACE, log_msg(msg));
+        REFCDEC(msg);
+    }
+
+
     struct sockaddr_in server;
 
-    String * ip = resolve_hostname(request->host);
+    String * ip = resolve_hostname(this, request->host);
     if(!ip) {
         REFCDEC(ip);
-        fprintf(stderr, "%s\n", "Error while resolving hostname");
+        String * msg = new(String, "Error while resolving hostname");
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
         return NULL;
     }
     server.sin_addr.s_addr = inet_addr(call(ip, to_cstring));
@@ -231,7 +258,12 @@ HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
 
     if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)  {
         REFCDEC(ip);
-        fprintf(stderr, "connect to %s:%d failed: %s\n", call(request->host, to_cstring), request->port->value, strerror(errno));
+
+        String * msg = new(String);
+        call(msg, format, "Connecting to %s:%d failed: %s", call(request->host, to_cstring), request->port->value, strerror(errno));
+        call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
+        REFCDEC(msg);
+
         return NULL;
     }
 
@@ -245,10 +277,9 @@ HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
         return NULL;
     }
     REFCDEC(ip);
-    HttpResponse * response = _parse_response(sock);
+    HttpResponse * response = _parse_response(this, sock);
     close(sock);
     String * response_string = call(response, to_string);
-    fprintf(stderr, "RESPONSE: %s\n\n", call(response_string, to_cstring));
     REFCDEC(response_string);
     return response;
 }
@@ -256,10 +287,16 @@ HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
 HttpClient * HttpClient_new(HttpClient * this) {
     super(Object, HttpClient);
     this->send_request = HttpClient_send_request;
+
+    LoggerFactory * lf = singleton(LoggerFactory);
+    this->_logger = call(lf, get_logger_cstring, "cdf-http-client");
+
     return this;
 }
 
 void HttpClient_delete(ObjectPtr _this) {
+    make_this(HttpClient, _this);
+    REFCDEC(this->_logger);
     super_delete(Object, _this);
 }
 

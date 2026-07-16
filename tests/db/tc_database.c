@@ -2,11 +2,6 @@
 #include "connection.h"
 #include "prepared_statement.h"
 #include <assert.h>
-#include <string.h>
-#include <math.h>
-#include <assert.h>
-#include <string.h>
-#include <math.h>
 
 static void database_lifecycle(void)
 {

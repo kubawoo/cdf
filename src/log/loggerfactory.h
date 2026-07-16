@@ -7,6 +7,7 @@ typedef struct {
     inherits(Object);
 	Map * _loggers;
     Logger * (*get_logger)(ObjectPtr, String * name);
+    Logger * (*get_logger_cstring)(ObjectPtr, const char * name);
 } LoggerFactory;
 
 LoggerFactory * LoggerFactory_new(LoggerFactory *);

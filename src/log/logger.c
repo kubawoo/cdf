@@ -19,9 +19,13 @@ static const char * _loglevel_to_cstring(LogLevel level) {
 	return "";
 }
 
+static bool _is_enabled(ObjectPtr _this, LogLevel level) {
+    make_this(Logger, _this);
+    return level <= this->current_level;
+}
+
 static void _log(ObjectPtr _this, LogLevel level, String * msg, const char * filename, int line) {
-	make_this(Logger, _this);
-	if(level <= this->current_level) {
+    if(_is_enabled(_this, level)) {
 		DateTime * now = new(DateTime);
 		String * now_string = call(now, format, "%F %T");
 		REFCDEC(now);
@@ -35,12 +39,15 @@ static void _log(ObjectPtr _this, LogLevel level, String * msg, const char * fil
 	}
 }
 
+
 Logger * Logger_new2(Logger * this, String * name, LogLevel level) {
     super(Object, Logger);
     REFCINC(name);
     this->name = name;
+    this->current_level = level;
+
     this->log = _log;
-	this->current_level = level;
+    this->is_enabled = _is_enabled;
     return this;
 }
 

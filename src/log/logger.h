@@ -3,7 +3,7 @@
 
 #include "../core/core.h"
 
-#define log_msg(x) x,__FILE__,__LINE__ 
+#define log_msg(x) x,__FILE_NAME__,__LINE__
 
 typedef enum {
 	LOG_LEVEL_OFF,
@@ -18,7 +18,8 @@ typedef struct {
     inherits(Object);
     String * name;
     LogLevel current_level;
-    void (*log)(ObjectPtr, LogLevel level, String *msg , const char * filename, int line);
+    void (*log)(ObjectPtr _this, LogLevel level, String *msg , const char * filename, int line);
+    bool (*is_enabled)(ObjectPtr _this, LogLevel level);
 } Logger;
 
 Logger * Logger_new2(Logger *, String * name, LogLevel level);
@@ -26,4 +27,3 @@ void Logger_delete(ObjectPtr);
 
 
 #endif
-

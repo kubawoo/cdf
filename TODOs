@@ -1,0 +1,10 @@
+create simple http client
+all fields shall be private, only accessible via getter
+delete shall not be used directly -> rename to _delete
+remove REFCTMP, lot of confusion
+use logger instead of fprintf
+NULL vs nullptr
+configure loggers
+
+
+
