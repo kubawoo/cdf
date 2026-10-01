@@ -68,11 +68,13 @@ Type Information
 | `io` | I/O classes - files, streams, etc. |
 | `json` | JSON parser/serializer |
 | `log` | Logging framework |
+| `tui` | Terminal UI toolkit (POSIX + ANSI, no ncurses) |
 
 
 ## Build & install
 
 Requires CMake >= 3.20, gcc >= 14 (`-std=c23`). `db-sqlite` requires `libsqlite3-dev`.
+`tui` requires nothing beyond POSIX.
 
 ```sh
 cmake -S . -B build
@@ -96,6 +98,38 @@ cmake -S . -B build \
     -DCDF_BUILD_EXAMPLES=OFF \
     -DCDF_BUILD_DB_SQLITE=OFF
 ```
+
+### TUI module
+
+`tui` is a terminal UI toolkit written directly against POSIX — `termios` raw
+mode, `TIOCGWINSZ` for size, `poll` for input and ANSI escape sequences for
+output. It has no external dependencies and targets the VT-100/xterm escape
+set rather than consulting a terminfo database.
+
+Drawing is double-buffered: you draw into a `Buffer`, and `Renderer.present()`
+compares it against a front buffer and emits only the cells that changed, so
+an update writes one frame rather than a whole screen.
+
+```c
+#include <core.h>
+#include <tui.h>
+
+Terminal * term = new(Terminal);
+call(term, open);
+int w = 0, h = 0;
+call(term, get_size, &w, &h);
+
+Renderer * rend = new(Renderer, call(term, out_fd), w, h);
+Buffer   * buf  = new(Buffer, w, h);
+
+call(rend, enter_alt_screen);
+call(buf, clear, TUI_COLOR_WHITE, TUI_COLOR_BLACK);
+call(buf, box, 0, 0, w, h, BOX_ROUNDED, TUI_COLOR_CYAN, TUI_COLOR_BLACK);
+call(rend, present, buf);
+```
+
+Run `tui-demo` for a working example. Disable the module with
+`-DCDF_BUILD_TUI=OFF`.
 
 
 ## OOP with CDF quick reference

@@ -1,4 +1,5 @@
 option(CDF_BUILD_DB_SQLITE  "Build SQLITE DB module"         ON)
+option(CDF_BUILD_TUI        "Build TUI module (POSIX, no ncurses)" ON)
 option(CDF_BUILD_EXAMPLES   "Build example programs"         ON)
 option(CDF_BUILD_STATIC     "Build static library in addition to shared" OFF)
 include(CTest)

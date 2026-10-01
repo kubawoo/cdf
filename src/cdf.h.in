@@ -14,4 +14,9 @@
 #  include "db-sqlite/db_sqlite.h"
 #endif
 
+#cmakedefine CDF_BUILD_TUI
+#ifdef CDF_BUILD_TUI
+#  include "tui/tui.h"
+#endif
+
 #endif
