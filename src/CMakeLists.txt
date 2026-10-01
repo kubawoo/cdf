@@ -49,6 +49,15 @@ add_library(cdf_objects OBJECT
 
     log/loggerfactory.c
     log/logger.c
+
+    $<$<BOOL:${CDF_BUILD_TUI}>:tui/buffer.c>
+    $<$<BOOL:${CDF_BUILD_TUI}>:tui/bufferdiff.c>
+    $<$<BOOL:${CDF_BUILD_TUI}>:tui/cell.c>
+    $<$<BOOL:${CDF_BUILD_TUI}>:tui/attributes.c>
+    $<$<BOOL:${CDF_BUILD_TUI}>:tui/eventloop.c>
+    $<$<BOOL:${CDF_BUILD_TUI}>:tui/keyevent.c>
+    $<$<BOOL:${CDF_BUILD_TUI}>:tui/renderer.c>
+    $<$<BOOL:${CDF_BUILD_TUI}>:tui/terminal.c>
 )
 
 target_include_directories(cdf_objects PUBLIC
@@ -60,6 +69,7 @@ target_include_directories(cdf_objects PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/io
     ${CMAKE_CURRENT_SOURCE_DIR}/json
     ${CMAKE_CURRENT_SOURCE_DIR}/log
+    $<$<BOOL:${CDF_BUILD_TUI}>:${CMAKE_CURRENT_SOURCE_DIR}/tui>
 )
 
 target_link_libraries(cdf_objects PUBLIC
@@ -121,3 +131,11 @@ install(DIRECTORY
     DESTINATION ${CDF_INCLUDE_INSTALL_DIR}
     FILES_MATCHING PATTERN "*.h"
 )
+
+if(CDF_BUILD_TUI)
+    install(DIRECTORY
+        ${CMAKE_CURRENT_SOURCE_DIR}/tui
+        DESTINATION ${CDF_INCLUDE_INSTALL_DIR}
+        FILES_MATCHING PATTERN "*.h"
+    )
+endif()

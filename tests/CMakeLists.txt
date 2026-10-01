@@ -22,3 +22,7 @@ if(CDF_BUILD_DB_SQLITE)
     add_cdf_tests(${CMAKE_CURRENT_SOURCE_DIR}/db-sqlite)
 endif()
 
+if(CDF_BUILD_TUI)
+    add_cdf_tests(${CMAKE_CURRENT_SOURCE_DIR}/tui)
+endif()
+
