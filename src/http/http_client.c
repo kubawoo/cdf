@@ -246,10 +246,10 @@ HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
 
     String * ip = resolve_hostname(this, request->host);
     if(!ip) {
-        REFCDEC(ip);
         String * msg = new(String, "Error while resolving hostname");
         call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
         REFCDEC(msg);
+        close(sock);
         return NULL;
     }
     server.sin_addr.s_addr = inet_addr(call(ip, to_cstring));
@@ -263,6 +263,7 @@ HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
         call(msg, format, "Connecting to %s:%d failed: %s", call(request->host, to_cstring), request->port->value, strerror(errno));
         call(this->_logger, log, LOG_LEVEL_ERROR, log_msg(msg));
         REFCDEC(msg);
+        close(sock);
 
         return NULL;
     }
@@ -274,11 +275,15 @@ HttpResponse * HttpClient_send_request(ObjectPtr _this, HttpRequest * request) {
     REFCDEC(request_string);
 
     if(!ok) {
+        close(sock);
         return NULL;
     }
     REFCDEC(ip);
     HttpResponse * response = _parse_response(this, sock);
     close(sock);
+    if(!response) {
+        return NULL;
+    }
     String * response_string = call(response, to_string);
     REFCDEC(response_string);
     return response;
