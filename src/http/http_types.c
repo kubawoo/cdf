@@ -66,9 +66,16 @@ const char * HttpRequest_method_to_string(HttpMethod method) {
 String * HttpRequest_to_string(ObjectPtr _this) {
     make_this(HttpRequest, _this);
     String * s = new(String);
-    call(s, append_cstring, HttpRequest_method_to_string(this->method));
+    // method and path are NULL until the request has been parsed or given a
+    // location, so both must be defaulted rather than dereferenced.
+    const char * method = HttpRequest_method_to_string(this->method);
+    call(s, append_cstring, method != NULL ? method : "UNKNOWN");
     call(s, append_char, ' ');
-    call(s, append, this->path);
+    if(this->path != NULL) {
+        call(s, append, this->path);
+    } else {
+        call(s, append_cstring, "/");
+    }
     call(s, append_cstring, " HTTP/1.1");
     call(s, append_cstring, EOL);
     for(int i = 0; i < this->headers->length; ++i) {
@@ -104,37 +111,80 @@ String * _HttpRequest_schema_from_location(String * location) {
     return call(location, substring, 0, pos);
 }
 
-String * _HttpRequest_host_from_location(String * location) {
-    int host_start = call(location, index_of_cstring, "://");
-    if(host_start < 0) {
-        host_start = 0;
-    } else {
-        host_start += 3;
+/*
+ * Locates the host portion of a location string.
+ * Returns the offset just past "://", or 0 when no scheme is present.
+ */
+static int _HttpRequest_host_start(String * location) {
+    int scheme = call(location, index_of_cstring, "://");
+    if(scheme < 0) {
+        return 0;
+    }
+    return scheme + 3;
+}
+
+/*
+ * Locates the end of the host portion. The host is delimited by the first
+ * '/', '?' or end of string; only a ':' inside that span starts a port.
+ * This keeps a colon in the path (e.g. "/pa:th") from being read as a port.
+ */
+static int _HttpRequest_host_stop(String * location, int host_start) {
+    int limit = (int) location->length;
+
+    int slash = call(location, next_index_of_char, host_start, '/');
+    if(slash >= 0 && slash < limit) {
+        limit = slash;
     }
 
-    int host_stop = call(location, next_index_of_char, host_start, ':');
-    if(host_stop < 0) {
-        host_stop = call(location, next_index_of_char, host_start, '/');
-        if(host_stop < 0) {
-            host_stop = location->length;
-        }
+    int question = call(location, next_index_of_char, host_start, '?');
+    if(question >= 0 && question < limit) {
+        limit = question;
+    }
+
+    int colon = call(location, next_index_of_char, host_start, ':');
+    if(colon >= 0 && colon < limit) {
+        return colon;
+    }
+
+    return limit;
+}
+
+String * _HttpRequest_host_from_location(String * location) {
+    int host_start = _HttpRequest_host_start(location);
+    int host_stop = _HttpRequest_host_stop(location, host_start);
+    if(host_stop < host_start) {
+        host_stop = host_start;
     }
     return call(location, substring, host_start, host_stop);
 }
 
-Integer * _HttpRequest_port_from_location(String * host, String * location) {
-    int host_end = call(location, index_of_string, host) + host->length;
-    int port_start = call(location, next_index_of_char, host_end, ':');
-    if(port_start < 0) {
-        return new(Integer, 80);
-    } else {
-        ++port_start;
+Integer * _HttpRequest_port_from_location(String * location) {
+    int host_start = _HttpRequest_host_start(location);
+    int colon = _HttpRequest_host_stop(location, host_start);
+    int limit = (int) location->length;
+
+    int slash = call(location, next_index_of_char, host_start, '/');
+    if(slash >= 0 && slash < limit) {
+        limit = slash;
     }
 
-    int port_stop = call(location, next_index_of_char, port_start, '/');
-    if(port_stop < 0) {
-        port_stop = location->length;
+    int question = call(location, next_index_of_char, host_start, '?');
+    if(question >= 0 && question < limit) {
+        limit = question;
     }
+
+    // _HttpRequest_host_stop returns the colon only when it is within the host.
+    if(colon < host_start || colon >= limit) {
+        return new(Integer, 80);
+    }
+
+    int port_start = colon + 1;
+    int port_stop = limit;
+    if(port_start >= port_stop) {
+        // "host:" with nothing after it
+        return new(Integer, 80);
+    }
+
     String * port_string = call(location, substring, port_start, port_stop);
     Integer * port = new(Integer);
     call(port, from_string, port_string);
@@ -142,17 +192,26 @@ Integer * _HttpRequest_port_from_location(String * host, String * location) {
     return port;
 }
 
-String * _HttpRequest_path_from_location(String * host, String * location) {
-    int host_end = call(location, index_of_string, host) + host->length;
-    int path_start = call(location, next_index_of_char, host_end, '/');
+String * _HttpRequest_path_from_location(String * location) {
+    int host_start = _HttpRequest_host_start(location);
+
+    int path_start = -1;
+    int slash = call(location, next_index_of_char, host_start, '/');
+    int question = call(location, next_index_of_char, host_start, '?');
+    if(slash >= 0 && (question < 0 || slash < question)) {
+        path_start = slash;
+    } else if(question >= 0) {
+        return new(String, "/");
+    }
+
     if(path_start < 0) {
         return new(String, "/");
     }
-    int path_stop = call(location, next_index_of_char, path_start, '?');
-    if(path_stop < 0) {
-        return call(location, substring_from, path_start);
+
+    if(question > path_start) {
+        return call(location, substring, path_start, question);
     }
-    return call(location, substring, path_start, path_stop);
+    return call(location, substring_from, path_start);
 }
 
 String * _HttpRequest_query_from_location(String * location) {
@@ -219,8 +278,8 @@ HttpRequest * HttpRequest_new2(HttpRequest * this, HttpMethod method, String * l
     if(location) {
         this->schema = _HttpRequest_schema_from_location(location);
         this->host = _HttpRequest_host_from_location(location);
-        this->port = _HttpRequest_port_from_location(this->host, location);
-        this->path = _HttpRequest_path_from_location(this->host, location);
+        this->port = _HttpRequest_port_from_location(location);
+        this->path = _HttpRequest_path_from_location(location);
         this->query_string = _HttpRequest_query_from_location(location);
         this->query_parameters = _HttpRequest_parse_query_string(this->query_string);
 

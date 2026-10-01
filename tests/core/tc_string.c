@@ -1,4 +1,5 @@
 #include "thestring.h"
+#include <string.h>
 #include <assert.h>
 
 
@@ -295,6 +296,29 @@ static void string_trim_empty(void)
     assert((s->length) == (0));
     REFCDEC(s);
 }
+static void string_trim_high_bytes_test(void)
+{
+    // Bytes above 0x7F are negative when stored in char, so passing them to
+    // isspace() directly is undefined behaviour (it indexes the ctype table
+    // with a negative value). The cast to unsigned char is the fix. glibc
+    // happens to answer 0 for these values today, so this test documents and
+    // locks in the correct behaviour rather than catching a live failure.
+    String * s = new(String, "\xc2\xa0hello\xc2\xa0");
+    assert((s->length) == (9));
+    call(s, trim);
+    assert((s->length) == (9));
+    assert(memcmp(s->_content, "\xc2\xa0hello\xc2\xa0", 9) == 0);
+    REFCDEC(s);
+
+    // Real whitespace must still be trimmed. The leading 0xc2 0xa0 pair is
+    // not whitespace, so only the trailing " \n" is removed.
+    String * w = new(String, "\xc2\xa0 \t hello \n");
+    call(w, trim);
+    assert((w->length) == (10));
+    assert(memcmp(w->_content, "\xc2\xa0 \t hello", 10) == 0);
+    REFCDEC(w);
+}
+
 int main(void)
 {
     string_new();
@@ -313,6 +337,7 @@ int main(void)
     string_trim_left();
     string_trim_right();
     string_trim_empty();
+    string_trim_high_bytes_test();
     return 0;
 }
 

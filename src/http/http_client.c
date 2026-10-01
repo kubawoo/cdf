@@ -1,6 +1,7 @@
 #include "http_client.h"
 #include "http_utils.h"
 #include "../log/log.h"
+#include <ctype.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -82,9 +83,16 @@ bool _HttpClient_process_header_line(String * header_line, HttpResponse * respon
     if(pos < 0) {
         return false;
     }
+    // The space after the colon is optional (RFC 7230), so skip any run of
+    // whitespace rather than assuming exactly one character.
+    int value_start = pos + 1;
+    while(value_start < (int) header_line->length &&
+          isspace((unsigned char) header_line->_content[value_start])) {
+        value_start++;
+    }
     String * name = call(header_line, substring, 0, pos);
-    String * value = call(header_line, substring_from, pos + 2);
-    if(name->length <= 0) {
+    String * value = call(header_line, substring_from, value_start);
+    if(name->length <= 0 || value->length <= 0) {
         REFCDEC(name);
         REFCDEC(value);
         return false;

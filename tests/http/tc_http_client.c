@@ -108,6 +108,61 @@ static void malformed_response_returns_null(void)
     close(fs.listen_fd);
 }
 
+// Headers may omit the space after the colon (RFC 7230). The value must be
+// captured whole, not lose its first character.
+static void header_without_space_after_colon(void)
+{
+    _FakeServer fs;
+    fs.response = "HTTP/1.1 200 OK\r\n"
+                  "Content-Type:application/json\r\n"
+                  "X-Multi:   spaced   \r\n"
+                  "\r\n";
+    fs.listen_fd = _listen_ephemeral(&fs.port);
+
+    thrd_t th;
+    assert(thrd_create(&th, _fake_server_main, &fs) == thrd_success);
+
+    HttpClient * client = new(HttpClient);
+    String * loc = new(String);
+    call(loc, format, "http://127.0.0.1:%d/", fs.port);
+    HttpRequest * request = new(HttpRequest, HTTP_METHOD_GET, loc);
+
+    HttpResponse * response = call(client, send_request, request);
+    assert(response != NULL);
+    assert((response->status) == (HTTP_STATUS_OK));
+
+    // find the Content-Type header and check nothing was dropped
+    HttpHeader * found = NULL;
+    HttpHeader * multi = NULL;
+    for(int i = 0; i < response->headers->length; ++i) {
+        HttpHeader * h = (HttpHeader *) call(response->headers, get, i);
+        const char * nm = call(h->name, to_cstring);
+        if(strcmp(nm, "Content-Type") == 0) {
+            found = h;
+        } else if(strcmp(nm, "X-Multi") == 0) {
+            multi = h;
+        } else {
+            REFCDEC(h);
+        }
+    }
+    // no space after the colon: value must be intact
+    assert(found != NULL);
+    assert(strcmp(call(found->value, to_cstring), "application/json") == 0);
+    REFCDEC(found);
+
+    // several spaces after the colon: all leading whitespace skipped
+    assert(multi != NULL);
+    assert(strcmp(call(multi->value, to_cstring), "spaced   ") == 0);
+    REFCDEC(multi);
+
+    REFCDEC(loc);
+    REFCDEC(request);
+    REFCDEC(response);
+    REFCDEC(client);
+    thrd_join(th, NULL);
+    close(fs.listen_fd);
+}
+
 // A server that closes without sending anything must yield NULL, not a crash.
 static void empty_response_returns_null(void)
 {
@@ -157,6 +212,7 @@ static void connection_refused_returns_null(void)
 int main(void)
 {
     malformed_response_returns_null();
+    header_without_space_after_colon();
     empty_response_returns_null();
     connection_refused_returns_null();
     get_html_test();
