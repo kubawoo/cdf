@@ -138,14 +138,16 @@ static void List_insert(ObjectPtr _this, int i, ObjectPtr e) {
 
 static bool List_contains(ObjectPtr _this, ObjectPtr element) {
 	make_this(List, _this);
-    for(int i = 0; i < this->_length; ++i) {
-	        ObjectPtr e = call(this, get, i);
-	        REFCDEC(e);
-	        if(call((Object*)element, equals, e)) {
-	            return true;
-	        }
-	    }
-	    return false;
+for(int i = 0; i < this->_length; ++i) {
+		ObjectPtr e = call(this, get, i);
+		bool match = call((Object*)element, equals, e);
+		// must be released only after equals has read it
+		REFCDEC(e);
+		if(match) {
+			return true;
+		}
+	}
+	return false;
 }
 
 static String * _to_string(ObjectPtr _this) {

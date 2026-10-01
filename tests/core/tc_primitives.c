@@ -1,4 +1,7 @@
 #include "primitives.h"
+#include <limits.h>
+#include <float.h>
+#include <string.h>
 #include <assert.h>
 #include <math.h>
 
@@ -677,6 +680,83 @@ static void double_from_string(void)
     REFCDEC(s);
     REFCDEC(i);
 }
+static void integer_extremes_to_string(void)
+{
+    // INT_MIN needs 11 chars; the previous 15-byte buffer was too tight only
+    // if the format ever changed, but assert the round trip explicitly.
+    Integer * i = new(Integer, INT_MIN);
+    String * s = call(i, to_string);
+    assert(s != NULL);
+    assert((s->length) == (11));
+    assert(strcmp(call(s, to_cstring), "-2147483648") == 0);
+    REFCDEC(s);
+    REFCDEC(i);
+
+    Integer * m = new(Integer, INT_MAX);
+    s = call(m, to_string);
+    assert((s->length) == (10));
+    assert(strcmp(call(s, to_cstring), "2147483647") == 0);
+    REFCDEC(s);
+    REFCDEC(m);
+}
+
+static void long_extremes_to_string(void)
+{
+    // LONG_MIN needs 20 chars plus terminator; the old buffer was 20.
+    Long * l = new(Long, LONG_MIN);
+    String * s = call(l, to_string);
+    assert(s != NULL);
+    assert((s->length) == (20));
+    assert(strcmp(call(s, to_cstring), "-9223372036854775808") == 0);
+    REFCDEC(s);
+    REFCDEC(l);
+
+    Long * m = new(Long, LONG_MAX);
+    s = call(m, to_string);
+    assert((s->length) == (19));
+    assert(strcmp(call(s, to_cstring), "9223372036854775807") == 0);
+    REFCDEC(s);
+    REFCDEC(m);
+}
+
+static void double_extremes_to_string(void)
+{
+    // %.4f of a large double needs hundreds of chars, far beyond a 20-byte buffer.
+    Double * d = new(Double, 1e300);
+    String * s = call(d, to_string);
+    assert(s != NULL);
+    assert((s->length) > (300));
+    assert(call(s, to_cstring)[0] == '1');
+    REFCDEC(s);
+    REFCDEC(d);
+
+    Double * m = new(Double, DBL_MAX);
+    s = call(m, to_string);
+    assert(s != NULL);
+    assert((s->length) > (300));
+    REFCDEC(s);
+    REFCDEC(m);
+}
+
+static void integer_divide_by_zero(void)
+{
+    Integer * i = new(Integer, 25);
+    assert(call(i, divide_int, 0) == NULL);
+    // in-place divide by zero must leave the value unchanged
+    call(i, divide_inplace_int, 0);
+    assert((i->value) == (25));
+    REFCDEC(i);
+}
+
+static void long_divide_by_zero(void)
+{
+    Long * l = new(Long, 25L);
+    assert(call(l, divide_long, 0L) == NULL);
+    call(l, divide_inplace_long, 0L);
+    assert((l->value) == (25L));
+    REFCDEC(l);
+}
+
 int main(void)
 {
     boolean_new();
@@ -716,6 +796,11 @@ int main(void)
     double_equals();
     double_to_string();
     double_from_string();
+    integer_extremes_to_string();
+    long_extremes_to_string();
+    double_extremes_to_string();
+    integer_divide_by_zero();
+    long_divide_by_zero();
     return 0;
 }
 

@@ -28,7 +28,7 @@ struct _String {
     String * (*substring)(void *, int, int);
     String * (*substring_from)(void *, int);
     void (*format)(ObjectPtr, const char *, ...);
-    const char (*char_at)(ObjectPtr, int);
+    char (*char_at)(ObjectPtr, int);
 
     //'private'
     char * _content;

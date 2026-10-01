@@ -7,8 +7,10 @@ static void Map_put(ObjectPtr _this, ObjectPtr key, ObjectPtr value) {
     make_this(Map, _this);
     for(int i = 0; i < call(this->_keys, size); ++i) {
         ObjectPtr k = call(this->_keys, get, i);
+        bool match = call((Object *)key, equals, k);
+        // must be released only after equals has read it
         REFCDEC(k);
-        if(call((Object *)key, equals, k)) {
+        if(match) {
             call(this->_values, set, i, value);
             return;
         }
@@ -21,8 +23,10 @@ static ObjectPtr Map_get(ObjectPtr _this, ObjectPtr key) {
     make_this(Map, _this);
     for(int i = 0; i < call(this->_keys, size); ++i) {
         ObjectPtr k = call(this->_keys, get, i);
+        bool match = call((Object *)key, equals, k);
+        // must be released only after equals has read it
         REFCDEC(k);
-        if(call((Object *)key, equals, k)) {
+        if(match) {
             return call(this->_values, get, i);
         }
     }
@@ -33,8 +37,10 @@ static void Map_remove(ObjectPtr _this, ObjectPtr key) {
     make_this(Map, _this);
     for(int i = 0; i < call(this->_keys, size); ++i) {
         ObjectPtr k = call(this->_keys, get, i);
+        bool match = call((Object *)key, equals, k);
+        // must be released only after equals has read it
         REFCDEC(k);
-        if(call((Object *)key, equals, k)) {
+        if(match) {
             call(this->_keys, remove, i);
             call(this->_values, remove, i);
             break;

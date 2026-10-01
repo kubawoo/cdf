@@ -13,6 +13,12 @@ target_link_libraries(shapes cdf)
 add_executable(wwwserver wwwserver/main.c)
 target_link_libraries(wwwserver cdf)
 
+# tui-demo — depends on core + tui
+if(CDF_BUILD_TUI)
+    add_executable(tui-demo tui/main.c)
+    target_link_libraries(tui-demo cdf)
+endif()
+
 # todo-list-api — depends on core + http + json + db + db-sqlite + db-entity + log
 if(CDF_BUILD_DB_SQLITE)
     add_executable(todo-list-api

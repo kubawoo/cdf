@@ -1,6 +1,7 @@
 #include "http_server.h"
 #include "http_utils.h"
 #include "datetime.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -104,8 +105,15 @@ static bool _process_header_line(String * header_line, HttpRequest * request) {
     if(pos < 0) {
         return false;
     }
+    // The space after the colon is optional (RFC 7230), so skip any run of
+    // whitespace rather than assuming exactly one character.
+    int value_start = pos + 1;
+    while(value_start < (int) header_line->length &&
+          isspace((unsigned char) header_line->_content[value_start])) {
+        value_start++;
+    }
     String * name = REFCTMP(call(header_line, substring, 0, pos));
-    String * value = REFCTMP(call(header_line, substring_from, pos + 2));
+    String * value = REFCTMP(call(header_line, substring_from, value_start));
     if(name->length <= 0 || value->length <= 0) {
         REFCDEC(name);
         REFCDEC(value);
