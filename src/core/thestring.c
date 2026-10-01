@@ -4,6 +4,7 @@
 #include "thestring.h"
 #include <stdarg.h>
 #include <stdint.h>
+#include <limits.h>
 
 void String_delete(void * _this) {
     String * this = (String *) _this;
@@ -14,21 +15,30 @@ void String_delete(void * _this) {
 }
 
 static bool _String_resize(void * _this, size_t len) {
-    size_t needed = len + 1;
     String * this = (String *) _this;
+    // len + 1 must not wrap, and must fit the unsigned int capacity field.
+    if (len == SIZE_MAX) return false;
+    size_t needed = len + 1;
+    if (needed > UINT_MAX) return false;
     if (this->_allocated >= needed) return true;
 
     size_t new_allocated = this->_allocated ? this->_allocated : 1;
-    while (new_allocated < needed) {
-        if (new_allocated > SIZE_MAX / 2) return false;
-        new_allocated *= 2;
+    // Guard before doubling, not inside the loop: doubling first would let
+    // the value wrap past the check on the next iteration.
+    if (new_allocated > UINT_MAX / 2) {
+        new_allocated = needed;
+    } else {
+        while (new_allocated < needed) {
+            new_allocated *= 2;
+        }
     }
+    if (new_allocated > UINT_MAX) return false;
 
     char * new_content = realloc(this->_content, new_allocated);
     if (!new_content) return false;
 
     this->_content = new_content;
-    this->_allocated = new_allocated;
+    this->_allocated = (unsigned int) new_allocated;
     return true;
 }
 
@@ -84,11 +94,11 @@ static void String_clear(void * _this) {
 
 static void trim_left(String * s) {
     int offset = 0;
-    while(offset < s->length && isspace(s->_content[offset])) {
+    while(offset < (int) s->length && isspace((unsigned char) s->_content[offset])) {
         offset++;
     }
 
-    if(offset == s->length) {
+    if(offset == (int) s->length) {
         s->_content[0] = '\0';
         s->length = 0;
     } else {
@@ -99,8 +109,8 @@ static void trim_left(String * s) {
 }
 
 static void trim_right(String * s) {
-    for(int i = s->length - 1; i >= 0; --i) {
-        if(!isspace(s->_content[i])) {
+    for(int i = (int) s->length - 1; i >= 0; --i) {
+        if(!isspace((unsigned char) s->_content[i])) {
             s->_content[i+1] = '\0';
             s->length = i+1;
             break;
@@ -111,11 +121,11 @@ static void trim_right(String * s) {
 static void String_trim(void * _this) {
     make_this(String, _this);
 
-    if(this->length > 0 && isspace(this->_content[0])) {
+    if(this->length > 0 && isspace((unsigned char) this->_content[0])) {
         trim_left(this);
     }
 
-    if(this->length > 0 && isspace(this->_content[this->length - 1])) {
+    if(this->length > 0 && isspace((unsigned char) this->_content[this->length - 1])) {
         trim_right(this);
     }
 }
@@ -209,9 +219,24 @@ static int String_index_of_string(void * _this, String * string) {
 
 static String * String_substring(void * _this, int from, int to) {
     make_this(String, _this);
-    String * sub = new(String);
+    int length = (int) this->length;
+    if(from < 0) {
+        from = 0;
+    } else if(from > length) {
+        from = length;
+    }
+    if(to < from) {
+        to = from;
+    } else if(to > length) {
+        to = length;
+    }
+
     int len = to - from;
-    if (!_String_resize(sub, len) || !sub->_content) return NULL;
+    String * sub = new(String);
+    if (!_String_resize(sub, len) || !sub->_content) {
+        REFCDEC(sub);
+        return NULL;
+    }
     sub->length = len;
     memcpy(sub->_content, this->_content + from, len);
     sub->_content[len] = '\0';
@@ -244,9 +269,9 @@ static void format(ObjectPtr _this, const char * fmt, ...) {
     va_end(argptr);
 }
 
-static const char String_char_at(ObjectPtr _this, int pos) {
+static char String_char_at(ObjectPtr _this, int pos) {
     make_this(String, _this);
-    if(pos >= 0 && pos < this->length) {
+    if(pos >= 0 && pos < (int) this->length) {
         return this->_content[pos];
     }
     return 0;

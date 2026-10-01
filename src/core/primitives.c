@@ -1,5 +1,6 @@
 #include "primitives.h"
 #include <stdio.h>
+#include <float.h>
 
 static String * Boolean_to_string(ObjectPtr _this) {
     make_this(Boolean, _this);
@@ -114,15 +115,24 @@ static void Integer_multiply_inplace(ObjectPtr _this, Integer * i) {
 
 static Integer * Integer_divide_int(ObjectPtr _this, int i) {
     make_this(Integer, _this);
+    if(i == 0) {
+        return NULL;
+    }
     return new(Integer, this->value / i);
 }
 
 static Integer * Integer_divide(ObjectPtr _this, Integer * i) {
+    if(i == NULL) {
+        return NULL;
+    }
     return Integer_divide_int(_this, i->value);
 }
 
 static void Integer_divide_inplace_int(ObjectPtr _this, int i) {
     make_this(Integer, _this);
+    if(i == 0) {
+        return;
+    }
     this->value /= i;
 }
 
@@ -132,8 +142,9 @@ static void Integer_divide_inplace(ObjectPtr _this, Integer * i) {
 
 static String * Integer_to_string(ObjectPtr _this) {
     make_this(Integer, _this);
-    char buf[15];
-    sprintf(buf, "%d", this->value);
+    // 11 chars for INT_MIN plus terminator.
+    char buf[12];
+    snprintf(buf, sizeof(buf), "%d", this->value);
     return new(String, buf);
 }
 
@@ -256,26 +267,39 @@ static void Long_multiply_inplace(ObjectPtr _this, Long * i) {
 
 static Long * Long_divide_long(ObjectPtr _this, long i) {
     make_this(Long, _this);
+    if(i == 0) {
+        return NULL;
+    }
     return new(Long, this->value / i);
 }
 
 static Long * Long_divide(ObjectPtr _this, Long * i) {
+    if(i == NULL) {
+        return NULL;
+    }
     return Long_divide_long(_this, i->value);
 }
 
 static void Long_divide_inplace_long(ObjectPtr _this, long i) {
     make_this(Long, _this);
+    if(i == 0) {
+        return;
+    }
     this->value /= i;
 }
 
 static void Long_divide_inplace(ObjectPtr _this, Long * i) {
+    if(i == NULL) {
+        return;
+    }
     Long_divide_inplace_long(_this, i->value);
 }
 
 static String * Long_to_string(ObjectPtr _this) {
     make_this(Long, _this);
-    char buf[20];
-    sprintf(buf, "%ld", this->value);
+    // 20 chars for LONG_MIN plus terminator.
+    char buf[24];
+    snprintf(buf, sizeof(buf), "%ld", this->value);
     return new(String, buf);
 }
 
@@ -416,8 +440,10 @@ static void Double_divide_inplace(ObjectPtr _this, Double * i) {
 
 static String * Double_to_string(ObjectPtr _this) {
     make_this(Double, _this);
-    char buf[20];
-    sprintf(buf, "%.4f", this->value);
+    // A double can need up to ~318 chars with %f (309 digits + sign + point),
+    // so size the buffer for the widest case rather than a typical one.
+    char buf[DBL_MAX_EXP * 10 + 32];
+    snprintf(buf, sizeof(buf), "%.4f", this->value);
     return new(String, buf);
 }
 

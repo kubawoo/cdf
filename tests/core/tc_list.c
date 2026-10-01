@@ -1,4 +1,5 @@
 #include "list.h"
+#include <string.h>
 #include <assert.h>
 
 
@@ -316,6 +317,43 @@ static void list_iterator_empty(void)
     REFCDEC(it);
     REFCDEC(list);
 }
+/*
+ * List_contains must not release an element before equals() has read it.
+ * The pool allocator hands the same block straight back, so the old
+ * use-after-free went unnoticed; these checks assert the element is still
+ * intact across a contains() call that fails to match.
+ */
+static void List_contains_element_stays_valid(void)
+{
+	List * list = new(List);
+	String * first = new(String, "first");
+	String * second = new(String, "second");
+	call(list, add, first);
+	call(list, add, second);
+
+	// a needle that does not match, forcing the scan to read every element
+	String * needle = new(String, "needle");
+	for(int i = 0; i < 100; i++) {
+		// perturb the allocator between the get() and the equals()
+		String * churn = new(String, "churn-churn-churn-churn");
+		REFCDEC(churn);
+		assert(!(call(list, contains, needle)));
+	}
+
+	// both stored elements must be unchanged and still matchable
+	assert((first->length) == (5));
+	assert(strcmp(call(first, to_cstring), "first") == 0);
+	assert((second->length) == (6));
+	assert(strcmp(call(second, to_cstring), "second") == 0);
+	assert(call(list, contains, first));
+	assert(call(list, contains, second));
+
+	REFCDEC(needle);
+	REFCDEC(first);
+	REFCDEC(second);
+	REFCDEC(list);
+}
+
 int main(void)
 {
     list_test();
@@ -324,6 +362,7 @@ int main(void)
     list_remove();
     list_insert();
     List_contains();
+    List_contains_element_stays_valid();
     list_to_string();
     list_iterator_test();
     list_iterator_empty();

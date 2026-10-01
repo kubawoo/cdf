@@ -100,7 +100,7 @@ static void pop_state(JsonEventsParser * this) {
 
 int _processIdle(ObjectPtr _this, char c) {
     make_this(JsonEventsParser, _this);
-    if(isspace(c)) {
+    if(isspace((unsigned char) c)) {
         return CJSON_PARSE_SUCCESS;
     }
     if(c == '{') {
@@ -122,7 +122,7 @@ int _processIdle(ObjectPtr _this, char c) {
 
 int _processInObject(ObjectPtr _this, char c) {
     make_this(JsonEventsParser, _this);
-    if(isspace(c)) {
+    if(isspace((unsigned char) c)) {
         return CJSON_PARSE_SUCCESS;
     }
 
@@ -169,7 +169,7 @@ int _processInName(ObjectPtr _this, char c) {
 
 int _processNameDone(ObjectPtr _this, char c) {
     make_this(JsonEventsParser, _this);
-    if(isspace(c)) {
+    if(isspace((unsigned char) c)) {
         return CJSON_PARSE_SUCCESS;
     }
 
@@ -184,7 +184,7 @@ int _processNameDone(ObjectPtr _this, char c) {
 
 int _processReadyForValue(ObjectPtr _this, char c) {
     make_this(JsonEventsParser, _this);
-    if(isspace(c)) {
+    if(isspace((unsigned char) c)) {
         return CJSON_PARSE_SUCCESS;
     }
 
@@ -265,7 +265,7 @@ int _processInValue(ObjectPtr _this, char c) {
 int _processInArray(ObjectPtr _this, char c)
 {
     make_this(JsonEventsParser, _this);
-    if(isspace(c)) {
+    if(isspace((unsigned char) c)) {
         return CJSON_PARSE_SUCCESS;
     }
 
