@@ -131,6 +131,13 @@ call(rend, present, buf);
 Run `tui-demo` for a working example. Disable the module with
 `-DCDF_BUILD_TUI=OFF`.
 
+`EventLoop.run()` drives the loop for you, repainting after each event. When
+work happens on another thread and the screen has to reflect it without any
+input, use `poll_once()` with a timeout and repaint between events instead —
+`run()` waits for a key indefinitely, so a background result would not appear
+until the user happened to press something. See the `chatter` example, which
+waits on an HTTP request while staying interactive.
+
 
 ## OOP with CDF quick reference
 

@@ -42,6 +42,78 @@ int _parse(ObjectPtr _this, InputStream * json_stream, bool ignore_trailing_char
 _Type _guessType(String * s);
 Object * _getValue(String * s, _Type type);
 
+static int _hex_value(char c) {
+    if(c >= '0' && c <= '9') return c - '0';
+    if(c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if(c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+/* Appends the UTF-8 encoding of a code point, so a \uXXXX escape survives as a
+   real character rather than as six literal characters. */
+static void _append_utf8(String * out, unsigned int cp) {
+    if(cp < 0x80) {
+        call(out, append_char, (char) cp);
+    } else if(cp < 0x800) {
+        call(out, append_char, (char) (0xC0 | (cp >> 6)));
+        call(out, append_char, (char) (0x80 | (cp & 0x3F)));
+    } else {
+        call(out, append_char, (char) (0xE0 | (cp >> 12)));
+        call(out, append_char, (char) (0x80 | ((cp >> 6) & 0x3F)));
+        call(out, append_char, (char) (0x80 | (cp & 0x3F)));
+    }
+}
+
+/* Reverses JSON string escaping, returning a new string holding the decoded
+   text. A backslash followed by something that is not a recognised escape is
+   emitted as the character itself, which keeps a lone backslash from silently
+   swallowing the character after it. Caller frees the result. */
+static String * _unescape_json_string(const char * src, int len) {
+    String * out = new(String);
+    for(int i = 0; i < len; ++i) {
+        char c = src[i];
+        if(c != '\\' || i + 1 >= len) {
+            call(out, append_char, c);
+            continue;
+        }
+        char e = src[++i];
+        switch(e) {
+            case '"':  call(out, append_char, '"'); break;
+            case '\\': call(out, append_char, '\\'); break;
+            case '/':  call(out, append_char, '/'); break;
+            case 'b':  call(out, append_char, '\b'); break;
+            case 'f':  call(out, append_char, '\f'); break;
+            case 'n':  call(out, append_char, '\n'); break;
+            case 'r':  call(out, append_char, '\r'); break;
+            case 't':  call(out, append_char, '\t'); break;
+            case 'u': {
+                if(i + 4 < len) {
+                    unsigned int cp = 0;
+                    bool ok = true;
+                    for(int d = 0; d < 4; ++d) {
+                        int v = _hex_value(src[i + 1 + d]);
+                        if(v < 0) { ok = false; break; }
+                        cp = (cp << 4) | (unsigned int) v;
+                    }
+                    if(ok) {
+                        i += 4;
+                        _append_utf8(out, cp);
+                        break;
+                    }
+                }
+                // Malformed \u escape: keep it verbatim rather than losing text.
+                call(out, append_char, '\\');
+                call(out, append_char, 'u');
+                break;
+            }
+            default:
+                call(out, append_char, e);
+                break;
+        }
+    }
+    return out;
+}
+
 
 int _JsonEventsParser_parse(ObjectPtr _this, InputStream * json_stream) {
     make_this(JsonEventsParser, _this);
@@ -69,6 +141,8 @@ JsonEventsParser * JsonEventsParser_new1(JsonEventsParser * this, JsonEventsHand
     this->_states[this->_state_depth++] = IDLE;
     this->_read_pos = 0;
     this->_read_end = 0;
+    this->_escaped = false;
+    this->_in_string = false;
     return this;
 }
 
@@ -144,10 +218,26 @@ int _processInObject(ObjectPtr _this, char c) {
 
 int _processInName(ObjectPtr _this, char c) {
     make_this(JsonEventsParser, _this);
+    /* A backslash consumes the next character, so an escaped quote is data and
+       must not be mistaken for the closing quote of the name or string. */
+    if(this->_escaped) {
+        this->_escaped = false;
+        call(this->_buffer, append_char, c);
+        return CJSON_PARSE_SUCCESS;
+    }
+    if(c == '\\') {
+        this->_escaped = true;
+        call(this->_buffer, append_char, c);
+        return CJSON_PARSE_SUCCESS;
+    }
     if(c=='"') {
         pop_state(this);
+        /* The closing quote must not be mistaken for a terminator when the
+           string it closes contains an escaped quote, so only an unescaped one
+           counts. _buffer holds the text between the quotes. */
+        String * decoded = _unescape_json_string(call(this->_buffer, to_cstring), (int) this->_buffer->length);
         if(peek_state(this) == IN_ARRAY) {
-            Object * value = (Object *) new(String, call(this->_buffer, to_cstring));
+            Object * value = (Object *) decoded;
             if(this->_handler->value != NULL) {
                 String * name = call(this->_name, copy);
                 call(this->_handler, value, name, value);
@@ -158,7 +248,8 @@ int _processInName(ObjectPtr _this, char c) {
             call(this->_buffer, clear);
         } else {
             push_state(this, NAME_DONE);
-            call(this->_name, set_text, call(this->_buffer, to_cstring));
+            call(this->_name, set_text, call(decoded, to_cstring));
+            REFCDEC(decoded);
             call(this->_buffer, clear);
         }
     } else {
@@ -211,6 +302,12 @@ int _processReadyForValue(ObjectPtr _this, char c) {
     }
 
     call(this->_buffer, append_char, c);
+    /* A leading quote means a string value follows, so the characters up to its
+       closing quote are data and must not be scanned for structural characters.
+       The quote itself stays in the buffer, since _getValue strips it. */
+    if(c == '"') {
+        this->_in_string = true;
+    }
     pop_state(this); // READY_FOR_VALUE
     push_state(this, IN_VALUE);
     return CJSON_PARSE_SUCCESS;
@@ -219,20 +316,29 @@ int _processReadyForValue(ObjectPtr _this, char c) {
 int _processInValue(ObjectPtr _this, char c) {
     make_this(JsonEventsParser, _this);
 
-    if(c == ',' || c == '}') {
-        if(c == ',' && this->_buffer->length > 0) {
-            const char * buf = call(this->_buffer, to_cstring);
-            if(buf[0] == '"') {
-                int quote_count = 0;
-                for(int i = 0; i < this->_buffer->length; i++) {
-                    if(buf[i] == '"') quote_count++;
-                }
-                if(quote_count % 2 == 1) {
-                    call(this->_buffer, append_char, c);
-                    return CJSON_PARSE_SUCCESS;
-                }
-            }
-        }
+    /* Inside a quoted value an escaped character is data, so '}' or ',' after a
+       backslash must not be read as the end of the value. */
+    if(this->_escaped) {
+        this->_escaped = false;
+        call(this->_buffer, append_char, c);
+        return CJSON_PARSE_SUCCESS;
+    }
+
+    /* An unescaped quote closes a string value. The delimiter that follows it
+       is left in the buffer, so the normal trim/emit path handles it next. */
+    if(c == '"') {
+        this->_in_string = false;
+        call(this->_buffer, append_char, c);
+        return CJSON_PARSE_SUCCESS;
+    }
+
+    if(c == '\\' && this->_in_string) {
+        this->_escaped = true;
+        call(this->_buffer, append_char, c);
+        return CJSON_PARSE_SUCCESS;
+    }
+
+    if((c == ',' || c == '}') && !this->_in_string) {
         call(this->_buffer, trim);
         _Type type = _guessType(this->_buffer);
         if(type < 0) {
@@ -255,6 +361,8 @@ int _processInValue(ObjectPtr _this, char c) {
         }
         call(this->_name, clear);
         call(this->_buffer, clear);
+        this->_escaped = false;
+        this->_in_string = false;
         return CJSON_PARSE_SUCCESS;
     }
 
@@ -325,7 +433,12 @@ Object * _getValue(String * s, _Type type) {
             break;
         }
         case STRING: {
-            p = (Object *)  call(s, substring, 1, s->length - 1);
+            // Strip the quotes, then undo the escaping so the caller gets the
+            // text the document actually denotes.
+            String * raw = call(s, substring, 1, s->length - 1);
+            String * decoded = _unescape_json_string(call(raw, to_cstring), (int) raw->length);
+            REFCDEC(raw);
+            p = (Object *) decoded;
             break;
         }
         case BOOLEAN: {
