@@ -185,6 +185,51 @@ static void string_substring(void)
     REFCDEC(s);
 }
 
+static void string_substring_bounds(void)
+{
+    String * s = new(String, "abcdefghijkl");
+
+    // from below 0 clamps to the start
+    String * s1 = call(s, substring, -5, 3);
+    assert(strcmp(call(s1, to_cstring), "abc") == 0);
+    REFCDEC(s1);
+
+    // to past the end clamps to the length
+    s1 = call(s, substring, 8, 100);
+    assert(strcmp(call(s1, to_cstring), "ijkl") == 0);
+    REFCDEC(s1);
+
+    // both out of range yields an empty string, not a huge read
+    s1 = call(s, substring, 0, 100);
+    assert(s1 != NULL);
+    assert((s1->length) == (12));
+    assert(strcmp(call(s1, to_cstring), "abcdefghijkl") == 0);
+    REFCDEC(s1);
+
+    // from past the end yields an empty string
+    s1 = call(s, substring_from, 50);
+    assert(s1 != NULL);
+    assert((s1->length) == (0));
+    assert(strcmp(call(s1, to_cstring), "") == 0);
+    REFCDEC(s1);
+
+    // from after to yields an empty string
+    s1 = call(s, substring, 5, 2);
+    assert(s1 != NULL);
+    assert((s1->length) == (0));
+    REFCDEC(s1);
+
+    REFCDEC(s);
+
+    // substring of an empty string
+    String * e = new(String);
+    s1 = call(e, substring, 0, 10);
+    assert(s1 != NULL);
+    assert((s1->length) == (0));
+    REFCDEC(s1);
+    REFCDEC(e);
+}
+
 static void string_format(void)
 {
     String * s = new(String, "abcdefghijkl");
@@ -262,6 +307,7 @@ int main(void)
     string_copy();
     string_index_of();
     string_substring();
+    string_substring_bounds();
     string_format();
     string_trim();
     string_trim_left();

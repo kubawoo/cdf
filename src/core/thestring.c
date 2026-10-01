@@ -209,9 +209,24 @@ static int String_index_of_string(void * _this, String * string) {
 
 static String * String_substring(void * _this, int from, int to) {
     make_this(String, _this);
-    String * sub = new(String);
+    int length = (int) this->length;
+    if(from < 0) {
+        from = 0;
+    } else if(from > length) {
+        from = length;
+    }
+    if(to < from) {
+        to = from;
+    } else if(to > length) {
+        to = length;
+    }
+
     int len = to - from;
-    if (!_String_resize(sub, len) || !sub->_content) return NULL;
+    String * sub = new(String);
+    if (!_String_resize(sub, len) || !sub->_content) {
+        REFCDEC(sub);
+        return NULL;
+    }
     sub->length = len;
     memcpy(sub->_content, this->_content + from, len);
     sub->_content[len] = '\0';
