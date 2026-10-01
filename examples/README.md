@@ -52,15 +52,30 @@ A terminal chat client for any OpenAI-compatible endpoint, such as a
 `llama-server`. Uses `cdf-tui`, `cdf-http`, `cdf-json` and `cdf-log`.
 
 ```
-# Defaults to the llama.cpp server on the Docker host, port 8080.
+# Defaults to a server on http://localhost:8080/ and lists the models it serves.
 ../build/examples/chatter/chatter
 
-# Or point it somewhere else and pick a model.
-../build/examples/chatter/chatter http://localhost:8080 unsloth/Qwen3.6-35B-A3B-GGUF:Q4_K_M
+# Point it somewhere else and pick one of the models it offers.
+../build/examples/chatter/chatter --host http://localhost:8080 \
+    --model unsloth/Qwen3.6-35B-A3B-GGUF:Q4_K_M
+
+# Send an API token, for a server that requires one.
+../build/examples/chatter/chatter --token $API_KEY
 
 # Let a reasoning model think before answering. Slower, but more thorough.
-../build/examples/chatter/chatter -t
+../build/examples/chatter/chatter --model unsloth/Qwen3.6-35B-A3B-GGUF:Q4_K_M -t
 ```
+
+| Option | Meaning |
+| --- | --- |
+| `--host <url>` | Server to talk to (default: `http://localhost:8080/`) |
+| `--model <name>` | Model to chat with. Without it, the models the server serves are listed and the program exits |
+| `--token <tok>` | API token, sent as a bearer token when the server requires one |
+| `-t` | Let a reasoning model deliberate before answering |
+| `-h`, `--help` | Show the built-in help |
+
+Which models are available is up to how the server was started, so there is no
+default: run without `--model` to see what a server offers and pick one of those.
 
 Type a message and press Enter. The request runs on a worker thread, so the
 screen keeps updating and Ctrl-C keeps working while the model is thinking; the

@@ -22,7 +22,8 @@ ChatTurn * ChatTurn_new2(ChatTurn *, String *, String *);
 void ChatTurn_delete(ObjectPtr);
 
 typedef struct {
-    String * base_url;      /* e.g. http://host.containers.internal:8080 */
+    String * base_url;      /* e.g. http://localhost:8080 */
+    String * token;         /* bearer token, or NULL when the server needs none */
     String * model;
     List   * turns;         /* of ChatTurn, owned by this client */
     Logger * logger;
@@ -35,7 +36,7 @@ typedef struct {
     HttpClient * client;
 } ChatClient;
 
-ChatClient * new_chat_client(const char * base_url, const char * model, bool thinking);
+ChatClient * new_chat_client(const char * base_url, const char * model, const char * token, bool thinking);
 
 /* Appends a turn to the history the next request will carry. */
 void chat_add_turn(ChatClient * chat, const char * role, const char * content);
@@ -52,6 +53,12 @@ String * chat_build_request_body(ChatClient * chat, int max_tokens);
    reason in err (also a caller-owned string). A model that returns only
    reasoning_content is treated as an empty reply rather than a failure. */
 String * chat_send(ChatClient * chat, int max_tokens, String * err);
+
+/* Asks the server which models it serves and returns them as a List of String
+   the caller owns. Returns NULL when the call failed, leaving the reason in
+   err. /v1/models answers with a bare JSON array, so the root of the response is
+   a list rather than an object. */
+List * chat_list_models(ChatClient * chat, String * err);
 
 void chat_client_delete(ChatClient * chat);
 

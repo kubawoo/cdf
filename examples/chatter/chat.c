@@ -17,10 +17,13 @@ void ChatTurn_delete(ObjectPtr _this) {
     super_delete(Object, _this);
 }
 
-ChatClient * new_chat_client(const char * base_url, const char * model, bool thinking) {
+ChatClient * new_chat_client(const char * base_url, const char * model, const char * token, bool thinking) {
     ChatClient * chat = malloc(sizeof(ChatClient));
     chat->base_url = new(String, base_url);
     chat->model = new(String, model);
+    /* NULL rather than an empty string, so "no token given" stays
+       distinguishable from "the token is empty" when the header is built. */
+    chat->token = token == NULL ? NULL : new(String, token);
     chat->turns = new(List);
     chat->client = new(HttpClient);
     chat->thinking = thinking;
@@ -29,6 +32,69 @@ ChatClient * new_chat_client(const char * base_url, const char * model, bool thi
     chat->logger = call(lf, get_logger_cstring, "chatter");
 
     return chat;
+}
+
+/* Attaches the bearer token when one was configured. A server that needs no
+   authentication rejects an empty Authorization header as firmly as a wrong
+   one, so nothing is sent at all when no token was given. */
+static void _add_auth_header(ChatClient * chat, HttpRequest * request) {
+    if(chat->token == NULL) {
+        return;
+    }
+    String * value = new(String, "Bearer ");
+    call(value, append, chat->token);
+    call(request, add_header, REFCTMP(new(HttpHeader,
+        REFCTMP(new(String, "Authorization")),
+        value)));
+    REFCDEC(value);
+}
+
+/* Joins the base URL and a path with exactly one slash between them, so both
+   "http://host:8080" and "http://host:8080/" give a well-formed URL. */
+static String * _endpoint(ChatClient * chat, const char * path) {
+    String * url = new(String);
+    call(url, append, chat->base_url);
+    if(url->length > 0 && call(url, char_at, (int) url->length - 1) != '/') {
+        call(url, append_char, '/');
+    }
+    call(url, append_cstring, path);
+    return url;
+}
+
+/* Checks a response and reports why it was unusable. Returns false when the
+   caller should stop; the reason is left in err. */
+static bool _check_response(ChatClient * chat, HttpResponse * response, String * err) {
+    if(response == NULL) {
+        call(err, clear);
+        String * detail = chat_describe_failure(call(chat->base_url, to_cstring));
+        call(err, append, detail);
+        REFCDEC(detail);
+        return false;
+    }
+
+    if(response->status != HTTP_STATUS_OK) {
+        call(err, clear);
+        call(err, format, "Server returned HTTP %d.\n%s", (int) response->status,
+             response->content->length > 0 ? call(response->content, to_cstring) : "(no body)");
+        return false;
+    }
+    return true;
+}
+
+/* Parses a JSON body into a freshly built handler the caller must release.
+   Returns NULL when the body did not parse. */
+static JsonObjectBuilderEventsHandler * _parse_body(HttpResponse * response) {
+    StringInputStream * stream = new(StringInputStream, response->content);
+    JsonObjectBuilderEventsHandler * handler = new(JsonObjectBuilderEventsHandler);
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+    int rc = call(parser, parse, (InputStream *) stream);
+    REFCDEC(parser);
+    REFCDEC(stream);
+    if(rc != CJSON_PARSE_SUCCESS) {
+        REFCDEC(handler);
+        return NULL;
+    }
+    return handler;
 }
 
 /* With thinking off the model still wraps its answer in empty <think> tags,
@@ -175,14 +241,13 @@ static String * _explain_empty_content(ChatClient * chat) {
 String * chat_send(ChatClient * chat, int max_tokens, String * err) {
     String * body = chat_build_request_body(chat, max_tokens);
 
-    String * url = new(String);
-    call(url, append, chat->base_url);
-    call(url, append_cstring, "/v1/chat/completions");
+    String * url = _endpoint(chat, "v1/chat/completions");
 
     HttpRequest * request = new(HttpRequest, HTTP_METHOD_POST, url);
     call(request, add_header, REFCTMP(new(HttpHeader,
         REFCTMP(new(String, "Content-Type")),
         REFCTMP(new(String, "application/json")))));
+    _add_auth_header(chat, request);
     call(request, append_content, body);
 
     String * trace = new(String);
@@ -197,41 +262,29 @@ String * chat_send(ChatClient * chat, int max_tokens, String * err) {
     REFCDEC(url);
     REFCDEC(body);
 
-    if(response == NULL) {
-        call(err, clear);
-        String * detail = chat_describe_failure(call(chat->base_url, to_cstring));
-        call(err, append, detail);
-        REFCDEC(detail);
-        return NULL;
+    /* The body is parsed before the response is released: _parse_body reads
+       response->content, so the response has to outlive it. */
+    JsonObjectBuilderEventsHandler * handler = NULL;
+    bool ok = _check_response(chat, response, err);
+    if(ok) {
+        handler = _parse_body(response);
     }
-
-    if(response->status != HTTP_STATUS_OK) {
-        call(err, clear);
-        call(err, format, "Server returned HTTP %d.\n%s", (int) response->status,
-             response->content->length > 0 ? call(response->content, to_cstring) : "(no body)");
-        REFCDEC(response);
-        return NULL;
-    }
-
-    StringInputStream * stream = new(StringInputStream, response->content);
-    JsonObjectBuilderEventsHandler * handler = new(JsonObjectBuilderEventsHandler);
-    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
-    int rc = call(parser, parse, (InputStream *) stream);
-    REFCDEC(parser);
-    REFCDEC(stream);
     REFCDEC(response);
 
-    if(rc != CJSON_PARSE_SUCCESS) {
+    if(!ok) {
+        return NULL;
+    }
+
+    if(handler == NULL) {
         call(err, clear);
         call(err, append_cstring, "The reply was not valid JSON.");
-        REFCDEC(handler);
         return NULL;
     }
 
     JsonObject * root = call(handler, get_object);
     REFCDEC(handler);
 
-    String * reply = _extract_reply(root);
+    String * reply = root == NULL ? NULL : _extract_reply(root);
     REFCDEC(root);
 
     if(reply == NULL) {
@@ -243,11 +296,85 @@ String * chat_send(ChatClient * chat, int max_tokens, String * err) {
     return stripped;
 }
 
+/* Each entry is an object with an "id" naming the model; anything without one is
+   skipped rather than shown as a blank row, so a server that adds a different
+   kind of entry does not break the list. */
+static List * _collect_model_ids(List * entries) {
+    List * models = new(List);
+    for(int i = 0; i < call(entries, size); ++i) {
+        Object * entry = call(entries, get, i);
+        if(entry != NULL && type_equal(entry, "JsonObject")) {
+            String * id = _first_non_empty_string((JsonObject *) entry, "id");
+            if(id != NULL) {
+                call(models, add, id);
+                REFCDEC(id);
+            }
+        }
+        REFCDEC(entry);
+    }
+    return models;
+}
+
+List * chat_list_models(ChatClient * chat, String * err) {
+    String * url = _endpoint(chat, "v1/models");
+
+    HttpRequest * request = new(HttpRequest, HTTP_METHOD_GET, url);
+    _add_auth_header(chat, request);
+
+    HttpResponse * response = call(chat->client, send_request, request);
+
+    REFCDEC(request);
+
+    /* Parsed before the response is released, since the body lives in it. */
+    JsonObjectBuilderEventsHandler * handler = NULL;
+    bool ok = _check_response(chat, response, err);
+    if(ok) {
+        handler = _parse_body(response);
+    }
+    REFCDEC(response);
+    REFCDEC(url);
+
+    if(!ok) {
+        return NULL;
+    }
+
+    if(handler == NULL) {
+        call(err, clear);
+        call(err, append_cstring, "The model list was not valid JSON.");
+        return NULL;
+    }
+
+    /* Some servers wrap the array in {"data":[...]}, others answer with a bare
+       array, so both roots are accepted. */
+    List * entries = call(handler, get_list);
+    if(entries == NULL) {
+        JsonObject * root = call(handler, get_object);
+        String * key = new(String, "data");
+        Object * data = root == NULL ? NULL : call(root, get_value, key);
+        REFCDEC(key);
+        if(data != NULL && type_equal(data, "List")) {
+            entries = (List *) data;
+        } else {
+            REFCDEC(data);
+        }
+        REFCDEC(root);
+    }
+
+    List * models = entries == NULL ? new(List) : _collect_model_ids(entries);
+    REFCDEC(entries);
+    REFCDEC(handler);
+    return models;
+}
+
 void chat_client_delete(ChatClient * chat) {
     if(!chat) return;
     REFCDEC(chat->turns);
+    REFCDEC(chat->token);
     REFCDEC(chat->model);
     REFCDEC(chat->base_url);
     REFCDEC(chat->client);
+    /* The logger is owned by the LoggerFactory, which caches it for the rest of
+       the process; get_logger_cstring only handed out a borrowed reference. */
+    REFCDEC(chat->logger);
     free(chat);
 }

@@ -15,9 +15,8 @@
 #include <threads.h>
 #include "chat.h"
 
-#define DEFAULT_URL   "http://host.containers.internal:8080"
-#define DEFAULT_MODEL "unsloth/Qwen3.6-35B-A3B-GGUF:Q4_K_M"
-#define MAX_TOKENS    1024
+#define DEFAULT_HOST "http://localhost:8080/"
+#define MAX_TOKENS  1024
 
 /* A line of the conversation, already wrapped for display. */
 typedef enum {
@@ -454,19 +453,129 @@ static void on_resize(App * app, Terminal * term, Buffer * screen, Renderer * re
     draw(app);
 }
 
-int main(int argc, char * argv[]) {
-    bool thinking = false;
-    int argi = 1;
+/* ---- command line -------------------------------------------------------- */
 
-    /* -t lets a reasoning model deliberate before answering; it is off by
-       default because the wait is long. */
-    while(argi < argc && strcmp(argv[argi], "-t") == 0) {
-        thinking = true;
-        argi++;
+/* Settings gathered from the command line before anything is opened. */
+typedef struct {
+    const char * host;
+    const char * model;      /* NULL until the user names one */
+    const char * token;      /* NULL when the server needs no authentication */
+    bool thinking;
+} Options;
+
+static void print_usage(FILE * out, const char * program) {
+    fprintf(out,
+        "Usage: %s [options]\n"
+        "\n"
+        "A terminal chat client for an OpenAI-compatible server, such as llama.cpp.\n"
+        "\n"
+        "  --host <url>    Server to talk to (default: %s)\n"
+        "  --model <name>  Model to chat with. Without it the models the server\n"
+        "                  serves are listed and the program exits.\n"
+        "  --token <tok>   API token, sent as a bearer token when the server\n"
+        "                  requires one\n"
+        "  -t              Let a reasoning model deliberate before answering\n"
+        "  -h, --help      Show this help\n",
+        program, DEFAULT_HOST);
+}
+
+/* Reads the value of a flag that requires one. Returns NULL and reports the
+   problem when the flag is missing its argument or followed by another flag. */
+static const char * option_value(int argc, char * argv[], int * i, const char * flag) {
+    if(*i + 1 >= argc || strncmp(argv[*i + 1], "--", 2) == 0) {
+        fprintf(stderr, "chatter: %s needs a value\n", flag);
+        return NULL;
+    }
+    (*i)++;
+    return argv[*i];
+}
+
+/* Returns false when parsing failed, so main can exit before touching the
+   terminal. */
+static bool parse_options(int argc, char * argv[], Options * opts) {
+    opts->host = DEFAULT_HOST;
+    opts->model = NULL;
+    opts->token = NULL;
+    opts->thinking = false;
+
+    for(int i = 1; i < argc; ++i) {
+        const char * arg = argv[i];
+        if(strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
+            print_usage(stdout, argv[0]);
+            exit(0);
+        } else if(strcmp(arg, "-t") == 0) {
+            opts->thinking = true;
+        } else if(strcmp(arg, "--host") == 0 || strcmp(arg, "-H") == 0) {
+            const char * value = option_value(argc, argv, &i, arg);
+            if(value == NULL) return false;
+            opts->host = value;
+        } else if(strcmp(arg, "--model") == 0 || strcmp(arg, "-m") == 0) {
+            const char * value = option_value(argc, argv, &i, arg);
+            if(value == NULL) return false;
+            opts->model = value;
+        } else if(strcmp(arg, "--token") == 0) {
+            const char * value = option_value(argc, argv, &i, arg);
+            if(value == NULL) return false;
+            opts->token = value;
+        } else {
+            fprintf(stderr, "chatter: unknown option '%s'\n", arg);
+            fprintf(stderr, "Try '%s --help'.\n", argv[0]);
+            return false;
+        }
+    }
+    return true;
+}
+
+/* Asks the server what it serves and prints the answer. Used when no model was
+   named: the model names are whatever the server was started with, so there is
+   nothing sensible to assume here. */
+static bool show_available_models(const Options * opts) {
+    ChatClient * chat = new_chat_client(opts->host, "", opts->token, opts->thinking);
+
+    String * err = new(String);
+    List * models = chat_list_models(chat, err);
+
+    if(models == NULL) {
+        fprintf(stderr, "chatter: %s\n", call(err, to_cstring));
+        REFCDEC(err);
+        chat_client_delete(chat);
+        return false;
     }
 
-    const char * url = argc > argi ? argv[argi] : DEFAULT_URL;
-    const char * model = argc > argi + 1 ? argv[argi + 1] : DEFAULT_MODEL;
+    if(call(models, size) == 0) {
+        fprintf(stderr, "chatter: %s serves no models.\n", opts->host);
+    } else {
+        printf("Models served by %s:\n", opts->host);
+        for(int i = 0; i < call(models, size); ++i) {
+            String * model = call(models, get, i);
+            printf("  %s\n", call(model, to_cstring));
+            REFCDEC(model);
+        }
+        printf("\nStart again with --model <name> to chat with one of these.\n");
+    }
+
+    REFCDEC(models);
+    REFCDEC(err);
+    chat_client_delete(chat);
+    return true;
+}
+
+int main(int argc, char * argv[]) {
+    Options opts;
+    if(!parse_options(argc, argv, &opts)) {
+        return 2;
+    }
+
+    /* Without a model there is nothing to chat with, so this run exists only to
+       report what the server offers. Doing it before the terminal is opened
+       keeps the output ordinary text rather than something the user has to
+       scroll back through a screen to find. */
+    if(opts.model == NULL) {
+        return show_available_models(&opts) ? 0 : 1;
+    }
+
+    const char * url = opts.host;
+    const char * model = opts.model;
 
     Terminal * term = new(Terminal);
     if(!call(term, open)) {
@@ -489,10 +598,10 @@ int main(int argc, char * argv[]) {
 
     App app = {0};
     app.screen = new(Buffer, w, h);
-    app.chat = new_chat_client(url, model, thinking);
+    app.chat = new_chat_client(url, model, opts.token, opts.thinking);
     app.url = strdup(url);
     app.model = strdup(model);
-    app.thinking = thinking;
+    app.thinking = opts.thinking;
     mtx_init(&app.lock, mtx_plain);
 
     lines_push_wrapped(&app, LINE_SYSTEM,

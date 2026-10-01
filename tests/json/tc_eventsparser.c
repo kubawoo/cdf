@@ -452,6 +452,112 @@ static void build_string_with_commas(void)
 
     REFCDEC(parser);
 }
+/* A document whose root is an array, as /v1/models returns. There is no parent
+   object to hold it, so it lives only as the handler's own root. */
+static void top_level_array_of_objects(void)
+{
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "[{\"id\":\"model-a\",\"object\":\"model\"},{\"id\":\"model-b\"}]");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    assert((ret) == (CJSON_PARSE_SUCCESS));
+
+    assert(handler->_object == NULL);
+
+    List * list = call(handler, get_list);
+    assert(list != NULL);
+    assert(call(list, size) == (2));
+
+    Object * first = call(list, get, 0);
+    assert(type_equal(first, "JsonObject"));
+    String * id = new(String, "id");
+    Object * id_val = call((JsonObject *) first, get_value, id);
+    assert(strcmp(call((String *) id_val, to_cstring), "model-a") == 0);
+    REFCDEC(id_val);
+    REFCDEC(id);
+    REFCDEC(first);
+
+    Object * second = call(list, get, 1);
+    assert(type_equal(second, "JsonObject"));
+    String * id2 = new(String, "id");
+    Object * id_val2 = call((JsonObject *) second, get_value, id2);
+    assert(strcmp(call((String *) id_val2, to_cstring), "model-b") == 0);
+    REFCDEC(id_val2);
+    REFCDEC(id2);
+    REFCDEC(second);
+
+    REFCDEC(list);
+    REFCDEC(parser);
+}
+
+/* get_object must stay NULL for an array document, and the list must still be
+   readable after it is handed back out. */
+static void top_level_array_of_strings(void)
+{
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "[\"alpha\",\"beta\",\"gamma\"]");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    assert((ret) == (CJSON_PARSE_SUCCESS));
+
+    assert(call(handler, get_object) == NULL);
+
+    List * list = call(handler, get_list);
+    assert(list != NULL);
+    assert(call(list, size) == (3));
+    String * s1 = call(list, get, 1);
+    assert(strcmp(call(s1, to_cstring), "beta") == 0);
+    REFCDEC(s1);
+    REFCDEC(list);
+
+    REFCDEC(parser);
+}
+
+static void empty_top_level_array(void)
+{
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "[]");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    assert((ret) == (CJSON_PARSE_SUCCESS));
+
+    List * list = call(handler, get_list);
+    assert(list != NULL);
+    assert(call(list, size) == (0));
+    REFCDEC(list);
+    REFCDEC(parser);
+}
+
+/* An object document has no root array, so get_list must not invent one. */
+static void top_level_object_has_no_root_list(void)
+{
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "{\"id\":\"only\"}");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    assert((ret) == (CJSON_PARSE_SUCCESS));
+
+    assert(call(handler, get_list) == NULL);
+    assert(call(handler, get_object) != NULL);
+    REFCDEC(parser);
+}
+
 int main(void)
 {
     testcase();
@@ -473,6 +579,10 @@ int main(void)
     escape_does_not_break_neighbours();
     escaped_string_in_array();
     raw_utf8_is_preserved();
+    top_level_array_of_objects();
+    top_level_array_of_strings();
+    empty_top_level_array();
+    top_level_object_has_no_root_list();
     return 0;
 }
 
