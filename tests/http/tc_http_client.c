@@ -134,7 +134,7 @@ static void header_without_space_after_colon(void)
     // find the Content-Type header and check nothing was dropped
     HttpHeader * found = NULL;
     HttpHeader * multi = NULL;
-    for(int i = 0; i < response->headers->length; ++i) {
+    for(int i = 0; i < call(response->headers, size); ++i) {
         HttpHeader * h = (HttpHeader *) call(response->headers, get, i);
         const char * nm = call(h->name, to_cstring);
         if(strcmp(nm, "Content-Type") == 0) {

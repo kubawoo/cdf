@@ -49,7 +49,7 @@ static sqlite3_stmt * bind_statement(DbPreparedStatement * _stmt, List * binding
 	sqlite3_clear_bindings(stmt);
 
 	if(bindings != NULL) {
-		for(int i = 0; i < bindings->length; ++i) {
+        for(int i = 0; i < call(bindings, size); ++i) {
 			Object * binding = call(bindings, get, i);
 			if(type_equal(binding, "String")) {
 				String * s = (String *) binding;

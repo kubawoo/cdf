@@ -6,21 +6,21 @@ static void array_test(void)
 {
     Array * a = new(Array, 10);
     assert(type_equal(a, "Array"));
-    assert((a->length) == (10));
-    assert(a->_values != NULL);
+    assert((a->_length) == (10));
+    assert(a->_values != nullptr);
     for(int i = 0; i < 10; ++i) {
-        assert(call(a, get, i) == NULL);
+        assert(call(a, get, i) == nullptr);
     }
 
     call(a, set, 3, REFCTMP(new(String, "one two free")));
 
-    assert((a->length) == (10));
+    assert((a->_length) == (10));
     assert(a->_values != NULL);
     for(int i = 0; i < 10; ++i) {
         Object * o = call(a, get, i);
         if(i == 3) {
             assert(o != NULL);
-            assert(strcmp("String", o->type) == 0);
+            assert(strcmp("String", o->_type) == 0);
             assert(strcmp(call((String *) o, to_cstring), "one two free") == 0);
         } else {
             assert(o == NULL);

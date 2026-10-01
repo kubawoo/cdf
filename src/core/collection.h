@@ -7,6 +7,7 @@
 typedef struct {
     inherits(Object);
     Iterator* (*iterator)(ObjectPtr);
+    unsigned int (*size)(ObjectPtr);
 } Collection;
 
 Collection * Collection_new(Collection * _this);

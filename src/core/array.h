@@ -7,11 +7,13 @@
 
 typedef struct {
     inherits(Collection);
-    int length;
+    int _length;
     Object ** _values;
+
     void (*set)(ObjectPtr, int, ObjectPtr);
     ObjectPtr (*get)(ObjectPtr, int);
     Iterator* (*iterator)(ObjectPtr);
+    unsigned int (*size)(ObjectPtr);
 } Array;
 
 Array * Array_new1(Array * _this, int size);
@@ -22,8 +24,8 @@ typedef struct {
     inherits(Iterator);
     bool (*hasNext)(ObjectPtr);
     ObjectPtr (*next)(ObjectPtr);
-    Array * array;
-    int index;
+    Array * _array;
+    int _index;
 } ArrayIterator;
 
 

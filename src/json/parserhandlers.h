@@ -3,7 +3,6 @@
 
 #include "eventparser.h"
 #include "jsonobject.h"
-#include "../core/core.h"
 
 typedef struct  {
     inherits(JsonEventsHandler);
@@ -13,7 +12,9 @@ typedef struct  {
     void (*array_end)(ObjectPtr);
     void (*value)(ObjectPtr, String *, Object *);
 
-    JsonObject * object;
+    JsonObject * (*get_object)(ObjectPtr);
+
+    JsonObject * _object;
     Stack * _stack;
 } JsonObjectBuilderEventsHandler;
 

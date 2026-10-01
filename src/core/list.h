@@ -6,9 +6,9 @@
 
 typedef struct _ListItem {
     inherits(Object);
-    Object * item;
-    struct _ListItem * next;
-    struct _ListItem * prev;
+    Object * _item;
+    struct _ListItem * _next;
+    struct _ListItem * _prev;
 } _ListItem;
 
 _ListItem * _ListItem_new1(_ListItem * this, Object *);
@@ -20,7 +20,7 @@ typedef struct {
     inherits(Collection);
     _ListItem * _first;
     _ListItem * _last;
-    int length;
+    int _length;
 
     void (*add)(ObjectPtr, ObjectPtr);
     void (*remove)(ObjectPtr, int);
@@ -31,6 +31,7 @@ typedef struct {
 
     String * (*to_string)(ObjectPtr);
     Iterator* (*iterator)(ObjectPtr);
+    unsigned int (*size)(ObjectPtr);
 } List;
 
 List * List_new(List * this);
@@ -42,8 +43,8 @@ typedef struct {
     inherits(Iterator);
     bool (*hasNext)(ObjectPtr);
     ObjectPtr (*next)(ObjectPtr);
-    List * list;
-    _ListItem * curr;
+    List * _list;
+    _ListItem * _curr;
 } ListIterator;
 
 

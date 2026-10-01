@@ -2,14 +2,14 @@
 
 static Map * _cdf_singleton_map = NULL;
 
+__attribute__((constructor))
+static void _cdf_singleton_init() {
+    _cdf_singleton_map = new(Map);
+}
+
 __attribute__((destructor))
 static void _cdf_singleton_cleanup() {
 	REFCDEC(_cdf_singleton_map);
-}
-
-__attribute__((constructor))
-static void _cdf_singleton_init() {
-	_cdf_singleton_map = new(Map);
 }
 
 ObjectPtr _cdf_get_singleton(const char * name) {

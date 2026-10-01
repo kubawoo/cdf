@@ -7,7 +7,7 @@ static bool Object_equals(void * _this, void * _other) {
 
 static String * _ooc_Object_to_string(ObjectPtr _this) {
     String * s = new(String, "Object of type ");
-    call(s,  append_cstring, ((Object *)_this)->type);
+    call(s,  append_cstring, ((Object *)_this)->_type);
     return s;
 }
 
@@ -24,7 +24,7 @@ Object * Object_new(Object * this) {
     }
     this->_refc = 1;
     this->_ooc_destructor = Object_delete;
-    this->type = "Object";
+    this->_type = "Object";
     this->to_string = _ooc_Object_to_string;
     this->equals = Object_equals;
     this->copy = Object_copy;

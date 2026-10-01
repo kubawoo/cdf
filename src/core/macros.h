@@ -56,7 +56,7 @@
 #define super(BaseClass, ThisClass) if(!this) this = pool_alloc(sizeof(ThisClass));\
                                     BaseClass##_new((BaseClass *)this);\
                                     ((Object *) this)->_ooc_destructor =  ThisClass##_delete;\
-                                    ((Object *) this)->type = #ThisClass
+                                    ((Object *) this)->_type = #ThisClass
 
 
 #define super_delete(BaseClass, x) BaseClass##_delete((BaseClass *) x)
@@ -66,8 +66,8 @@
 
 #define make_this(class, _this) class * this = (class *) _this
 
-#define type_equal(x, _type) (strcmp(((Object *) (x))->type, _type) == 0)
-#define types_equal(x, y) (strcmp(((Object *) (x))->type, ((Object *) y)->type) == 0)
+#define type_equal(x, type) (strcmp(((Object *) (x))->_type, type) == 0)
+#define types_equal(x, y) (strcmp(((Object *) (x))->_type, ((Object *) (y))->_type) == 0)
 
 #define REFCINC(x) do { if(!x) break; Object * _o = (Object *) x; atomic_fetch_add(&_o->_refc, 1); } while(0)
 #define REFCDEC(x) do { if(!x) break; Object * _o = (Object *) x; if(atomic_fetch_sub(&_o->_refc, 1) == 1) _delete(x); } while(0)

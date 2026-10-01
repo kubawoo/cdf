@@ -8,15 +8,15 @@ typedef struct {
     inherits(Collection);
     List * _keys;
     List * _values;
-    int (*get_length)(void *);
-    void (*put)(void *, ObjectPtr, ObjectPtr);
-    ObjectPtr (*get)(void *, ObjectPtr);
-    void (*remove)(void *, ObjectPtr);
-    bool (*contains_key)(void *, ObjectPtr);
-    bool (*contains_value)(void *, ObjectPtr);
+    void (*put)(ObjectPtr, ObjectPtr, ObjectPtr);
+    ObjectPtr (*get)(ObjectPtr, ObjectPtr);
+    void (*remove)(ObjectPtr, ObjectPtr);
+    bool (*contains_key)(ObjectPtr, ObjectPtr);
+    bool (*contains_value)(ObjectPtr, ObjectPtr);
     List * (*get_keys)(ObjectPtr);
     String * (*to_string)(ObjectPtr);
     Iterator* (*iterator)(ObjectPtr);
+    unsigned int (*size)(ObjectPtr);
 } Map;
 
 Map * Map_new(Map * this);
@@ -26,8 +26,8 @@ typedef struct {
     inherits(Iterator);
     bool (*hasNext)(ObjectPtr);
     ObjectPtr (*next)(ObjectPtr);
-    Map * map;
-    int index;
+    Map * _map;
+    int _index;
 } MapIterator;
 
 MapIterator * MapIterator_new1(MapIterator * this, Map * map);
