@@ -252,6 +252,156 @@ static void parse_string_comma_value(void)
     REFCDEC(parser);
 }
 
+/* Parses json and asserts the value at key, returning it for inspection. */
+static String * value_of(const char * json_text, const char * key)
+{
+    JsonObjectBuilderEventsHandler * handler = new(JsonObjectBuilderEventsHandler);
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+    String * json = new(String, json_text);
+    InputStream * stream = new(StringInputStream, json);
+    int ret = call(parser, parse, stream);
+    REFCDEC(stream);
+    REFCDEC(json);
+    assert((ret) == (CJSON_PARSE_SUCCESS));
+
+    String * name = new(String, key);
+    Object * value = call(handler->_object, get_value, name);
+    assert(value != NULL);
+    assert(type_equal(value, "String"));
+    String * text = (String *) value;
+    REFCINC(text);
+    REFCDEC(name);
+    REFCDEC(parser);
+    REFCDEC(handler);
+    return text;
+}
+
+// An escaped quote is one character, not a quote that ends the string. Without
+// this, a reply such as He said "OK" was parsed as He said \ followed by junk.
+static void escaped_quote_is_decoded(void)
+{
+    String * v = value_of("{\"a\":\"say \\\"hi\\\"\"}", "a");
+    assert(strcmp(call(v, to_cstring), "say \"hi\"") == 0);
+    REFCDEC(v);
+}
+
+// The two-character escapes must become the control character they denote,
+// rather than staying as a literal backslash followed by a letter.
+static void short_escapes_are_decoded(void)
+{
+    String * nl = value_of("{\"a\":\"one\\ntwo\"}", "a");
+    assert(strcmp(call(nl, to_cstring), "one\ntwo") == 0);
+    REFCDEC(nl);
+
+    String * tab = value_of("{\"a\":\"x\\ty\"}", "a");
+    assert(strcmp(call(tab, to_cstring), "x\ty") == 0);
+    REFCDEC(tab);
+
+    String * slash = value_of("{\"a\":\"a\\/b\"}", "a");
+    assert(strcmp(call(slash, to_cstring), "a/b") == 0);
+    REFCDEC(slash);
+
+    String * bs = value_of("{\"a\":\"a\\\\b\"}", "a");
+    assert(strcmp(call(bs, to_cstring), "a\\b") == 0);
+    REFCDEC(bs);
+}
+
+// A \uXXXX escape denotes one code point and must become its UTF-8 bytes, not
+// six literal characters.
+static void unicode_escape_is_decoded(void)
+{
+    String * v = value_of("{\"a\":\"\\u00e9\"}", "a");     // e-acute
+    assert(strcmp(call(v, to_cstring), "\xc3\xa9") == 0);
+    REFCDEC(v);
+
+    String * tab = value_of("{\"a\":\"\\u0041\"}", "a");   // 'A'
+    assert(strcmp(call(tab, to_cstring), "A") == 0);
+    REFCDEC(tab);
+}
+
+// A brace or comma inside a quoted value is data. Reading it as structure would
+// truncate the value and desynchronise the rest of the document.
+static void structural_characters_inside_strings(void)
+{
+    String * brace = value_of("{\"a\":\"x}y\"}", "a");
+    assert(strcmp(call(brace, to_cstring), "x}y") == 0);
+    REFCDEC(brace);
+
+    String * comma = value_of("{\"a\":\"x,y\",\"b\":2}", "a");
+    assert(strcmp(call(comma, to_cstring), "x,y") == 0);
+    REFCDEC(comma);
+}
+
+// An escaped brace is data for the same reason an unescaped one is.
+static void escaped_structural_character(void)
+{
+    String * v = value_of("{\"a\":\"x\\}y\"}", "a");
+    assert(strcmp(call(v, to_cstring), "x}y") == 0);
+    REFCDEC(v);
+}
+
+// Escaping must not disturb the fields around the escaped value.
+static void escape_does_not_break_neighbours(void)
+{
+    JsonObjectBuilderEventsHandler * handler = new(JsonObjectBuilderEventsHandler);
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+    String * json = new(String, "{\"content\":\"He said \\\"OK\\\".\",\"n\":7}");
+    InputStream * stream = new(StringInputStream, json);
+    assert(call(parser, parse, stream) == CJSON_PARSE_SUCCESS);
+
+    String * ck = new(String, "content");
+    Object * cv = call(handler->_object, get_value, ck);
+    assert(type_equal(cv, "String"));
+    assert(strcmp(call((String *)cv, to_cstring), "He said \"OK\".") == 0);
+
+    String * nk = new(String, "n");
+    Object * nv = call(handler->_object, get_value, nk);
+    assert(type_equal(nv, "Long"));
+    assert(((Long *)nv)->value == 7);
+
+    REFCDEC(nk); REFCDEC(nv); REFCDEC(ck); REFCDEC(cv);
+    REFCDEC(stream); REFCDEC(json); REFCDEC(parser); REFCDEC(handler);
+}
+
+// Text that arrives as a JSON string value inside an array takes a different
+// path through the parser, so it needs covering separately.
+static void escaped_string_in_array(void)
+{
+    JsonObjectBuilderEventsHandler * handler = new(JsonObjectBuilderEventsHandler);
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+    String * json = new(String, "{\"items\":[\"a\\\"b\",\"c,d\"]}");
+    InputStream * stream = new(StringInputStream, json);
+    assert(call(parser, parse, stream) == CJSON_PARSE_SUCCESS);
+
+    String * k = new(String, "items");
+    Object * items = call(handler->_object, get_value, k);
+    assert(type_equal(items, "List"));
+    List * list = (List *) items;
+    assert(call(list, size) == 2);
+
+    String * first = call(list, get, 0);
+    String * second = call(list, get, 1);
+    assert(strcmp(call((String *)first, to_cstring), "a\"b") == 0);
+    assert(strcmp(call((String *)second, to_cstring), "c,d") == 0);
+
+    REFCDEC(first); REFCDEC(second);
+    REFCDEC(k); REFCDEC(items); REFCDEC(stream); REFCDEC(json);
+    REFCDEC(parser); REFCDEC(handler);
+}
+
+// Multi-byte UTF-8 passes through a string value unchanged. A byte above 0x7F
+// must not be mistaken for end-of-input, or the value is cut short.
+static void raw_utf8_is_preserved(void)
+{
+    String * accented = value_of("{\"a\":\"caf\xc3\xa9\"}", "a");
+    assert(strcmp(call(accented, to_cstring), "caf\xc3\xa9") == 0);
+    REFCDEC(accented);
+
+    String * cjk = value_of("{\"a\":\"\xe4\xbd\xa0\xe5\xa5\xbd\"}", "a");
+    assert(strcmp(call(cjk, to_cstring), "\xe4\xbd\xa0\xe5\xa5\xbd") == 0);
+    REFCDEC(cjk);
+}
+
 static void build_string_with_commas(void)
 {
     JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
@@ -302,6 +452,112 @@ static void build_string_with_commas(void)
 
     REFCDEC(parser);
 }
+/* A document whose root is an array, as /v1/models returns. There is no parent
+   object to hold it, so it lives only as the handler's own root. */
+static void top_level_array_of_objects(void)
+{
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "[{\"id\":\"model-a\",\"object\":\"model\"},{\"id\":\"model-b\"}]");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    assert((ret) == (CJSON_PARSE_SUCCESS));
+
+    assert(handler->_object == NULL);
+
+    List * list = call(handler, get_list);
+    assert(list != NULL);
+    assert(call(list, size) == (2));
+
+    Object * first = call(list, get, 0);
+    assert(type_equal(first, "JsonObject"));
+    String * id = new(String, "id");
+    Object * id_val = call((JsonObject *) first, get_value, id);
+    assert(strcmp(call((String *) id_val, to_cstring), "model-a") == 0);
+    REFCDEC(id_val);
+    REFCDEC(id);
+    REFCDEC(first);
+
+    Object * second = call(list, get, 1);
+    assert(type_equal(second, "JsonObject"));
+    String * id2 = new(String, "id");
+    Object * id_val2 = call((JsonObject *) second, get_value, id2);
+    assert(strcmp(call((String *) id_val2, to_cstring), "model-b") == 0);
+    REFCDEC(id_val2);
+    REFCDEC(id2);
+    REFCDEC(second);
+
+    REFCDEC(list);
+    REFCDEC(parser);
+}
+
+/* get_object must stay NULL for an array document, and the list must still be
+   readable after it is handed back out. */
+static void top_level_array_of_strings(void)
+{
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "[\"alpha\",\"beta\",\"gamma\"]");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    assert((ret) == (CJSON_PARSE_SUCCESS));
+
+    assert(call(handler, get_object) == NULL);
+
+    List * list = call(handler, get_list);
+    assert(list != NULL);
+    assert(call(list, size) == (3));
+    String * s1 = call(list, get, 1);
+    assert(strcmp(call(s1, to_cstring), "beta") == 0);
+    REFCDEC(s1);
+    REFCDEC(list);
+
+    REFCDEC(parser);
+}
+
+static void empty_top_level_array(void)
+{
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "[]");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    assert((ret) == (CJSON_PARSE_SUCCESS));
+
+    List * list = call(handler, get_list);
+    assert(list != NULL);
+    assert(call(list, size) == (0));
+    REFCDEC(list);
+    REFCDEC(parser);
+}
+
+/* An object document has no root array, so get_list must not invent one. */
+static void top_level_object_has_no_root_list(void)
+{
+    JsonObjectBuilderEventsHandler * handler = REFCTMP(new(JsonObjectBuilderEventsHandler));
+    JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+
+    String * json = new(String, "{\"id\":\"only\"}");
+    InputStream * json_stream = new(StringInputStream, json);
+    int ret = call(parser, parse, json_stream);
+    REFCDEC(json_stream);
+    REFCDEC(json);
+    assert((ret) == (CJSON_PARSE_SUCCESS));
+
+    assert(call(handler, get_list) == NULL);
+    assert(call(handler, get_object) != NULL);
+    REFCDEC(parser);
+}
+
 int main(void)
 {
     testcase();
@@ -315,6 +571,18 @@ int main(void)
     build_object_with_array_then_fields();
     build_string_with_commas();
     parse_string_comma_value();
+    escaped_quote_is_decoded();
+    short_escapes_are_decoded();
+    unicode_escape_is_decoded();
+    structural_characters_inside_strings();
+    escaped_structural_character();
+    escape_does_not_break_neighbours();
+    escaped_string_in_array();
+    raw_utf8_is_preserved();
+    top_level_array_of_objects();
+    top_level_array_of_strings();
+    empty_top_level_array();
+    top_level_object_has_no_root_list();
     return 0;
 }
 

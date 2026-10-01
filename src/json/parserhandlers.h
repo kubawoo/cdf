@@ -12,9 +12,14 @@ typedef struct  {
     void (*array_end)(ObjectPtr);
     void (*value)(ObjectPtr, String *, Object *);
 
+    /* The root object, or NULL when the document was a top-level array. */
     JsonObject * (*get_object)(ObjectPtr);
 
+    /* The root array, or NULL when the document was a top-level object. */
+    List * (*get_list)(ObjectPtr);
+
     JsonObject * _object;
+    List * _list;
     Stack * _stack;
 } JsonObjectBuilderEventsHandler;
 

@@ -9,7 +9,16 @@
 #include <errno.h>
 #include <netdb.h>
 
-typedef enum {_PARSING_STATUS_LINE, _PARSING_HEADERS, _PARSING_BODY} _HttpClient_ParsingState;
+typedef enum {_PARSING_STATUS_LINE, _PARSING_HEADERS, _PARSING_BODY, _PARSING_CHUNKED} _HttpClient_BodyState;
+
+typedef struct {
+    _HttpClient_BodyState state;
+    /* Set once the headers say the body is chunked, so the body bytes are
+       de-framed rather than taken verbatim. */
+    bool chunked;
+    /* Set when the terminating zero-length chunk has been consumed. */
+    bool complete;
+} _HttpClient_ParsingState;
 
 HttpStatus _status_from_string(String * s) {
     int code = atoi(call(s, to_cstring));
@@ -78,7 +87,7 @@ bool _HttpClient_parse_status_line(String * status_line, HttpResponse * response
     return true;
 }
 
-bool _HttpClient_process_header_line(String * header_line, HttpResponse * response) {
+bool _HttpClient_process_header_line(String * header_line, HttpResponse * response, _HttpClient_ParsingState * state) {
     int pos = call(header_line, index_of_char, ':');
     if(pos < 0) {
         return false;
@@ -92,10 +101,17 @@ bool _HttpClient_process_header_line(String * header_line, HttpResponse * respon
     }
     String * name = call(header_line, substring, 0, pos);
     String * value = call(header_line, substring_from, value_start);
-    if(name->length <= 0 || value->length <= 0) {
+    if(name->length <= 0) {
         REFCDEC(name);
         REFCDEC(value);
         return false;
+    }
+
+    /* Remember the framing while the header is still alive, since by the time
+       the blank line arrives the name and value are gone. Only "chunked" needs
+       de-framing; an identity encoding needs none. */
+    if(call(name, equals_cstring, "Transfer-Encoding") && call(value, equals_cstring, "chunked")) {
+        state->chunked = true;
     }
 
     HttpHeader * header = new(HttpHeader, name, value);
@@ -107,9 +123,70 @@ bool _HttpClient_process_header_line(String * header_line, HttpResponse * respon
 }
 
 
+/* Consumes chunk framing from buffer and appends the decoded payload bytes to
+   response. Anything left over — a partial size line, or a chunk whose body has
+   not all arrived — stays in buffer for the next read. Returns false only when
+   the framing is malformed beyond recovery. */
+static bool _process_chunked(String * buffer, HttpResponse * response, _HttpClient_ParsingState * state) {
+    const char * buf = call(buffer, to_cstring);
+    int len = (int) buffer->length;
+    int consumed = 0;
+
+    while(!state->complete) {
+        /* Chunk size line: hexadecimal digits, then CRLF. Extensions after a
+           ';' are permitted (RFC 7230 §4.1) and are skipped. */
+        int eol = -1;
+        for(int i = consumed; i + 1 < len; ++i) {
+            if(buf[i] == '\r' && buf[i + 1] == '\n') {
+                eol = i;
+                break;
+            }
+        }
+        if(eol < 0) {
+            break;                                  /* size line not complete yet */
+        }
+
+        long size = strtol(buf + consumed, NULL, 16);
+        if(size < 0) {
+            return false;                           /* malformed size line */
+        }
+        /* A size line with no hex digits at all is also malformed; strtol
+           would have read 0 and silently ended the body. */
+        if(eol == consumed) {
+            return false;
+        }
+
+        int body_start = eol + 2;
+        if(size == 0) {
+            /* Trailer section ends at a blank line. Everything after the size
+               line is a trailer, and for our purposes there is nothing to keep. */
+            state->complete = true;
+            consumed = body_start;
+            break;
+        }
+
+        /* Each chunk body is followed by its own CRLF, so wait until the body
+           plus those two bytes have arrived before appending. */
+        if(body_start + size + 2 > len) {
+            break;
+        }
+        String * payload = call(buffer, substring, body_start, body_start + (int) size);
+        call(response, append_content, payload);
+        REFCDEC(payload);
+        consumed = body_start + (int) size + 2;
+    }
+
+    if(consumed > 0) {
+        String * rest = call(buffer, substring_from, consumed);
+        call(buffer, set_text, call(rest, to_cstring));
+        REFCDEC(rest);
+    }
+    return true;
+}
+
 static bool _process_buffer(String * buffer, HttpResponse * response, _HttpClient_ParsingState * state) {
 
-    if(*state == _PARSING_STATUS_LINE) {
+    if(state->state == _PARSING_STATUS_LINE) {
          int eol_pos = call(buffer, index_of_cstring, EOL);
          if(eol_pos < 0) {
              if(buffer->length >= 1024) {
@@ -127,21 +204,21 @@ static bool _process_buffer(String * buffer, HttpResponse * response, _HttpClien
              String * buffer_tmp = call(buffer, substring_from, eol_pos + 2 /* strlen(EOL) */);
              call(buffer, set_text, call(buffer_tmp, to_cstring));
              REFCDEC(buffer_tmp);
-             *state = _PARSING_HEADERS;
+             state->state = _PARSING_HEADERS;
          }
     }
 
-    if(*state == _PARSING_HEADERS) {
+    if(state->state == _PARSING_HEADERS) {
         int prev_pos = 0;
         int pos;
         while((pos = call(buffer, next_index_of_cstring, prev_pos, EOL)) > 0) {
             if(prev_pos == pos) {
                 prev_pos = pos + 2;
-                *state = _PARSING_BODY;
+                state->state = state->chunked ? _PARSING_CHUNKED : _PARSING_BODY;
                 break;
             }
             String * header_line = call(buffer, substring, prev_pos, pos);
-            bool ok = _HttpClient_process_header_line(header_line, response);
+            bool ok = _HttpClient_process_header_line(header_line, response, state);
             REFCDEC(header_line);
             if(!ok) {
                 return false;
@@ -155,7 +232,11 @@ static bool _process_buffer(String * buffer, HttpResponse * response, _HttpClien
         REFCDEC(buffer_tmp);
     }
 
-    if(*state == _PARSING_BODY) {
+    if(state->state == _PARSING_CHUNKED) {
+        return _process_chunked(buffer, response, state);
+    }
+
+    if(state->state == _PARSING_BODY) {
         call(response, append_content, buffer);
         call(buffer, clear);
     }
@@ -167,17 +248,27 @@ static bool _process_buffer(String * buffer, HttpResponse * response, _HttpClien
 static HttpResponse * _parse_response(HttpClient * this, int conn_fd) {
     HttpResponse * response = new(HttpResponse);
     String * s = new(String);
-    _HttpClient_ParsingState state = _PARSING_STATUS_LINE;
+    _HttpClient_ParsingState state = { .state = _PARSING_STATUS_LINE, .chunked = false, .complete = false };
     int last_bytes_read = 0;
     int buffer_len = 16384;
     char buffer[buffer_len + 1];
     bool parsing_ok = false;
 
+    /* A short read only says the kernel had nothing more buffered at that
+       moment, not that the response is over: a peer that streams its reply
+       dribbles it out in many reads, each smaller than the buffer. Stopping at
+       the first short read truncated every chunked body mid-flight. The loop
+       ends on recv() returning 0, which is the peer closing the connection. */
     while((last_bytes_read = recv(conn_fd, buffer, buffer_len, 0)) > 0) {
         buffer[last_bytes_read] = '\0';
         call(s, append_cstring, buffer);
         parsing_ok = _process_buffer(s, response, &state);
-        if(!parsing_ok || last_bytes_read < buffer_len) {
+        if(!parsing_ok) {
+            break;
+        }
+        /* A chunked body ends at the zero-length chunk, so there is no need to
+           wait for the peer to close the connection. */
+        if(state.state == _PARSING_CHUNKED && state.complete) {
             break;
         }
     }

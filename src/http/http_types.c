@@ -63,6 +63,20 @@ const char * HttpRequest_method_to_string(HttpMethod method) {
     return s;
 }
 
+/* Whether the caller already supplied a Content-Length header, which must not
+   be duplicated or contradicted. */
+static bool _HttpRequest_has_content_length(HttpRequest * this) {
+    for(int i = 0; i < call(this->headers, size); ++i) {
+        HttpHeader * header = (HttpHeader *) call(this->headers, get, i);
+        bool match = call(header->name, equals_cstring, "Content-Length");
+        REFCDEC(header);
+        if(match) {
+            return true;
+        }
+    }
+    return false;
+}
+
 String * HttpRequest_to_string(ObjectPtr _this) {
     make_this(HttpRequest, _this);
     String * s = new(String);
@@ -85,6 +99,17 @@ String * HttpRequest_to_string(ObjectPtr _this) {
         call(s, append, header_string);
         REFCDEC(header_string);
         call(s, append_cstring, EOL);
+    }
+    /* A body with no length is unreadable to the receiver: HTTP/1.1 delimits
+       it by Content-Length or by chunked framing, and this client sends
+       neither. A length the caller set explicitly takes precedence. */
+    if(this->content->length > 0 && !_HttpRequest_has_content_length(this)) {
+        // Built separately because format() clears the string it is called on.
+        String * length = new(String);
+        call(length, format, "Content-Length: %zu", (size_t) this->content->length);
+        call(s, append, length);
+        call(s, append_cstring, EOL);
+        REFCDEC(length);
     }
     call(s, append_cstring, EOL);
 

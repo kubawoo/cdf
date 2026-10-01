@@ -39,6 +39,15 @@ typedef struct {
     int _read_pos;
     int _read_end;
 
+    /* True when the previous character appended to the buffer was a backslash,
+       so the next character is an escape and must not be treated as a structural
+       character such as a quote, comma or closing brace. */
+    bool _escaped;
+
+    /* True while scanning inside a quoted value, so a '}' or ',' appearing in
+       the text is not mistaken for the end of the object. */
+    bool _in_string;
+
     int (*parse)(ObjectPtr, InputStream * json_stream);
 } JsonEventsParser;
 

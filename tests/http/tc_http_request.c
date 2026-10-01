@@ -311,6 +311,62 @@ static void null_path_to_string_test(void)
     REFCDEC(request);
 }
 
+/* A POST body with no declared length cannot be read by the receiver: HTTP/1.1
+   delimits it by Content-Length or by chunked framing, and a body preceded by
+   neither is truncated at the end of the headers. llama.cpp answered such a
+   request with a 500 rather than parsing it. */
+static void content_length_is_emitted_for_a_body(void)
+{
+    String * loc = new(String, "http://www.example.com");
+    HttpRequest * request = new(HttpRequest, HTTP_METHOD_POST, loc);
+    String * body = new(String, "{\"ok\":true}");
+    call(request, append_content, body);
+
+    String * s = call(request, to_string);
+    assert(strcmp(call(s, to_cstring),
+                  "POST / HTTP/1.1\r\nHost: www.example.com\r\n"
+                  "Content-Length: 11\r\n\r\n{\"ok\":true}") == 0);
+    REFCDEC(s);
+    REFCDEC(body);
+    REFCDEC(loc);
+    REFCDEC(request);
+}
+
+/* An empty body needs no length, and must not grow a zero-length one. */
+static void no_content_length_for_an_empty_body(void)
+{
+    String * loc = new(String, "http://www.example.com");
+    HttpRequest * request = new(HttpRequest, HTTP_METHOD_POST, loc);
+
+    String * s = call(request, to_string);
+    assert(strcmp(call(s, to_cstring),
+                  "POST / HTTP/1.1\r\nHost: www.example.com\r\n\r\n") == 0);
+    REFCDEC(s);
+    REFCDEC(loc);
+    REFCDEC(request);
+}
+
+/* A length the caller set wins: the server may have been told one already, and
+   emitting a second header would leave the message self-contradictory. */
+static void explicit_content_length_is_not_duplicated(void)
+{
+    String * loc = new(String, "http://www.example.com");
+    HttpRequest * request = new(HttpRequest, HTTP_METHOD_POST, loc);
+    call(request, add_header, REFCTMP(new(HttpHeader,
+        REFCTMP(new(String, "Content-Length")), REFCTMP(new(String, "999")))));
+    String * body = new(String, "{\"ok\":true}");
+    call(request, append_content, body);
+
+    String * s = call(request, to_string);
+    const char * text = call(s, to_cstring);
+    assert(strstr(text, "Content-Length: 999\r\n") != NULL);
+    assert(strstr(text, "Content-Length: 11") == NULL);
+    REFCDEC(s);
+    REFCDEC(body);
+    REFCDEC(loc);
+    REFCDEC(request);
+}
+
 int main(void)
 {
     to_string_test();
@@ -327,6 +383,9 @@ int main(void)
     unparsed_request_to_string_test();
     unknown_method_with_location_test();
     null_path_to_string_test();
+    content_length_is_emitted_for_a_body();
+    no_content_length_for_an_empty_body();
+    explicit_content_length_is_not_duplicated();
     return 0;
 }
 

@@ -1,4 +1,7 @@
 #include "jsonobject.h"
+#include "eventparser.h"
+#include "parserhandlers.h"
+#include "stringinputstream.h"
 #include <assert.h>
 #include <math.h>
 
@@ -232,6 +235,142 @@ static void get_map(void)
 	REFCDEC(m);
 	assert(m == NULL);
 }
+/* Serializes a one-entry object whose value is the given text, returning the
+   document. Caller frees the result. */
+static String * json_with_value(const char * value)
+{
+    JsonObject * json = new(JsonObject);
+    call(json, put_value, REFCTMP(new(String, "v")), REFCTMP(new(String, value)));
+    String * text = call(json, to_string);
+    REFCDEC(json);
+    return text;
+}
+
+// A value containing a quote must be escaped, otherwise the document is invalid
+// JSON and the receiver rejects it.
+static void quote_in_value_is_escaped(void)
+{
+    String * expected = json_with_value("he said \"hi\"");
+    assert(strcmp(call(expected, to_cstring), "{\"v\":\"he said \\\"hi\\\"\"}") == 0);
+    REFCDEC(expected);
+}
+
+// Control characters have no place raw in JSON and must use their escapes.
+static void control_characters_are_escaped(void)
+{
+    String * nl = json_with_value("a\nb");
+    assert(strcmp(call(nl, to_cstring), "{\"v\":\"a\\nb\"}") == 0);
+    REFCDEC(nl);
+
+    String * tab = json_with_value("a\tb");
+    assert(strcmp(call(tab, to_cstring), "{\"v\":\"a\\tb\"}") == 0);
+    REFCDEC(tab);
+
+    String * cr = json_with_value("a\rb");
+    assert(strcmp(call(cr, to_cstring), "{\"v\":\"a\\rb\"}") == 0);
+    REFCDEC(cr);
+
+/* Backspace and formfeed are C escapes of their own, so the values are built
+   from explicit bytes: the encoder must emit the two-character JSON escape. */
+    JsonObject * bsj = new(JsonObject);
+    String * bs = new(String);
+    call(bs, append_cstring, "a");
+    call(bs, append_char, (char) 0x08);
+    call(bs, append_char, 'b');
+    call(bsj, put_value, REFCTMP(new(String, "v")), bs);
+    String * bst = call(bsj, to_string);
+    assert(strcmp(call(bst, to_cstring), "{\"v\":\"a\\bb\"}") == 0);
+    REFCDEC(bst); REFCDEC(bsj); REFCDEC(bs);
+
+    JsonObject * ffj = new(JsonObject);
+    String * ff = new(String);
+    call(ff, append_cstring, "a");
+    call(ff, append_char, (char) 0x0C);
+    call(ff, append_char, 'b');
+    call(ffj, put_value, REFCTMP(new(String, "v")), ff);
+    String * fft = call(ffj, to_string);
+    assert(strcmp(call(fft, to_cstring), "{\"v\":\"a\\fb\"}") == 0);
+    REFCDEC(fft); REFCDEC(ffj); REFCDEC(ff);
+}
+
+// A backslash must be doubled, or the document would claim an escape that the
+// value never contained.
+static void backslash_in_value_is_escaped(void)
+{
+    String * expected = json_with_value("a\\b");
+    assert(strcmp(call(expected, to_cstring), "{\"v\":\"a\\\\b\"}") == 0);
+    REFCDEC(expected);
+}
+
+// Control characters with no two-character form go out as \u00XX.
+static void other_control_characters_use_unicode_escape(void)
+{
+    JsonObject * json = new(JsonObject);
+    String * value = new(String);
+    call(value, append_char, 'a');
+    call(value, append_char, (char) 0x01);
+    call(value, append_char, 'b');
+    call(json, put_value, REFCTMP(new(String, "v")), value);
+    String * text = call(json, to_string);
+    assert(strcmp(call(text, to_cstring), "{\"v\":\"a\\u0001b\"}") == 0);
+    REFCDEC(text); REFCDEC(value); REFCDEC(json);
+}
+
+// Text outside the escaped set, including UTF-8, must survive untouched.
+static void plain_and_utf8_pass_through(void)
+{
+    JsonObject * plain = new(JsonObject);
+    call(plain, put_value, REFCTMP(new(String, "v")), REFCTMP(new(String, "hello world")));
+    String * p = call(plain, to_string);
+    assert(strcmp(call(p, to_cstring), "{\"v\":\"hello world\"}") == 0);
+    REFCDEC(p); REFCDEC(plain);
+
+    JsonObject * utf8 = new(JsonObject);
+    call(utf8, put_value, REFCTMP(new(String, "v")), REFCTMP(new(String, "caf\xc3\xa9")));
+    String * u = call(utf8, to_string);
+    assert(strcmp(call(u, to_cstring), "{\"v\":\"caf\xc3\xa9\"}") == 0);
+    REFCDEC(u); REFCDEC(utf8);
+}
+
+// Escaping a value must leave the keys and the surrounding structure intact.
+static void escaped_value_keeps_document_shape(void)
+{
+    JsonObject * json = new(JsonObject);
+    call(json, put_value, REFCTMP(new(String, "content")), REFCTMP(new(String, "a\"b")));
+    call(json, put_value, REFCTMP(new(String, "n")), REFCTMP(new(Long, 7L)));
+    String * text = call(json, to_string);
+    const char * s = call(text, to_cstring);
+    assert(strstr(s, "{\"content\":\"a\\\"b\",") != NULL);
+    assert(strstr(s, "\"n\":7}") != NULL);
+    REFCDEC(text);
+    REFCDEC(json);
+}
+
+// Whatever to_string emits must parse back to the value that went in.
+static void escaped_value_round_trips(void)
+{
+    const char * originals[] = { "he said \"hi\"", "a\nb", "a\\b", "a\tb", "caf\xc3\xa9" };
+    for(unsigned i = 0; i < sizeof originals / sizeof originals[0]; ++i) {
+        JsonObject * json = new(JsonObject);
+        call(json, put_value, REFCTMP(new(String, "v")), REFCTMP(new(String, originals[i])));
+        String * text = call(json, to_string);
+        REFCDEC(json);
+
+        StringInputStream * stream = new(StringInputStream, text);
+        JsonObjectBuilderEventsHandler * handler = new(JsonObjectBuilderEventsHandler);
+        JsonEventsParser * parser = new(JsonEventsParser, (JsonEventsHandler *) handler);
+        assert(call(parser, parse, (InputStream *) stream) == CJSON_PARSE_SUCCESS);
+
+        String * key = new(String, "v");
+        Object * value = call(handler->_object, get_value, key);
+        assert(value != NULL);
+        assert(strcmp(call((String *)value, to_cstring), originals[i]) == 0);
+
+        REFCDEC(key); REFCDEC(value);
+        REFCDEC(parser); REFCDEC(handler); REFCDEC(stream); REFCDEC(text);
+    }
+}
+
 int main(void)
 {
     integer_to_json();
@@ -246,6 +385,13 @@ int main(void)
     complex_object_to_json();
     get_missing_object();
     get_map();
+    quote_in_value_is_escaped();
+    control_characters_are_escaped();
+    backslash_in_value_is_escaped();
+    other_control_characters_use_unicode_escape();
+    plain_and_utf8_pass_through();
+    escaped_value_keeps_document_shape();
+    escaped_value_round_trips();
     return 0;
 }
 
